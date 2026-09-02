@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cadran
+      POSTGRES_PASSWORD: cadran
+      POSTGRES_DB: cadran
+    ports:
+      - "5432:5432"
+    volumes:
+      - cadran_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  cadran_postgres_data:

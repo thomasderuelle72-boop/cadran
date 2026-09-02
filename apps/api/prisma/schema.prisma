@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  DAF
+  CONTROLEUR
+  LECTEUR
+}
+
+enum PeriodStatus {
+  OUVERTE
+  CLOTUREE
+}
+
+// Poste normalisé : catégorie comptable standardisée à laquelle chaque ligne
+// importée est rattachée. Le moteur de ratios (apps/api/src/ratios/engine.ts)
+// n'agrège jamais un numéro de compte brut, toujours ces postes.
+enum LinePoste {
+  CHIFFRE_AFFAIRES
+  ACHATS_CONSOMMES
+  CHARGES_EXTERNES
+  CHARGES_PERSONNEL
+  IMPOTS_TAXES
+  DOTATIONS_AMORTISSEMENTS
+  AUTRES_PRODUITS_CHARGES_EXPLOITATION
+  CHARGES_FINANCIERES
+  PRODUITS_FINANCIERS
+  RESULTAT_EXCEPTIONNEL
+  IMPOT_SOCIETES
+  STOCKS
+  CREANCES_CLIENTS
+  AUTRES_CREANCES
+  DISPONIBILITES
+  CAPITAUX_PROPRES
+  DETTES_FINANCIERES
+  DETTES_FOURNISSEURS
+  AUTRES_DETTES
+  IMMOBILISATIONS
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  sector    String?
+  currency  String   @default("EUR")
+  createdAt DateTime @default(now())
+
+  users   User[]
+  periods AccountingPeriod[]
+}
+
+model User {
+  id             String       @id @default(cuid())
+  email          String       @unique
+  passwordHash   String
+  name           String
+  role           Role         @default(LECTEUR)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
+}
+
+model AccountingPeriod {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  label          String
+  startDate      DateTime
+  endDate        DateTime
+  status         PeriodStatus @default(OUVERTE)
+  createdAt      DateTime     @default(now())
+
+  lineItems   FinancialLineItem[]
+  ratioResult RatioResult?
+
+  @@unique([organizationId, label])
+  @@index([organizationId, startDate])
+}
+
+model FinancialLineItem {
+  id           String           @id @default(cuid())
+  periodId     String
+  period       AccountingPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  accountCode  String
+  label        String
+  amount       Decimal          @db.Decimal(14, 2)
+  poste        LinePoste
+  createdAt    DateTime         @default(now())
+
+  @@index([periodId, poste])
+}
+
+// Cache du dernier calcul de ratios pour la période (recalculé à chaque
+// import ou clôture). Évite de recalculer à chaque affichage du dashboard.
+model RatioResult {
+  id         String           @id @default(cuid())
+  periodId   String           @unique
+  period     AccountingPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  aggregates Json
+  derived    Json
+  ratios     Json
+  computedAt DateTime         @default(now())
+}
