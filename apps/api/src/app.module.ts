@@ -11,6 +11,7 @@ import { ReportsModule } from "./reports/reports.module";
 import { ConsolidationModule } from "./consolidation/consolidation.module";
 import { BudgetModule } from "./budget/budget.module";
 import { AlertsModule } from "./alerts/alerts.module";
+import { CashForecastModule } from "./cash-forecast/cash-forecast.module";
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { AlertsModule } from "./alerts/alerts.module";
     ConsolidationModule,
     BudgetModule,
     AlertsModule,
+    CashForecastModule,
   ],
 })
 export class AppModule {}

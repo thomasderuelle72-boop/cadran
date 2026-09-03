@@ -7,6 +7,10 @@ import type {
   AuthResponse,
   AuthUser,
   BudgetVariance,
+  CashCategory,
+  CashLine,
+  CashProjection,
+  CashRecurrence,
   ConsolidatedRatios,
   ConsolidationGroup,
   Entity,
@@ -175,6 +179,73 @@ export function useAcknowledgeAlert() {
   return useMutation({
     mutationFn: (id: string) => api.patch(`/alerts/${id}/acknowledge`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["alerts"] }),
+  });
+}
+
+export function useCashProjection(entityId: string | null, weeks = 13) {
+  return useQuery<CashProjection>({
+    queryKey: ["cash-projection", entityId, weeks],
+    queryFn: () => api.get(`/entities/${entityId}/cash-forecast?weeks=${weeks}`),
+    enabled: !!entityId,
+  });
+}
+
+export function useCashLines(entityId: string | null) {
+  return useQuery<CashLine[]>({
+    queryKey: ["cash-lines", entityId],
+    queryFn: () => api.get(`/entities/${entityId}/cash-forecast/lines`),
+    enabled: !!entityId,
+  });
+}
+
+export function useCashCategories(entityId: string | null) {
+  return useQuery<Array<{ category: CashCategory; label: string }>>({
+    queryKey: ["cash-categories"],
+    queryFn: () => api.get(`/entities/${entityId}/cash-forecast/categories`),
+    enabled: !!entityId,
+    staleTime: Infinity,
+  });
+}
+
+function invalidateCash(queryClient: ReturnType<typeof useQueryClient>, entityId: string) {
+  queryClient.invalidateQueries({ queryKey: ["cash-projection", entityId] });
+  queryClient.invalidateQueries({ queryKey: ["cash-lines", entityId] });
+}
+
+export function useCreateCashLine() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      entityId: string;
+      label: string;
+      category: CashCategory;
+      amount: number;
+      startDate: string;
+      recurrence: CashRecurrence;
+      endDate?: string;
+    }) => {
+      const { entityId, ...body } = input;
+      return api.post<CashLine>(`/entities/${entityId}/cash-forecast/lines`, body);
+    },
+    onSuccess: (_, variables) => invalidateCash(queryClient, variables.entityId),
+  });
+}
+
+export function useDeleteCashLine() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { entityId: string; lineId: string }) =>
+      api.delete(`/entities/${input.entityId}/cash-forecast/lines/${input.lineId}`),
+    onSuccess: (_, variables) => invalidateCash(queryClient, variables.entityId),
+  });
+}
+
+export function usePrefillCash() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (entityId: string) =>
+      api.post<{ created: number; basedOn: { label: string } }>(`/entities/${entityId}/cash-forecast/prefill`),
+    onSuccess: (_, entityId) => invalidateCash(queryClient, entityId),
   });
 }
 

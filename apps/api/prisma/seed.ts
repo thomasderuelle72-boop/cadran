@@ -256,6 +256,28 @@ async function main() {
     }
   }
 
+  // Prévisionnel de trésorerie de la maison-mère : flux mensuels récurrents
+  // à partir du mois prochain, plus un investissement ponctuel qui creuse
+  // le point bas — de quoi rendre la courbe parlante dès la première visite.
+  const sas = await prisma.entity.findFirstOrThrow({ where: { organizationId: organization.id, name: "Atelier Nova SAS" } });
+  const now = new Date();
+  const nextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  const onDay = (day: number, monthOffset = 0) =>
+    new Date(Date.UTC(nextMonth.getUTCFullYear(), nextMonth.getUTCMonth() + monthOffset, day));
+  const inAYear = new Date(Date.UTC(nextMonth.getUTCFullYear() + 1, nextMonth.getUTCMonth(), 1));
+  await prisma.cashForecastLine.createMany({
+    data: [
+      { entityId: sas.id, label: "Encaissements clients", category: "ENCAISSEMENTS_CLIENTS", amount: 168000, startDate: onDay(15), recurrence: "MONTHLY", endDate: inAYear },
+      { entityId: sas.id, label: "Règlements fournisseurs", category: "DECAISSEMENTS_FOURNISSEURS", amount: -71000, startDate: onDay(10), recurrence: "MONTHLY", endDate: inAYear },
+      { entityId: sas.id, label: "Salaires et charges sociales", category: "SALAIRES_ET_CHARGES_SOCIALES", amount: -42000, startDate: onDay(28), recurrence: "MONTHLY", endDate: inAYear },
+      { entityId: sas.id, label: "Loyer et charges externes", category: "LOYERS_ET_CHARGES_EXTERNES", amount: -23000, startDate: onDay(5), recurrence: "MONTHLY", endDate: inAYear },
+      { entityId: sas.id, label: "Échéance emprunt", category: "REMBOURSEMENT_EMPRUNT", amount: -6500, startDate: onDay(1), recurrence: "MONTHLY", endDate: inAYear },
+      { entityId: sas.id, label: "Acompte IS", category: "IMPOTS_ET_TAXES", amount: -11000, startDate: onDay(15, 2), recurrence: "NONE" },
+      { entityId: sas.id, label: "Nouvelle ligne de production", category: "INVESTISSEMENT", amount: -48000, startDate: onDay(20, 1), recurrence: "NONE" },
+    ],
+  });
+  console.log("Prévisionnel de trésorerie créé pour Atelier Nova SAS");
+
   const rules = await Promise.all(
     DEMO_ALERT_RULES.map((rule) =>
       prisma.alertRule.create({

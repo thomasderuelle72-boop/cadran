@@ -10,6 +10,7 @@ import { ReportsPage } from "./pages/Reports";
 import { SettingsPage } from "./pages/Settings";
 import { BudgetPage } from "./pages/Budget";
 import { AlertsPage } from "./pages/Alerts";
+import { CashPage } from "./pages/Cash";
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/ratios" element={<RatiosPage />} />
         <Route path="/budget" element={<BudgetPage />} />
+        <Route path="/cash" element={<CashPage />} />
         <Route path="/alerts" element={<AlertsPage />} />
         <Route path="/import" element={<ImportPage />} />
         <Route path="/reports" element={<ReportsPage />} />

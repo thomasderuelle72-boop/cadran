@@ -51,9 +51,14 @@ export class ConsolidationService {
     return Array.from(groups.values()).sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
   }
 
-  private async aggregateGroup(organizationId: string, startDate: Date, endDate: Date) {
+  private async aggregateGroup(organizationId: string, startDate: Date, endDate: Date, entityIds?: string[]) {
     const periods = await this.prisma.accountingPeriod.findMany({
-      where: { entity: { organizationId }, startDate, endDate },
+      where: {
+        entity: { organizationId },
+        startDate,
+        endDate,
+        ...(entityIds ? { entityId: { in: entityIds } } : {}),
+      },
       include: { lineItems: true, entity: true },
     });
 
@@ -83,11 +88,32 @@ export class ConsolidationService {
       .filter((g) => g.startDate.getTime() < start.getTime())
       .sort((a, b) => b.startDate.getTime() - a.startDate.getTime())[0];
 
-    const previous = previousGroup
-      ? { aggregates: (await this.aggregateGroup(organizationId, previousGroup.startDate, previousGroup.endDate)).aggregates }
-      : null;
+    // Croissance à périmètre constant : on ne compare que les entités
+    // présentes dans les deux groupes. Sinon, une filiale absente d'une des
+    // deux périodes ferait apparaître une variation qui n'est qu'un
+    // changement de périmètre, pas une performance.
+    const ratios = computeRatios(aggregates, derived, null);
+    const currentEntityIds = new Set(periods.map((p) => p.entityId));
+    const commonEntityIds = previousGroup
+      ? previousGroup.entities.map((e) => e.id).filter((id) => currentEntityIds.has(id))
+      : [];
 
-    const ratios = computeRatios(aggregates, derived, previous);
+    let growthScope: { previousLabel: string; entities: Array<{ id: string; name: string }> } | null = null;
+    if (previousGroup && commonEntityIds.length > 0) {
+      const [currentCommon, previousCommon] = await Promise.all([
+        this.aggregateGroup(organizationId, start, end, commonEntityIds),
+        this.aggregateGroup(organizationId, previousGroup.startDate, previousGroup.endDate, commonEntityIds),
+      ]);
+      const likeForLike = computeRatios(currentCommon.aggregates, computeDerived(currentCommon.aggregates), {
+        aggregates: previousCommon.aggregates,
+      }).find((r) => r.id === "croissance_ca");
+      const index = ratios.findIndex((r) => r.id === "croissance_ca");
+      if (likeForLike && index >= 0) ratios[index] = likeForLike;
+      growthScope = {
+        previousLabel: previousGroup.label,
+        entities: previousGroup.entities.filter((e) => currentEntityIds.has(e.id)),
+      };
+    }
 
     // Les montants sont déjà convertis (aggregateGroup applique le taux de
     // chaque entité) : le groupe consolidé s'exprime dans la devise de
@@ -105,6 +131,7 @@ export class ConsolidationService {
       aggregates,
       derived,
       ratios,
+      growthScope,
     };
   }
 }

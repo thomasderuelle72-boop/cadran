@@ -147,6 +147,7 @@ export interface ConsolidatedRatios {
   aggregates: Aggregates;
   derived: Derived;
   ratios: RatioValue[];
+  growthScope: { previousLabel: string; entities: Array<{ id: string; name: string }> } | null;
 }
 
 export interface BudgetLine {
@@ -173,6 +174,53 @@ export interface BudgetVariance {
     ebitda: { budgeted: number; actual: number; ecart: number };
     resultatNet: { budgeted: number; actual: number; ecart: number };
   };
+}
+
+export type CashCategory =
+  | "ENCAISSEMENTS_CLIENTS"
+  | "DECAISSEMENTS_FOURNISSEURS"
+  | "SALAIRES_ET_CHARGES_SOCIALES"
+  | "IMPOTS_ET_TAXES"
+  | "LOYERS_ET_CHARGES_EXTERNES"
+  | "REMBOURSEMENT_EMPRUNT"
+  | "INVESTISSEMENT"
+  | "FINANCEMENT"
+  | "AUTRE";
+
+export type CashRecurrence = "NONE" | "WEEKLY" | "MONTHLY";
+
+export interface CashLine {
+  id: string;
+  label: string;
+  category: CashCategory;
+  amount: string;
+  startDate: string;
+  recurrence: CashRecurrence;
+  endDate: string | null;
+}
+
+export interface CashWeek {
+  weekStart: string;
+  weekEnd: string;
+  inflows: number;
+  outflows: number;
+  net: number;
+  closingBalance: number;
+  status: "bon" | "attention" | "critique";
+  movements: Array<{ lineId: string; label: string; category: CashCategory; date: string; amount: number }>;
+}
+
+export interface CashProjection {
+  entityId: string;
+  currency: string;
+  openingBalance: number;
+  openingSource: { periodId: string; label: string; endDate: string } | null;
+  lineCount: number;
+  horizonWeeks: number;
+  from: string;
+  weeks: CashWeek[];
+  lowestBalance: number;
+  lowestWeekStart: string | null;
 }
 
 export type AlertOperator = "LT" | "LTE" | "GT" | "GTE";

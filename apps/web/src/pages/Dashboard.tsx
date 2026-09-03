@@ -142,7 +142,16 @@ function ConsolidatedDashboard() {
       </div>
 
       {ratiosLoading && <p className="text-ink/50">Calcul des ratios consolidés…</p>}
-      {consolidated && <DashboardBody ratioResult={consolidated} />}
+      {consolidated && (
+        <>
+          <DashboardBody ratioResult={consolidated} />
+          <p className="text-xs text-ink/50">
+            {consolidated.growthScope
+              ? `Croissance du CA calculée à périmètre constant vs ${consolidated.growthScope.previousLabel} (${consolidated.growthScope.entities.map((e) => e.name).join(", ")}).`
+              : "Croissance du CA non disponible : aucune entité commune avec la période précédente."}
+          </p>
+        </>
+      )}
     </div>
   );
 }

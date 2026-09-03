@@ -5,6 +5,7 @@ const NAV_ITEMS = [
   { to: "/", label: "Tableau de bord", end: true },
   { to: "/ratios", label: "Ratios" },
   { to: "/budget", label: "Budget" },
+  { to: "/cash", label: "Trésorerie" },
   { to: "/alerts", label: "Alertes" },
   { to: "/import", label: "Import" },
   { to: "/reports", label: "Rapports" },

@@ -54,13 +54,16 @@ Si PostgreSQL tourne déjà en local (hors Docker), adaptez simplement `DATABASE
 - **Budget vs réalisé** — saisie d'un budget par poste et par période, écarts calculés automatiquement (montant et %), avec code couleur adapté au sens du poste (charge vs produit).
 - **Alertes sur seuils** — règles configurables sur n'importe quel ratio (`<`, `≤`, `>`, `≥`), réévaluées à chaque import, historique des événements déclenchés/acquittés.
 - **Export Excel** — en plus du PDF, un classeur `.xlsx` (synthèse + détail des ratios) est généré par période.
+- **Trésorerie prévisionnelle** — flux d'encaissement/décaissement (ponctuels ou récurrents), projection glissante du solde semaine par semaine sur 13/26/52 semaines à partir des disponibilités de la dernière période, point bas et semaines en tension ; pré-remplissage possible à partir du rythme de la dernière période importée. Voir `apps/api/src/cash-forecast/engine.ts` et ses tests.
+- **Croissance à périmètre constant** — en vue consolidée, la croissance du CA ne compare que les entités présentes sur les deux périodes, et le périmètre retenu est affiché sous le tableau de bord.
 
-### Limite connue
-La croissance du CA en vue consolidée compare les groupes de périodes tels quels : si la composition des entités change d'une période à l'autre (ex. une filiale sans données sur la période la plus récente), la variation affichée reflète en partie ce changement de périmètre, pas uniquement la performance réelle. Une comparaison « à périmètre constant » est laissée à une itération ultérieure.
+### Limites connues
+- Le pré-remplissage de trésorerie répartit le rythme de la dernière période en flux mensuels : il ne modélise ni les délais d'encaissement (DSO) ni la TVA. C'est un point de départ à ajuster, pas une prévision.
+- Le solde d'ouverture de la projection est celui des disponibilités de la dernière période importée ; entre deux clôtures, il faut l'ajuster par une ligne ponctuelle si la trésorerie réelle a bougé (pas encore de rapprochement bancaire).
 
 ## Ce qui reste hors périmètre (V2 et au-delà)
 
-Connecteurs ERP/bancaires automatiques (Open Banking, Sage, Cegid…), SSO entreprise, prévisionnel de trésorerie glissant à 13 semaines, IA prédictive, benchmark sectoriel, export PowerPoint — ces modules sont décrits dans le cahier des charges mais nécessitent des comptes/API tiers non disponibles dans cet environnement de développement.
+Connecteurs ERP/bancaires automatiques (Open Banking, Sage, Cegid…), SSO entreprise, IA prédictive, benchmark sectoriel, export PowerPoint — ces modules sont décrits dans le cahier des charges mais nécessitent des comptes/API tiers non disponibles dans cet environnement de développement.
 
 ## Tests
 
@@ -68,4 +71,4 @@ Connecteurs ERP/bancaires automatiques (Open Banking, Sage, Cegid…), SSO entre
 npm run test:api
 ```
 
-Couvre le moteur de calcul des ratios (agrégats, EBITDA/EBIT/résultat net, FR/BFR/trésorerie nette, statuts de seuil, croissance vs période précédente).
+Couvre le moteur de calcul des ratios (agrégats, EBITDA/EBIT/résultat net, FR/BFR/trésorerie nette, statuts de seuil, croissance vs période précédente) et le moteur de projection de trésorerie (découpage hebdomadaire, récurrences mensuelles avec fins de mois, point bas, statuts).

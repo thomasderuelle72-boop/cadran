@@ -92,9 +92,47 @@ model Entity {
   fxRateToOrgCurrency   Float    @default(1)
   createdAt             DateTime @default(now())
 
-  periods AccountingPeriod[]
+  periods           AccountingPeriod[]
+  cashForecastLines CashForecastLine[]
 
   @@unique([organizationId, name])
+}
+
+enum CashCategory {
+  ENCAISSEMENTS_CLIENTS
+  DECAISSEMENTS_FOURNISSEURS
+  SALAIRES_ET_CHARGES_SOCIALES
+  IMPOTS_ET_TAXES
+  LOYERS_ET_CHARGES_EXTERNES
+  REMBOURSEMENT_EMPRUNT
+  INVESTISSEMENT
+  FINANCEMENT
+  AUTRE
+}
+
+enum CashRecurrence {
+  NONE
+  WEEKLY
+  MONTHLY
+}
+
+// Flux prévisionnel de trésorerie d'une entité. Le montant est signé :
+// positif pour un encaissement, négatif pour un décaissement. Une ligne
+// récurrente est développée en occurrences par le moteur de projection
+// (src/cash-forecast/engine.ts) jusqu'à endDate ou l'horizon demandé.
+model CashForecastLine {
+  id         String         @id @default(cuid())
+  entityId   String
+  entity     Entity         @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  label      String
+  category   CashCategory
+  amount     Decimal        @db.Decimal(14, 2)
+  startDate  DateTime
+  recurrence CashRecurrence @default(NONE)
+  endDate    DateTime?
+  createdAt  DateTime       @default(now())
+
+  @@index([entityId, startDate])
 }
 
 model AccountingPeriod {
