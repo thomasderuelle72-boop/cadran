@@ -4,6 +4,7 @@ import type {
   AlertEvent,
   AlertOperator,
   AlertRule,
+  AuditLogPage,
   AuthResponse,
   AuthUser,
   BudgetVariance,
@@ -179,6 +180,14 @@ export function useAcknowledgeAlert() {
   return useMutation({
     mutationFn: (id: string) => api.patch(`/alerts/${id}/acknowledge`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["alerts"] }),
+  });
+}
+
+export function useAuditLogs(limit = 25, enabled = true) {
+  return useQuery<AuditLogPage>({
+    queryKey: ["audit-logs", limit],
+    queryFn: () => api.get(`/audit-logs?limit=${limit}`),
+    enabled,
   });
 }
 

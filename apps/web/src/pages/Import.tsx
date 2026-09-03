@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCreatePeriod, useEntities, useImportReference, usePeriods, useSubmitLineItems } from "../api/hooks";
 import { parseAmount, parseFile, type ParsedFile } from "../lib/parseFile";
+import { controlerEquilibre } from "../lib/balance";
+import { formatCurrency } from "../lib/format";
 import type { LinePoste } from "../api/types";
 import { ApiError } from "../api/client";
 
@@ -130,6 +132,13 @@ export function ImportPage() {
     reference?.postes.forEach((p) => map.set(p.poste, p.label));
     return map;
   }, [reference]);
+
+  // Contrôlé pendant la revue, pas après : c'est le seul moment où corriger
+  // une classification coûte un clic plutôt qu'un réimport.
+  const equilibre = useMemo(
+    () => controlerEquilibre(groups.map((g) => ({ poste: g.poste, total: g.total }))),
+    [groups]
+  );
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -346,6 +355,19 @@ export function ImportPage() {
               </tbody>
             </table>
           </div>
+          {equilibre.applicable && !equilibre.equilibre && (
+            <div className="rounded-lg border border-warning/40 bg-warning-soft/40 p-3 text-sm">
+              <span className="font-semibold text-warning">Bilan déséquilibré :</span>{" "}
+              <span className="text-ink/70">
+                actif {formatCurrency(equilibre.totalActif)} contre passif {formatCurrency(equilibre.totalPassif)}, soit
+                un écart de {formatCurrency(Math.abs(equilibre.ecart))}. Vérifiez la classification avant de valider :
+                un poste mal classé fausse tous les ratios de structure.
+              </span>
+            </div>
+          )}
+          {equilibre.applicable && equilibre.equilibre && (
+            <p className="text-sm text-success">Bilan équilibré : actif et passif concordent.</p>
+          )}
           <p className="text-xs text-ink/40">{groups.length} comptes détectés, classés en {posteLabelByCode.size} postes.</p>
           <button className="btn-primary" disabled={submitLineItems.isPending} onClick={handleSubmit}>
             {submitLineItems.isPending ? "Import en cours…" : "Valider l'import"}

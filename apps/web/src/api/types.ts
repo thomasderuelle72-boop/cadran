@@ -97,7 +97,13 @@ export interface Derived {
   fondsDeRoulement: number;
   bfr: number;
   tresorerieNette: number;
-  [key: string]: number;
+  totalActif: number;
+  // Absents des calculs mis en cache avant l'ajout du contrôle d'équilibre :
+  // l'affichage doit tolérer leur absence tant qu'une période n'a pas été
+  // recalculée.
+  totalPassif?: number;
+  ecartBilan?: number;
+  [key: string]: number | undefined;
 }
 
 export interface RatioResultPayload {
@@ -221,6 +227,24 @@ export interface CashProjection {
   weeks: CashWeek[];
   lowestBalance: number;
   lowestWeekStart: string | null;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  userEmail: string;
+  userRole: Role | null;
+  action: string;
+  method: string;
+  path: string;
+  statusCode: number;
+  targetId: string | null;
+  metadata: unknown;
+  createdAt: string;
+}
+
+export interface AuditLogPage {
+  items: AuditLogEntry[];
+  nextCursor: string | null;
 }
 
 export type AlertOperator = "LT" | "LTE" | "GT" | "GTE";

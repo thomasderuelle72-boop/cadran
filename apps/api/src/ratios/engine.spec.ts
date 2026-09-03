@@ -1,4 +1,4 @@
-import { computeAggregates, computeDerived, computeRatios } from "./engine";
+import { bilanEstEquilibre, computeAggregates, computeDerived, computeRatios } from "./engine";
 import { LinePoste } from "@prisma/client";
 
 describe("moteur de calcul des ratios", () => {
@@ -67,6 +67,33 @@ describe("moteur de calcul des ratios", () => {
     const margeBrute = ratios.find((r) => r.id === "marge_brute")!;
     expect(margeBrute.value).toBeNull();
     expect(margeBrute.status).toBe("neutre");
+  });
+
+  it("détecte un bilan déséquilibré", () => {
+    // Actif = 300 + 100 + 200 + 150 = 750 ; passif = 500 + 200 + 120 = 820.
+    expect(derived.totalActif).toBe(750);
+    expect(derived.totalPassif).toBe(820);
+    expect(derived.ecartBilan).toBe(-70);
+    expect(bilanEstEquilibre(derived)).toBe(false);
+  });
+
+  it("tolère un écart d'arrondi mais pas un poste mal classé", () => {
+    const equilibre = computeDerived(
+      computeAggregates([
+        { poste: LinePoste.IMMOBILISATIONS, amount: 300 },
+        { poste: LinePoste.DISPONIBILITES, amount: 200.4 },
+        { poste: LinePoste.CAPITAUX_PROPRES, amount: 500 },
+      ])
+    );
+    expect(bilanEstEquilibre(equilibre)).toBe(true);
+
+    const desequilibre = computeDerived(
+      computeAggregates([
+        { poste: LinePoste.IMMOBILISATIONS, amount: 300 },
+        { poste: LinePoste.CAPITAUX_PROPRES, amount: 500 },
+      ])
+    );
+    expect(bilanEstEquilibre(desequilibre)).toBe(false);
   });
 
   it("calcule la croissance du CA par rapport à la période précédente", () => {

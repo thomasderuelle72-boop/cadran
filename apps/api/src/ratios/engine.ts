@@ -103,11 +103,24 @@ export interface Derived {
   actifCirculant: number;
   passifCirculant: number;
   totalActif: number;
+  totalPassif: number;
+  ecartBilan: number;
   ressourcesStables: number;
   emploisStables: number;
   fondsDeRoulement: number;
   bfr: number;
   tresorerieNette: number;
+}
+
+/**
+ * Tolérance d'équilibre du bilan, en unité de devise. Un écart d'un euro ou
+ * moins vient des arrondis de la balance ; au-delà, c'est un poste mal
+ * classé à l'import, et tous les ratios qui en découlent sont faux.
+ */
+export const TOLERANCE_EQUILIBRE_BILAN = 1;
+
+export function bilanEstEquilibre(derived: Pick<Derived, "ecartBilan">): boolean {
+  return Math.abs(derived.ecartBilan) <= TOLERANCE_EQUILIBRE_BILAN;
 }
 
 export function computeDerived(a: Aggregates): Derived {
@@ -125,6 +138,8 @@ export function computeDerived(a: Aggregates): Derived {
   const actifCirculant = a.stocks + a.creancesClients + a.autresCreances + a.disponibilites;
   const passifCirculant = a.dettesFournisseurs + a.autresDettes;
   const totalActif = a.immobilisations + actifCirculant;
+  const totalPassif = a.capitauxPropres + a.dettesFinancieres + passifCirculant;
+  const ecartBilan = totalActif - totalPassif;
   const ressourcesStables = a.capitauxPropres + a.dettesFinancieres;
   const emploisStables = a.immobilisations;
   const fondsDeRoulement = ressourcesStables - emploisStables;
@@ -139,6 +154,8 @@ export function computeDerived(a: Aggregates): Derived {
     actifCirculant,
     passifCirculant,
     totalActif,
+    totalPassif,
+    ecartBilan,
     ressourcesStables,
     emploisStables,
     fondsDeRoulement,

@@ -12,6 +12,7 @@ import { ConsolidationModule } from "./consolidation/consolidation.module";
 import { BudgetModule } from "./budget/budget.module";
 import { AlertsModule } from "./alerts/alerts.module";
 import { CashForecastModule } from "./cash-forecast/cash-forecast.module";
+import { AuditModule } from "./audit/audit.module";
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { CashForecastModule } from "./cash-forecast/cash-forecast.module";
     BudgetModule,
     AlertsModule,
     CashForecastModule,
+    AuditModule,
   ],
 })
 export class AppModule {}

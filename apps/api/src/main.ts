@@ -16,7 +16,6 @@ async function bootstrap() {
   app.setGlobalPrefix("api");
   const port = process.env.PORT ? Number(process.env.PORT) : 3001;
   await app.listen(port);
-  // eslint-disable-next-line no-console
   console.log(`Cadran API listening on http://localhost:${port}/api`);
 }
 bootstrap();

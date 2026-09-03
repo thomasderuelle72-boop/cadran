@@ -162,8 +162,22 @@ function DashboardBody({
   ratioResult: Pick<RatioResultPayload, "currency" | "aggregates" | "derived" | "ratios">;
 }) {
   const { currency } = ratioResult;
+  const ecartBilan = ratioResult.derived.ecartBilan;
+  const bilanDesequilibre = ecartBilan !== undefined && Math.abs(ecartBilan) > 1;
+
   return (
     <>
+      {bilanDesequilibre && (
+        <div className="card border-warning/40 bg-warning-soft/40 text-sm">
+          <span className="font-semibold text-warning">Bilan déséquilibré.</span>{" "}
+          <span className="text-ink/70">
+            Écart de {formatCurrency(Math.abs(ecartBilan!), currency)} entre l&apos;actif et le passif. Un poste est
+            probablement mal classé à l&apos;import : les ratios de structure et de liquidité sont à interpréter avec
+            prudence.
+          </span>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiTile label="Chiffre d'affaires" value={formatCurrency(ratioResult.aggregates.chiffreAffaires, currency)} />
         <KpiTile

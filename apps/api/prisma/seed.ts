@@ -47,6 +47,9 @@ const DEMO_ENTITIES: DemoEntity[] = [
           [LinePoste.IMPOT_SOCIETES, 9500],
           [LinePoste.STOCKS, 58000],
           [LinePoste.CREANCES_CLIENTS, 96000],
+          // TVA déductible et charges constatées d'avance : équilibrent le
+          // bilan de démonstration (actif = passif), comme une balance réelle.
+          [LinePoste.AUTRES_CREANCES, 34000],
           [LinePoste.DISPONIBILITES, 74000],
           [LinePoste.DETTES_FOURNISSEURS, 51000],
           [LinePoste.AUTRES_DETTES, 21000],
@@ -71,6 +74,7 @@ const DEMO_ENTITIES: DemoEntity[] = [
           [LinePoste.IMPOT_SOCIETES, 10800],
           [LinePoste.STOCKS, 66000],
           [LinePoste.CREANCES_CLIENTS, 104000],
+          [LinePoste.AUTRES_CREANCES, 53000],
           [LinePoste.DISPONIBILITES, 61000],
           [LinePoste.DETTES_FOURNISSEURS, 55000],
           [LinePoste.AUTRES_DETTES, 22000],
@@ -95,6 +99,7 @@ const DEMO_ENTITIES: DemoEntity[] = [
           [LinePoste.IMPOT_SOCIETES, 11200],
           [LinePoste.STOCKS, 79000],
           [LinePoste.CREANCES_CLIENTS, 118000],
+          [LinePoste.AUTRES_CREANCES, 66500],
           [LinePoste.DISPONIBILITES, 42000],
           [LinePoste.DETTES_FOURNISSEURS, 58000],
           [LinePoste.AUTRES_DETTES, 23500],
@@ -156,6 +161,7 @@ const DEMO_ENTITIES: DemoEntity[] = [
           [LinePoste.IMPOT_SOCIETES, 3600],
           [LinePoste.STOCKS, 21000],
           [LinePoste.CREANCES_CLIENTS, 35000],
+          [LinePoste.AUTRES_CREANCES, 4000],
           [LinePoste.DISPONIBILITES, 19000],
           [LinePoste.DETTES_FOURNISSEURS, 18000],
           [LinePoste.CAPITAUX_PROPRES, 86000],

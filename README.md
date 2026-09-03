@@ -56,6 +56,12 @@ Si PostgreSQL tourne déjà en local (hors Docker), adaptez simplement `DATABASE
 - **Export Excel** — en plus du PDF, un classeur `.xlsx` (synthèse + détail des ratios) est généré par période.
 - **Trésorerie prévisionnelle** — flux d'encaissement/décaissement (ponctuels ou récurrents), projection glissante du solde semaine par semaine sur 13/26/52 semaines à partir des disponibilités de la dernière période, point bas et semaines en tension ; pré-remplissage possible à partir du rythme de la dernière période importée. Voir `apps/api/src/cash-forecast/engine.ts` et ses tests.
 - **Croissance à périmètre constant** — en vue consolidée, la croissance du CA ne compare que les entités présentes sur les deux périodes, et le périmètre retenu est affiché sous le tableau de bord.
+- **Piste d'audit** — chaque opération modifiant des données est enregistrée (auteur, rôle, route, cible, horodatage) par un interceptor global, donc sans risque d'oubli quand un module est ajouté. Les secrets sont expurgés et les imports volumineux réduits à leur volume. Consultable par les rôles ADMIN et DAF depuis Paramètres, en écriture seule : aucun code applicatif ne modifie ni ne supprime une entrée.
+- **Contrôle d'équilibre du bilan** — l'écart actif/passif est signalé pendant la revue de l'import, quand la classification est encore corrigeable en un clic, et rappelé sur le tableau de bord tant qu'une période reste déséquilibrée.
+
+## Vérifications automatiques
+
+La CI (`.github/workflows/cadran-ci.yml`) lance sur chaque PR touchant `cadran/` : ESLint sur les deux applications, les tests unitaires des moteurs de calcul, puis les builds API et web (ce dernier incluant le typage TypeScript).
 
 ### Limites connues
 - Le pré-remplissage de trésorerie répartit le rythme de la dernière période en flux mensuels : il ne modélise ni les délais d'encaissement (DSO) ni la TVA. C'est un point de départ à ajuster, pas une prévision.
@@ -71,4 +77,10 @@ Connecteurs ERP/bancaires automatiques (Open Banking, Sage, Cegid…), SSO entre
 npm run test:api
 ```
 
-Couvre le moteur de calcul des ratios (agrégats, EBITDA/EBIT/résultat net, FR/BFR/trésorerie nette, statuts de seuil, croissance vs période précédente) et le moteur de projection de trésorerie (découpage hebdomadaire, récurrences mensuelles avec fins de mois, point bas, statuts).
+Couvre le moteur de calcul des ratios (agrégats, EBITDA/EBIT/résultat net, FR/BFR/trésorerie nette, statuts de seuil, croissance vs période précédente, équilibre du bilan), le moteur de projection de trésorerie (découpage hebdomadaire, récurrences mensuelles avec fins de mois, point bas, statuts) et l'expurgation des secrets dans la piste d'audit.
+
+Le lint s'exécute depuis la racine du projet :
+
+```bash
+npm run lint
+```

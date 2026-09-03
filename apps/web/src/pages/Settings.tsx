@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useCreateEntity, useCreateOrgUser, useEntities, useOrgUsers } from "../api/hooks";
+import { useAuditLogs, useCreateEntity, useCreateOrgUser, useEntities, useOrgUsers } from "../api/hooks";
 import { ApiError } from "../api/client";
 import type { Role } from "../api/types";
 import { useAuth } from "../context/AuthContext";
@@ -21,6 +21,10 @@ export function SettingsPage() {
 
   const { data: entities } = useEntities();
   const createEntity = useCreateEntity();
+  // La piste d'audit n'est lisible que par les rôles qui répondent de la
+  // conformité ; inutile de déclencher une requête refusée pour les autres.
+  const peutVoirAudit = user?.role === "ADMIN" || user?.role === "DAF";
+  const { data: auditLogs } = useAuditLogs(25, peutVoirAudit);
   const [entityForm, setEntityForm] = useState({ name: "", country: "", currency: "EUR", fxRateToOrgCurrency: 1 });
   const [entityError, setEntityError] = useState<string | null>(null);
 
@@ -192,6 +196,51 @@ export function SettingsPage() {
           {createUser.isPending ? "Création…" : "Ajouter"}
         </button>
       </form>
+
+      {peutVoirAudit && (
+        <div className="card">
+          <h2 className="font-display text-lg font-semibold mb-1">Piste d&apos;audit</h2>
+          <p className="text-sm text-ink/50 mb-3">
+            Toute opération qui modifie des données est enregistrée, sans possibilité de modification ni de suppression.
+          </p>
+          {auditLogs?.items.length === 0 && <p className="text-sm text-ink/50">Aucune opération enregistrée.</p>}
+          {auditLogs && auditLogs.items.length > 0 && (
+            <div className="overflow-x-auto max-h-96">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-white">
+                  <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-black/10">
+                    <th className="py-2 pr-3">Date</th>
+                    <th className="py-2 pr-3">Auteur</th>
+                    <th className="py-2 pr-3">Opération</th>
+                    <th className="py-2">Détail</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditLogs.items.map((entry) => (
+                    <tr key={entry.id} className="border-b border-black/5 last:border-0">
+                      <td className="py-2 pr-3 whitespace-nowrap text-ink/60">
+                        {new Date(entry.createdAt).toLocaleString("fr-FR")}
+                      </td>
+                      <td className="py-2 pr-3">
+                        {entry.userEmail}
+                        {entry.userRole && <span className="text-ink/40 text-xs"> · {ROLE_LABELS[entry.userRole]}</span>}
+                      </td>
+                      <td className="py-2 pr-3 font-mono text-xs">{entry.action}</td>
+                      <td className="py-2 font-mono text-xs text-ink/50">
+                        {entry.targetId ?? "—"}
+                        <span className={entry.statusCode >= 400 ? "text-critical" : "text-ink/40"}>
+                          {" "}
+                          ({entry.statusCode})
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
