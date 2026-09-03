@@ -17,6 +17,7 @@ export interface BudgetVarianceRow {
 
 export interface BudgetVariance {
   periodId: string;
+  currency: string;
   rows: BudgetVarianceRow[];
   summary: {
     chiffreAffaires: { budgeted: number; actual: number; ecart: number };
@@ -35,6 +36,7 @@ export class BudgetService {
   private async assertPeriodInOrg(organizationId: string, periodId: string) {
     const period = await this.prisma.accountingPeriod.findFirst({
       where: { id: periodId, entity: { organizationId } },
+      include: { entity: true },
     });
     if (!period) throw new NotFoundException("Période introuvable.");
     return period;
@@ -59,7 +61,7 @@ export class BudgetService {
   }
 
   async getVariance(organizationId: string, periodId: string): Promise<BudgetVariance> {
-    await this.assertPeriodInOrg(organizationId, periodId);
+    const period = await this.assertPeriodInOrg(organizationId, periodId);
 
     const [lineItems, budgetLines] = await Promise.all([
       this.prisma.financialLineItem.findMany({ where: { periodId } }),
@@ -95,6 +97,7 @@ export class BudgetService {
 
     return {
       periodId,
+      currency: period.entity.currency,
       rows,
       summary: {
         chiffreAffaires: {

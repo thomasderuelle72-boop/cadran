@@ -98,7 +98,12 @@ function EntityDashboard({ entityId }: { entityId: string }) {
       {ratioResult && (
         <>
           <DashboardBody ratioResult={ratioResult} />
-          {trend && trend.length > 1 && <TrendChart trend={trend.map((t) => ({ label: t.label, chiffreAffaires: t.chiffreAffaires, ebitda: t.ebitda }))} />}
+          {trend && trend.length > 1 && (
+            <TrendChart
+              currency={ratioResult.currency}
+              trend={trend.map((t) => ({ label: t.label, chiffreAffaires: t.chiffreAffaires, ebitda: t.ebitda }))}
+            />
+          )}
         </>
       )}
     </div>
@@ -142,14 +147,19 @@ function ConsolidatedDashboard() {
   );
 }
 
-function DashboardBody({ ratioResult }: { ratioResult: Pick<RatioResultPayload, "aggregates" | "derived" | "ratios"> }) {
+function DashboardBody({
+  ratioResult,
+}: {
+  ratioResult: Pick<RatioResultPayload, "currency" | "aggregates" | "derived" | "ratios">;
+}) {
+  const { currency } = ratioResult;
   return (
     <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiTile label="Chiffre d'affaires" value={formatCurrency(ratioResult.aggregates.chiffreAffaires)} />
+        <KpiTile label="Chiffre d'affaires" value={formatCurrency(ratioResult.aggregates.chiffreAffaires, currency)} />
         <KpiTile
           label="EBITDA"
-          value={formatCurrency(ratioResult.derived.ebitda)}
+          value={formatCurrency(ratioResult.derived.ebitda, currency)}
           sublabel={
             formatRatioValue(ratioResult.ratios.find((r) => r.id === "marge_ebitda")?.value ?? null, "pourcentage") +
             " de marge"
@@ -157,13 +167,13 @@ function DashboardBody({ ratioResult }: { ratioResult: Pick<RatioResultPayload, 
         />
         <KpiTile
           label="Résultat net"
-          value={formatCurrency(ratioResult.derived.resultatNet)}
+          value={formatCurrency(ratioResult.derived.resultatNet, currency)}
           sublabel={
             formatRatioValue(ratioResult.ratios.find((r) => r.id === "marge_nette")?.value ?? null, "pourcentage") +
             " de marge"
           }
         />
-        <KpiTile label="Trésorerie nette" value={formatCurrency(ratioResult.derived.tresorerieNette)} />
+        <KpiTile label="Trésorerie nette" value={formatCurrency(ratioResult.derived.tresorerieNette, currency)} />
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
@@ -177,7 +187,7 @@ function DashboardBody({ ratioResult }: { ratioResult: Pick<RatioResultPayload, 
                   <li key={ratio.id} className="flex items-center justify-between text-sm">
                     <span className="text-ink/70">{ratio.label}</span>
                     <span className="flex items-center gap-2">
-                      <span className="font-mono font-semibold">{formatRatioValue(ratio.value, ratio.unit)}</span>
+                      <span className="font-mono font-semibold">{formatRatioValue(ratio.value, ratio.unit, currency)}</span>
                       <StatusBadge status={ratio.status} />
                     </span>
                   </li>
@@ -191,7 +201,13 @@ function DashboardBody({ ratioResult }: { ratioResult: Pick<RatioResultPayload, 
   );
 }
 
-function TrendChart({ trend }: { trend: Array<{ label: string; chiffreAffaires: number; ebitda: number }> }) {
+function TrendChart({
+  trend,
+  currency,
+}: {
+  trend: Array<{ label: string; chiffreAffaires: number; ebitda: number }>;
+  currency: string;
+}) {
   return (
     <div className="card">
       <h3 className="font-display text-lg font-semibold mb-3">Tendance — CA &amp; EBITDA</h3>
@@ -199,8 +215,8 @@ function TrendChart({ trend }: { trend: Array<{ label: string; chiffreAffaires: 
         <LineChart data={trend}>
           <CartesianGrid strokeDasharray="3 3" stroke="#00000012" />
           <XAxis dataKey="label" fontSize={12} stroke="#171F1980" />
-          <YAxis fontSize={12} stroke="#171F1980" tickFormatter={(v) => `${Math.round(Number(v) / 1000)}k€`} />
-          <Tooltip formatter={(value) => formatCurrency(Number(value ?? 0))} />
+          <YAxis fontSize={12} stroke="#171F1980" tickFormatter={(v) => `${Math.round(Number(v) / 1000)}k`} />
+          <Tooltip formatter={(value) => formatCurrency(Number(value ?? 0), currency)} />
           <Line type="monotone" dataKey="chiffreAffaires" name="CA" stroke="#1F5C4E" strokeWidth={2} dot={false} />
           <Line type="monotone" dataKey="ebitda" name="EBITDA" stroke="#9C5F26" strokeWidth={2} dot={false} />
         </LineChart>

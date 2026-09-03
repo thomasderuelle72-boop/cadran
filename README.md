@@ -22,6 +22,9 @@ npm install
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env
 
+# JWT_SECRET est obligatoire (l'API refuse de démarrer sans un secret fort) :
+openssl rand -base64 48   # copiez le résultat dans JWT_SECRET= (apps/api/.env)
+
 # 4. Schéma + données de démonstration
 npm run prisma:migrate --workspace=apps/api
 npm run prisma:seed --workspace=apps/api

@@ -102,6 +102,7 @@ export interface Derived {
 
 export interface RatioResultPayload {
   periodId: string;
+  currency: string;
   aggregates: Aggregates;
   derived: Derived;
   ratios: RatioValue[];
@@ -141,6 +142,7 @@ export interface ConsolidatedRatios {
   label: string;
   startDate: string;
   endDate: string;
+  currency: string;
   entities: Array<{ id: string; name: string }>;
   aggregates: Aggregates;
   derived: Derived;
@@ -164,6 +166,7 @@ export interface BudgetVarianceRow {
 
 export interface BudgetVariance {
   periodId: string;
+  currency: string;
   rows: BudgetVarianceRow[];
   summary: {
     chiffreAffaires: { budgeted: number; actual: number; ecart: number };

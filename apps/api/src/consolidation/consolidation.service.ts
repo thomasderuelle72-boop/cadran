@@ -89,10 +89,16 @@ export class ConsolidationService {
 
     const ratios = computeRatios(aggregates, derived, previous);
 
+    // Les montants sont déjà convertis (aggregateGroup applique le taux de
+    // chaque entité) : le groupe consolidé s'exprime dans la devise de
+    // référence de l'organisation, jamais dans celle d'une entité en particulier.
+    const organization = await this.prisma.organization.findUniqueOrThrow({ where: { id: organizationId } });
+
     return {
       label: periods[0].label,
       startDate: start,
       endDate: end,
+      currency: organization.currency,
       entities: Array.from(new Map(periods.map((p) => [p.entity.id, p.entity.name])).entries()).map(
         ([id, name]) => ({ id, name })
       ),

@@ -2,7 +2,15 @@ import type { RatioValue } from "../api/types";
 import { formatRatioValue } from "../lib/format";
 import { StatusBadge } from "./StatusBadge";
 
-export function RatioTable({ ratios, title }: { ratios: RatioValue[]; title: string }) {
+export function RatioTable({
+  ratios,
+  title,
+  currency = "EUR",
+}: {
+  ratios: RatioValue[];
+  title: string;
+  currency?: string;
+}) {
   return (
     <div className="card">
       <h3 className="font-display text-lg font-semibold mb-3">{title}</h3>
@@ -21,7 +29,7 @@ export function RatioTable({ ratios, title }: { ratios: RatioValue[]; title: str
               <tr key={ratio.id} className="border-b border-black/5 last:border-0">
                 <td className="py-2 pr-3 font-medium">{ratio.label}</td>
                 <td className="py-2 pr-3 font-mono text-xs text-ink/50 whitespace-nowrap">{ratio.formula}</td>
-                <td className="py-2 pr-3 font-mono font-semibold">{formatRatioValue(ratio.value, ratio.unit)}</td>
+                <td className="py-2 pr-3 font-mono font-semibold">{formatRatioValue(ratio.value, ratio.unit, currency)}</td>
                 <td className="py-2">
                   <StatusBadge status={ratio.status} />
                 </td>

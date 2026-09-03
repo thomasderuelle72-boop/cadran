@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { ArrayMinSize, IsArray, IsEnum, IsNumber, ValidateNested } from "class-validator";
+import { IsArray, IsEnum, IsNumber, ValidateNested } from "class-validator";
 import { LinePoste } from "@prisma/client";
 
 export class BudgetLineInputDto {
@@ -11,8 +11,10 @@ export class BudgetLineInputDto {
 }
 
 export class BulkBudgetLinesDto {
+  // Un tableau vide est une valeur légitime : c'est le seul moyen de vider
+  // un budget déjà enregistré (BudgetService.replace supprime d'abord toutes
+  // les lignes existantes avant de recréer celles fournies ici).
   @IsArray()
-  @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => BudgetLineInputDto)
   items!: BudgetLineInputDto[];

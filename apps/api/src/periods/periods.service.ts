@@ -60,7 +60,7 @@ export class PeriodsService {
   }
 
   async replaceLineItems(organizationId: string, periodId: string, dto: BulkLineItemsDto) {
-    await this.getOrThrow(organizationId, periodId);
+    const period = await this.getOrThrow(organizationId, periodId);
 
     await this.prisma.$transaction([
       this.prisma.financialLineItem.deleteMany({ where: { periodId } }),
@@ -79,6 +79,21 @@ export class PeriodsService {
     // jamais afficher des ratios calculés sur les anciennes lignes.
     const result = await this.ratiosService.recomputeAndCache(periodId);
     await this.alertsService.evaluateForPeriod(periodId);
+
+    // Si cette période n'est pas la plus récente de l'entité, les périodes
+    // suivantes ont mis en cache une croissance du CA (et des alertes basées
+    // dessus) calculée à partir de son ancien contenu. On les recalcule en
+    // cascade pour qu'elles reflètent immédiatement les nouvelles données.
+    const laterPeriods = await this.prisma.accountingPeriod.findMany({
+      where: { entityId: period.entityId, startDate: { gt: period.startDate } },
+      orderBy: { startDate: "asc" },
+      select: { id: true },
+    });
+    for (const later of laterPeriods) {
+      await this.ratiosService.recomputeAndCache(later.id);
+      await this.alertsService.evaluateForPeriod(later.id);
+    }
+
     return result;
   }
 }

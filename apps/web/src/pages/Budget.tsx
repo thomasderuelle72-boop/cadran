@@ -120,12 +120,12 @@ export function BudgetPage() {
                 <div className="card" key={key}>
                   <div className="text-xs uppercase tracking-wide text-ink/50 font-medium">{label}</div>
                   <div className="flex items-baseline gap-2 mt-1">
-                    <span className="font-mono text-xl font-semibold">{formatCurrency(s.actual)}</span>
-                    <span className="text-xs text-ink/40">/ {formatCurrency(s.budgeted)} prévu</span>
+                    <span className="font-mono text-xl font-semibold">{formatCurrency(s.actual, variance.currency)}</span>
+                    <span className="text-xs text-ink/40">/ {formatCurrency(s.budgeted, variance.currency)} prévu</span>
                   </div>
                   <div className={`text-xs mt-1 font-medium ${s.ecart >= 0 ? "text-success" : "text-critical"}`}>
                     {s.ecart >= 0 ? "+" : ""}
-                    {formatCurrency(s.ecart)} vs budget
+                    {formatCurrency(s.ecart, variance.currency)} vs budget
                   </div>
                 </div>
               );
@@ -160,10 +160,10 @@ export function BudgetPage() {
                             onChange={(e) => setDraft({ ...draft, [poste]: Number(e.target.value) || 0 })}
                           />
                         </td>
-                        <td className="py-2 pr-3 font-mono text-ink/60">{formatCurrency(actual)}</td>
+                        <td className="py-2 pr-3 font-mono text-ink/60">{formatCurrency(actual, variance.currency)}</td>
                         <td className={`py-2 font-mono ${ecartColor(poste, ecart)}`}>
                           {ecart >= 0 ? "+" : ""}
-                          {formatCurrency(ecart)}
+                          {formatCurrency(ecart, variance.currency)}
                         </td>
                       </tr>
                     );

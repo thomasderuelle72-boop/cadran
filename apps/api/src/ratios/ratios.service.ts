@@ -5,6 +5,7 @@ import { Aggregates, computeAggregates, computeDerived, computeRatios, Derived, 
 
 export interface RatioResultPayload {
   periodId: string;
+  currency: string;
   aggregates: Aggregates;
   derived: Derived;
   ratios: RatioValue[];
@@ -40,7 +41,7 @@ export class RatiosService {
   async recomputeAndCache(periodId: string): Promise<RatioResultPayload> {
     const period = await this.prisma.accountingPeriod.findUniqueOrThrow({
       where: { id: periodId },
-      include: { lineItems: true },
+      include: { lineItems: true, entity: true },
     });
 
     const aggregates = computeAggregates(
@@ -66,13 +67,13 @@ export class RatiosService {
       },
     });
 
-    return { periodId, aggregates, derived, ratios, computedAt: new Date() };
+    return { periodId, currency: period.entity.currency, aggregates, derived, ratios, computedAt: new Date() };
   }
 
   async getForPeriod(organizationId: string, periodId: string): Promise<RatioResultPayload> {
     const period = await this.prisma.accountingPeriod.findFirst({
       where: { id: periodId, entity: { organizationId } },
-      include: { ratioResult: true },
+      include: { ratioResult: true, entity: true },
     });
     if (!period) throw new NotFoundException("Période introuvable.");
 
@@ -83,6 +84,7 @@ export class RatiosService {
 
     return {
       periodId,
+      currency: period.entity.currency,
       aggregates: period.ratioResult.aggregates as unknown as Aggregates,
       derived: period.ratioResult.derived as unknown as Derived,
       ratios: period.ratioResult.ratios as unknown as RatioValue[],

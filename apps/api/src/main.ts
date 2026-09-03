@@ -1,3 +1,7 @@
+// Doit être chargé avant tout le reste : plusieurs modules (AuthModule en
+// tête) lisent process.env.JWT_SECRET dès l'évaluation de leur décorateur
+// @Module, donc avant que ConfigModule.forRoot() n'ait eu la main.
+import "dotenv/config";
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";

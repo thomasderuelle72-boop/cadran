@@ -59,6 +59,7 @@ export function RatiosPage() {
             key={category}
             title={CATEGORY_LABELS[category]}
             ratios={ratioResult.ratios.filter((r) => r.category === category)}
+            currency={ratioResult.currency}
           />
         ))}
     </div>

@@ -19,7 +19,11 @@ const STATUS_LABELS: Record<RatioValue["status"], string> = {
   neutre: "—",
 };
 
-function formatValue(ratio: RatioValue): string {
+function formatMoney(value: number, currency: string): string {
+  return value.toLocaleString("fr-FR", { style: "currency", currency, maximumFractionDigits: 0 });
+}
+
+function formatValue(ratio: RatioValue, currency: string): string {
   if (ratio.value === null) return "n/d";
   switch (ratio.unit) {
     case "pourcentage":
@@ -29,7 +33,7 @@ function formatValue(ratio: RatioValue): string {
     case "annees":
       return `${ratio.value.toFixed(1)} ans`;
     case "devise":
-      return `${ratio.value.toLocaleString("fr-FR", { maximumFractionDigits: 0 })} €`;
+      return formatMoney(ratio.value, currency);
     default:
       return ratio.value.toFixed(2);
   }
@@ -62,6 +66,7 @@ export class ReportsService {
       organizationId,
       periodId
     );
+    const currency = period.entity.currency;
 
     const doc = new PDFDocument({ size: "A4", margin: 48 });
     const chunks: Buffer[] = [];
@@ -90,10 +95,10 @@ export class ReportsService {
     doc.fillColor("#111").fontSize(13).text("Synthèse");
     doc.moveDown(0.4);
     const kpis: Array<[string, string]> = [
-      ["Chiffre d'affaires", `${aggregates.chiffreAffaires.toLocaleString("fr-FR")} €`],
-      ["EBITDA", `${derived.ebitda.toLocaleString("fr-FR")} €`],
-      ["Résultat net", `${derived.resultatNet.toLocaleString("fr-FR")} €`],
-      ["Trésorerie nette", `${derived.tresorerieNette.toLocaleString("fr-FR")} €`],
+      ["Chiffre d'affaires", formatMoney(aggregates.chiffreAffaires, currency)],
+      ["EBITDA", formatMoney(derived.ebitda, currency)],
+      ["Résultat net", formatMoney(derived.resultatNet, currency)],
+      ["Trésorerie nette", formatMoney(derived.tresorerieNette, currency)],
     ];
     kpis.forEach(([label, value]) => {
       doc.fontSize(10).fillColor("#333").text(`${label} : `, { continued: true }).fillColor("#111").text(value);
@@ -109,7 +114,7 @@ export class ReportsService {
         doc
           .fontSize(9.5)
           .fillColor("#333")
-          .text(`${ratio.label} — ${formatValue(ratio)} (${STATUS_LABELS[ratio.status]})`);
+          .text(`${ratio.label} — ${formatValue(ratio, currency)} (${STATUS_LABELS[ratio.status]})`);
       });
       doc.moveDown(0.8);
     }
@@ -123,6 +128,7 @@ export class ReportsService {
       organizationId,
       periodId
     );
+    const currency = period.entity.currency;
 
     const workbook = new ExcelJS.Workbook();
     workbook.creator = "Cadran";
@@ -137,10 +143,11 @@ export class ReportsService {
       { label: "Organisation", value: period.entity.organization.name },
       { label: "Entité", value: period.entity.name },
       { label: "Période", value: period.label },
-      { label: "Chiffre d'affaires", value: aggregates.chiffreAffaires },
-      { label: "EBITDA", value: derived.ebitda },
-      { label: "Résultat net", value: derived.resultatNet },
-      { label: "Trésorerie nette", value: derived.tresorerieNette },
+      { label: "Devise", value: currency },
+      { label: "Chiffre d'affaires", value: formatMoney(aggregates.chiffreAffaires, currency) },
+      { label: "EBITDA", value: formatMoney(derived.ebitda, currency) },
+      { label: "Résultat net", value: formatMoney(derived.resultatNet, currency) },
+      { label: "Trésorerie nette", value: formatMoney(derived.tresorerieNette, currency) },
     ]);
     summarySheet.getRow(1).font = { bold: true };
 
@@ -158,7 +165,7 @@ export class ReportsService {
         category: CATEGORY_LABELS[ratio.category],
         label: ratio.label,
         formula: ratio.formula,
-        value: formatValue(ratio),
+        value: formatValue(ratio, currency),
         status: STATUS_LABELS[ratio.status],
       });
     });
