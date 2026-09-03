@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCreatePeriod, useImportReference, usePeriods, useSubmitLineItems } from "../api/hooks";
+import { useCreatePeriod, useEntities, useImportReference, usePeriods, useSubmitLineItems } from "../api/hooks";
 import { parseAmount, parseFile, type ParsedFile } from "../lib/parseFile";
 import type { LinePoste } from "../api/types";
 import { ApiError } from "../api/client";
@@ -26,10 +26,16 @@ function suggestPosteFromPrefix(
 
 export function ImportPage() {
   const navigate = useNavigate();
-  const { data: periods } = usePeriods();
+  const { data: entities } = useEntities();
+  const [entityId, setEntityId] = useState<string>("");
+  const { data: periods } = usePeriods(entityId || undefined);
   const { data: reference } = useImportReference();
   const createPeriod = useCreatePeriod();
   const submitLineItems = useSubmitLineItems();
+
+  useEffect(() => {
+    if (!entityId && entities && entities.length > 0) setEntityId(entities[0].id);
+  }, [entities, entityId]);
 
   const [step, setStep] = useState<Step>("period");
   const [periodId, setPeriodId] = useState<string>("");
@@ -46,7 +52,7 @@ export function ImportPage() {
   async function handleCreatePeriod() {
     setError(null);
     try {
-      const period = await createPeriod.mutateAsync(newPeriod);
+      const period = await createPeriod.mutateAsync({ ...newPeriod, entityId });
       setPeriodId(period.id);
       setStep("upload");
     } catch (err) {
@@ -138,7 +144,27 @@ export function ImportPage() {
 
       {step === "period" && (
         <div className="card space-y-4">
-          <h2 className="font-display text-lg font-semibold">1. Choisir la période</h2>
+          <h2 className="font-display text-lg font-semibold">1. Choisir l'entité et la période</h2>
+
+          {entities && entities.length === 0 && (
+            <p className="text-sm text-warning">
+              Aucune entité n'existe encore. Créez-en une depuis la page Paramètres avant d'importer des données.
+            </p>
+          )}
+
+          {entities && entities.length > 0 && (
+            <div>
+              <label className="label">Entité</label>
+              <select className="input" value={entityId} onChange={(e) => setEntityId(e.target.value)}>
+                {entities.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {periods && periods.length > 0 && (
             <div className="flex items-end gap-3">
               <div className="flex-1">
@@ -190,7 +216,9 @@ export function ImportPage() {
             </div>
             <button
               className="btn-secondary mt-3"
-              disabled={!newPeriod.label || !newPeriod.startDate || !newPeriod.endDate || createPeriod.isPending}
+              disabled={
+                !entityId || !newPeriod.label || !newPeriod.startDate || !newPeriod.endDate || createPeriod.isPending
+              }
               onClick={handleCreatePeriod}
             >
               Créer la période

@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards } from "@nestjs/common";
+import { Controller, Get, Param, Query, UseGuards } from "@nestjs/common";
 import { JwtAuthGuard } from "../common/jwt-auth.guard";
 import { CurrentUser, AuthUser } from "../common/current-user.decorator";
 import { RatiosService } from "./ratios.service";
@@ -14,7 +14,7 @@ export class RatiosController {
   }
 
   @Get("ratios/trend")
-  getTrend(@CurrentUser() user: AuthUser) {
-    return this.ratiosService.getTrend(user.organizationId);
+  getTrend(@CurrentUser() user: AuthUser, @Query("entityId") entityId?: string) {
+    return this.ratiosService.getTrend(user.organizationId, entityId);
   }
 }

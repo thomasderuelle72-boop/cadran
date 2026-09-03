@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import PDFDocument from "pdfkit";
+import ExcelJS from "exceljs";
 import { PrismaService } from "../prisma/prisma.service";
 import { RatiosService } from "../ratios/ratios.service";
 import { RatioCategory, RatioValue } from "../ratios/engine";
@@ -41,14 +42,23 @@ export class ReportsService {
     private ratiosService: RatiosService
   ) {}
 
-  async generatePeriodReport(organizationId: string, periodId: string): Promise<Buffer> {
+  private async loadReportData(organizationId: string, periodId: string) {
     const period = await this.prisma.accountingPeriod.findFirst({
-      where: { id: periodId, organizationId },
-      include: { organization: true },
+      where: { id: periodId, entity: { organizationId } },
+      include: { entity: { include: { organization: true } } },
     });
     if (!period) throw new NotFoundException("Période introuvable.");
 
     const { derived, aggregates, ratios, computedAt } = await this.ratiosService.getForPeriod(
+      organizationId,
+      periodId
+    );
+
+    return { period, derived, aggregates, ratios, computedAt };
+  }
+
+  async generatePeriodReport(organizationId: string, periodId: string): Promise<Buffer> {
+    const { period, derived, aggregates, ratios, computedAt } = await this.loadReportData(
       organizationId,
       periodId
     );
@@ -63,7 +73,10 @@ export class ReportsService {
 
     doc.fontSize(20).text("Cadran — Rapport financier", { align: "left" });
     doc.moveDown(0.2);
-    doc.fontSize(12).fillColor("#555").text(`${period.organization.name} · ${period.label}`);
+    doc
+      .fontSize(12)
+      .fillColor("#555")
+      .text(`${period.entity.organization.name} — ${period.entity.name} · ${period.label}`);
     doc
       .fontSize(9)
       .fillColor("#888")
@@ -103,5 +116,54 @@ export class ReportsService {
 
     doc.end();
     return done;
+  }
+
+  async generatePeriodReportExcel(organizationId: string, periodId: string): Promise<Buffer> {
+    const { period, derived, aggregates, ratios, computedAt } = await this.loadReportData(
+      organizationId,
+      periodId
+    );
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = "Cadran";
+    workbook.created = computedAt;
+
+    const summarySheet = workbook.addWorksheet("Synthèse");
+    summarySheet.columns = [
+      { header: "Indicateur", key: "label", width: 28 },
+      { header: "Valeur", key: "value", width: 18 },
+    ];
+    summarySheet.addRows([
+      { label: "Organisation", value: period.entity.organization.name },
+      { label: "Entité", value: period.entity.name },
+      { label: "Période", value: period.label },
+      { label: "Chiffre d'affaires", value: aggregates.chiffreAffaires },
+      { label: "EBITDA", value: derived.ebitda },
+      { label: "Résultat net", value: derived.resultatNet },
+      { label: "Trésorerie nette", value: derived.tresorerieNette },
+    ]);
+    summarySheet.getRow(1).font = { bold: true };
+
+    const ratiosSheet = workbook.addWorksheet("Ratios");
+    ratiosSheet.columns = [
+      { header: "Catégorie", key: "category", width: 16 },
+      { header: "Ratio", key: "label", width: 32 },
+      { header: "Formule", key: "formula", width: 42 },
+      { header: "Valeur", key: "value", width: 14 },
+      { header: "Statut", key: "status", width: 12 },
+    ];
+    ratiosSheet.getRow(1).font = { bold: true };
+    ratios.forEach((ratio) => {
+      ratiosSheet.addRow({
+        category: CATEGORY_LABELS[ratio.category],
+        label: ratio.label,
+        formula: ratio.formula,
+        value: formatValue(ratio),
+        status: STATUS_LABELS[ratio.status],
+      });
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(buffer);
   }
 }

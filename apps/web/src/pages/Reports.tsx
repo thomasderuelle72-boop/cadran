@@ -7,10 +7,13 @@ export function ReportsPage() {
   const { data: periods, isLoading } = usePeriods();
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  async function handleDownload(periodId: string, label: string) {
-    setDownloadingId(periodId);
+  async function handleDownload(periodId: string, label: string, format: "pdf" | "xlsx") {
+    setDownloadingId(`${periodId}:${format}`);
     try {
-      await downloadFile(`/periods/${periodId}/report.pdf`, `cadran-${label.replace(/\s+/g, "-").toLowerCase()}.pdf`);
+      await downloadFile(
+        `/periods/${periodId}/report.${format}`,
+        `cadran-${label.replace(/\s+/g, "-").toLowerCase()}.${format}`
+      );
     } finally {
       setDownloadingId(null);
     }
@@ -20,7 +23,7 @@ export function ReportsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-semibold">Rapports</h1>
-        <p className="text-sm text-ink/50">Générez un rapport PDF de synthèse pour chaque période clôturée.</p>
+        <p className="text-sm text-ink/50">Générez un rapport PDF ou Excel de synthèse pour chaque période.</p>
       </div>
 
       {isLoading && <p className="text-ink/50">Chargement…</p>}
@@ -32,6 +35,7 @@ export function ReportsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-black/10">
+                <th className="py-2">Entité</th>
                 <th className="py-2">Période</th>
                 <th className="py-2">Dates</th>
                 <th className="py-2">Lignes importées</th>
@@ -41,18 +45,26 @@ export function ReportsPage() {
             <tbody>
               {periods.map((p) => (
                 <tr key={p.id} className="border-b border-black/5 last:border-0">
+                  <td className="py-2.5 text-ink/60">{p.entity?.name ?? "—"}</td>
                   <td className="py-2.5 font-medium">{p.label}</td>
                   <td className="py-2.5 text-ink/60">
                     {formatDate(p.startDate)} — {formatDate(p.endDate)}
                   </td>
                   <td className="py-2.5 text-ink/60">{p._count?.lineItems ?? 0}</td>
-                  <td className="py-2.5 text-right">
+                  <td className="py-2.5 text-right space-x-2">
                     <button
                       className="btn-secondary"
-                      disabled={downloadingId === p.id || !p._count?.lineItems}
-                      onClick={() => handleDownload(p.id, p.label)}
+                      disabled={downloadingId === `${p.id}:pdf` || !p._count?.lineItems}
+                      onClick={() => handleDownload(p.id, p.label, "pdf")}
                     >
-                      {downloadingId === p.id ? "Génération…" : "Télécharger le PDF"}
+                      {downloadingId === `${p.id}:pdf` ? "Génération…" : "PDF"}
+                    </button>
+                    <button
+                      className="btn-secondary"
+                      disabled={downloadingId === `${p.id}:xlsx` || !p._count?.lineItems}
+                      onClick={() => handleDownload(p.id, p.label, "xlsx")}
+                    >
+                      {downloadingId === `${p.id}:xlsx` ? "Génération…" : "Excel"}
                     </button>
                   </td>
                 </tr>

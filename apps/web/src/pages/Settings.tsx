@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useCreateOrgUser, useOrgUsers } from "../api/hooks";
+import { useCreateEntity, useCreateOrgUser, useEntities, useOrgUsers } from "../api/hooks";
 import { ApiError } from "../api/client";
 import type { Role } from "../api/types";
 import { useAuth } from "../context/AuthContext";
@@ -19,6 +19,11 @@ export function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  const { data: entities } = useEntities();
+  const createEntity = useCreateEntity();
+  const [entityForm, setEntityForm] = useState({ name: "", country: "", currency: "EUR", fxRateToOrgCurrency: 1 });
+  const [entityError, setEntityError] = useState<string | null>(null);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -32,11 +37,92 @@ export function SettingsPage() {
     }
   }
 
+  async function handleCreateEntity(e: React.FormEvent) {
+    e.preventDefault();
+    setEntityError(null);
+    try {
+      await createEntity.mutateAsync(entityForm);
+      setEntityForm({ name: "", country: "", currency: "EUR", fxRateToOrgCurrency: 1 });
+    } catch (err) {
+      setEntityError(err instanceof ApiError ? err.message : "Création impossible.");
+    }
+  }
+
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
         <h1 className="font-display text-2xl font-semibold">Paramètres</h1>
         <p className="text-sm text-ink/50">Organisation : {user?.organizationName}</p>
+      </div>
+
+      <div className="card">
+        <h2 className="font-display text-lg font-semibold mb-3">Entités du groupe</h2>
+        <table className="w-full text-sm mb-4">
+          <thead>
+            <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-black/10">
+              <th className="py-2">Nom</th>
+              <th className="py-2">Pays</th>
+              <th className="py-2">Devise</th>
+              <th className="py-2">Taux vers devise groupe</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entities?.map((entity) => (
+              <tr key={entity.id} className="border-b border-black/5 last:border-0">
+                <td className="py-2 font-medium">{entity.name}</td>
+                <td className="py-2 text-ink/60">{entity.country ?? "—"}</td>
+                <td className="py-2 text-ink/60">{entity.currency}</td>
+                <td className="py-2 font-mono text-ink/60">{entity.fxRateToOrgCurrency}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {user?.role === "ADMIN" || user?.role === "DAF" ? (
+          <form onSubmit={handleCreateEntity} className="grid grid-cols-4 gap-3 items-end">
+            <div>
+              <label className="label">Nom</label>
+              <input
+                className="input"
+                value={entityForm.name}
+                onChange={(e) => setEntityForm({ ...entityForm, name: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <label className="label">Pays</label>
+              <input
+                className="input"
+                value={entityForm.country}
+                onChange={(e) => setEntityForm({ ...entityForm, country: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="label">Devise</label>
+              <input
+                className="input"
+                value={entityForm.currency}
+                onChange={(e) => setEntityForm({ ...entityForm, currency: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="label">Taux vers devise groupe</label>
+              <input
+                type="number"
+                step="any"
+                className="input"
+                value={entityForm.fxRateToOrgCurrency}
+                onChange={(e) => setEntityForm({ ...entityForm, fxRateToOrgCurrency: Number(e.target.value) || 1 })}
+              />
+            </div>
+            <div className="col-span-4">
+              {entityError && <p className="text-critical text-sm mb-2">{entityError}</p>}
+              <button type="submit" className="btn-secondary" disabled={createEntity.isPending}>
+                {createEntity.isPending ? "Création…" : "Ajouter une entité"}
+              </button>
+            </div>
+          </form>
+        ) : null}
       </div>
 
       <div className="card">

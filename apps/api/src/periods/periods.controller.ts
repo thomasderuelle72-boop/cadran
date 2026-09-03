@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from "@nestjs/common";
 import { Role } from "@prisma/client";
 import { PeriodsService } from "./periods.service";
 import { CreatePeriodDto } from "./dto/create-period.dto";
@@ -14,8 +14,8 @@ export class PeriodsController {
   constructor(private periodsService: PeriodsService) {}
 
   @Get()
-  list(@CurrentUser() user: AuthUser) {
-    return this.periodsService.list(user.organizationId);
+  list(@CurrentUser() user: AuthUser, @Query("entityId") entityId?: string) {
+    return this.periodsService.list(user.organizationId, entityId);
   }
 
   @Get(":id")

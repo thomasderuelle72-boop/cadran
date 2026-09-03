@@ -15,16 +15,18 @@ export interface RatioResultPayload {
 export class RatiosService {
   constructor(private prisma: PrismaService) {}
 
-  private toNumber(amount: Prisma.Decimal | number): number {
+  toNumber(amount: Prisma.Decimal | number): number {
     return typeof amount === "number" ? amount : Number(amount);
   }
 
   private async findPreviousPeriodAggregates(
-    organizationId: string,
+    entityId: string,
     startDate: Date
   ): Promise<{ aggregates: Aggregates } | null> {
+    // La croissance (CA n vs n-1) ne compare que des périodes de la même
+    // entité : mélanger deux filiales fausserait le taux de croissance.
     const previousPeriod = await this.prisma.accountingPeriod.findFirst({
-      where: { organizationId, startDate: { lt: startDate } },
+      where: { entityId, startDate: { lt: startDate } },
       orderBy: { startDate: "desc" },
       include: { lineItems: true },
     });
@@ -45,7 +47,7 @@ export class RatiosService {
       period.lineItems.map((item) => ({ poste: item.poste, amount: this.toNumber(item.amount) }))
     );
     const derived = computeDerived(aggregates);
-    const previous = await this.findPreviousPeriodAggregates(period.organizationId, period.startDate);
+    const previous = await this.findPreviousPeriodAggregates(period.entityId, period.startDate);
     const ratios = computeRatios(aggregates, derived, previous);
 
     await this.prisma.ratioResult.upsert({
@@ -69,7 +71,7 @@ export class RatiosService {
 
   async getForPeriod(organizationId: string, periodId: string): Promise<RatioResultPayload> {
     const period = await this.prisma.accountingPeriod.findFirst({
-      where: { id: periodId, organizationId },
+      where: { id: periodId, entity: { organizationId } },
       include: { ratioResult: true },
     });
     if (!period) throw new NotFoundException("Période introuvable.");
@@ -88,9 +90,9 @@ export class RatiosService {
     };
   }
 
-  async getTrend(organizationId: string) {
+  async getTrend(organizationId: string, entityId?: string) {
     const periods = await this.prisma.accountingPeriod.findMany({
-      where: { organizationId },
+      where: { entity: { organizationId }, ...(entityId ? { entityId } : {}) },
       orderBy: { startDate: "asc" },
       include: { ratioResult: true },
     });
@@ -104,6 +106,7 @@ export class RatiosService {
         const byId = (id: string) => ratios.find((r) => r.id === id)?.value ?? null;
         return {
           periodId: p.id,
+          entityId: p.entityId,
           label: p.label,
           startDate: p.startDate,
           chiffreAffaires: aggregates.chiffreAffaires,

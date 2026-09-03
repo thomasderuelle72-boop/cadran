@@ -19,6 +19,13 @@ enum PeriodStatus {
   CLOTUREE
 }
 
+enum AlertOperator {
+  LT
+  LTE
+  GT
+  GTE
+}
+
 // Poste normalisé : catégorie comptable standardisée à laquelle chaque ligne
 // importée est rattachée. Le moteur de ratios (apps/api/src/ratios/engine.ts)
 // n'agrège jamais un numéro de compte brut, toujours ces postes.
@@ -52,8 +59,9 @@ model Organization {
   currency  String   @default("EUR")
   createdAt DateTime @default(now())
 
-  users   User[]
-  periods AccountingPeriod[]
+  users      User[]
+  entities   Entity[]
+  alertRules AlertRule[]
 }
 
 model User {
@@ -67,21 +75,44 @@ model User {
   createdAt      DateTime     @default(now())
 }
 
+// Filiale / société du groupe. Le pilotage mono-entité du MVP devient un cas
+// particulier (une organisation avec une seule entité) : rien ne change pour
+// les petites structures, la consolidation ne fait que sommer un groupe d'une
+// seule entité.
+model Entity {
+  id                    String   @id @default(cuid())
+  organizationId        String
+  organization          Organization @relation(fields: [organizationId], references: [id])
+  name                  String
+  country               String?
+  currency              String   @default("EUR")
+  // Taux de conversion appliqué lors de la consolidation pour ramener les
+  // montants de cette entité dans la devise de référence du groupe. Saisi
+  // manuellement en V1 (pas d'flux de cours de change en temps réel).
+  fxRateToOrgCurrency   Float    @default(1)
+  createdAt             DateTime @default(now())
+
+  periods AccountingPeriod[]
+
+  @@unique([organizationId, name])
+}
+
 model AccountingPeriod {
-  id             String       @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  label          String
-  startDate      DateTime
-  endDate        DateTime
-  status         PeriodStatus @default(OUVERTE)
-  createdAt      DateTime     @default(now())
+  id        String       @id @default(cuid())
+  entityId  String
+  entity    Entity       @relation(fields: [entityId], references: [id])
+  label     String
+  startDate DateTime
+  endDate   DateTime
+  status    PeriodStatus @default(OUVERTE)
+  createdAt DateTime     @default(now())
 
   lineItems   FinancialLineItem[]
   ratioResult RatioResult?
+  budgetLines BudgetLine[]
 
-  @@unique([organizationId, label])
-  @@index([organizationId, startDate])
+  @@unique([entityId, label])
+  @@index([entityId, startDate])
 }
 
 model FinancialLineItem {
@@ -107,4 +138,54 @@ model RatioResult {
   derived    Json
   ratios     Json
   computedAt DateTime         @default(now())
+}
+
+// Montant budgété pour un poste donné, sur la même période que les lignes
+// réelles importées : la comparaison budget/réalisé se fait poste par poste,
+// puis les écarts sont recalculés avec le même moteur que les ratios.
+model BudgetLine {
+  id             String           @id @default(cuid())
+  periodId       String
+  period         AccountingPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  poste          LinePoste
+  amountBudgeted Decimal          @db.Decimal(14, 2)
+  createdAt      DateTime         @default(now())
+
+  @@unique([periodId, poste])
+}
+
+// Règle définissant un seuil à surveiller sur un ratio (ex: liquidité
+// générale < 1.0). Évaluée à chaque recalcul de ratios pour toutes les
+// entités de l'organisation.
+model AlertRule {
+  id             String        @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  label          String
+  ratioId        String
+  operator       AlertOperator
+  threshold      Float
+  active         Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+
+  events AlertEvent[]
+
+  @@index([organizationId, active])
+}
+
+// Déclenchement effectif d'une règle pour une entité/période donnée. Un seul
+// événement par (règle, période) : il est mis à jour tant que le seuil reste
+// franchi, et supprimé dès que ce n'est plus le cas (cf RatiosService).
+model AlertEvent {
+  id           String    @id @default(cuid())
+  alertRuleId  String
+  alertRule    AlertRule @relation(fields: [alertRuleId], references: [id], onDelete: Cascade)
+  entityId     String
+  periodId     String
+  value        Float
+  acknowledged Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([alertRuleId, periodId])
 }

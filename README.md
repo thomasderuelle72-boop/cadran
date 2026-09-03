@@ -1,13 +1,10 @@
-# Cadran — MVP
+# Cadran — MVP + V1
 
-Plateforme de pilotage financier pour l'entreprise : import de données comptables, calcul automatique de 19 ratios financiers, tableau de bord, et export PDF. Voir le [cahier des charges complet](../) pour la vision produit et la roadmap.
-
-Ce dossier contient le début d'implémentation du **MVP** défini dans la roadmap :
-import Excel/CSV, catalogue de ratios essentiels, tableau de bord mono-entité, reporting PDF, gestion basique des utilisateurs et des droits.
+Plateforme de pilotage financier pour l'entreprise : import de données comptables, calcul automatique de 19 ratios financiers, tableau de bord, budget vs réalisé, alertes, consolidation multi-entités et export PDF/Excel. Voir le [cahier des charges complet](../) pour la vision produit et la roadmap.
 
 ## Stack
 
-- **apps/api** — NestJS + Prisma + PostgreSQL, JWT + RBAC (ADMIN/DAF/CONTROLEUR/LECTEUR), moteur de calcul des ratios, génération de rapports PDF (pdfkit).
+- **apps/api** — NestJS + Prisma + PostgreSQL, JWT + RBAC (ADMIN/DAF/CONTROLEUR/LECTEUR), moteur de calcul des ratios, génération de rapports PDF (pdfkit) et Excel (exceljs).
 - **apps/web** — React + Vite + TypeScript + Tailwind, TanStack Query, Recharts, import CSV/Excel côté client (papaparse / xlsx) avec classification PCG assistée.
 
 ## Démarrer en local
@@ -34,12 +31,13 @@ npm run dev:api
 npm run dev:web
 ```
 
-Compte de démonstration créé par le seed : `demo@cadran.fr` / `CadranDemo123!` (organisation « Atelier Nova SAS », 3 trimestres de données).
+Compte de démonstration créé par le seed : `demo@cadran.fr` / `CadranDemo123!` — organisation « Atelier Nova Group » avec deux entités (Atelier Nova SAS en France/EUR, Atelier Nova GmbH en Allemagne/USD), un budget T3 sur la SAS, et deux règles d'alerte préconfigurées.
 
 Si PostgreSQL tourne déjà en local (hors Docker), adaptez simplement `DATABASE_URL` dans `apps/api/.env`.
 
-## Ce qui est implémenté (MVP)
+## Ce qui est implémenté
 
+### MVP
 - **Authentification & rôles** — inscription (crée une organisation + un compte ADMIN), connexion JWT, 4 rôles (ADMIN, DAF, CONTROLEUR, LECTEUR).
 - **Import de données** — upload CSV/Excel, mapping des colonnes, classification automatique par préfixe du plan comptable général (éditable avant validation), import en masse déclenchant le recalcul des ratios.
 - **Moteur de ratios** — 19 ratios (rentabilité, liquidité, solvabilité, activité) calculés à partir des postes normalisés, avec seuils d'alerte (bon / attention / critique) ; voir `apps/api/src/ratios/engine.ts` et ses tests unitaires.
@@ -47,9 +45,19 @@ Si PostgreSQL tourne déjà en local (hors Docker), adaptez simplement `DATABASE
 - **Rapports** — génération et téléchargement d'un PDF de synthèse par période.
 - **Utilisateurs** — liste et création d'utilisateurs par un administrateur.
 
-## Ce qui reste hors MVP (voir roadmap V1/V2)
+### V1
+- **Multi-entités** — une organisation regroupe plusieurs entités juridiques (filiales), chacune avec sa devise et ses propres périodes ; gestion depuis Paramètres.
+- **Consolidation groupe** — les périodes de même plage de dates sont regroupées entre entités, avec conversion de change (taux saisi manuellement par entité) et recalcul des mêmes ratios sur les montants consolidés.
+- **Budget vs réalisé** — saisie d'un budget par poste et par période, écarts calculés automatiquement (montant et %), avec code couleur adapté au sens du poste (charge vs produit).
+- **Alertes sur seuils** — règles configurables sur n'importe quel ratio (`<`, `≤`, `>`, `≥`), réévaluées à chaque import, historique des événements déclenchés/acquittés.
+- **Export Excel** — en plus du PDF, un classeur `.xlsx` (synthèse + détail des ratios) est généré par période.
 
-Connecteurs ERP/bancaires automatiques, consolidation multi-entités, budget prévisionnel, alertes temps réel, IA prédictive, benchmark sectoriel — ces modules sont décrits dans le cahier des charges mais nécessitent des comptes/API tiers non disponibles dans cet environnement de développement.
+### Limite connue
+La croissance du CA en vue consolidée compare les groupes de périodes tels quels : si la composition des entités change d'une période à l'autre (ex. une filiale sans données sur la période la plus récente), la variation affichée reflète en partie ce changement de périmètre, pas uniquement la performance réelle. Une comparaison « à périmètre constant » est laissée à une itération ultérieure.
+
+## Ce qui reste hors périmètre (V2 et au-delà)
+
+Connecteurs ERP/bancaires automatiques (Open Banking, Sage, Cegid…), SSO entreprise, prévisionnel de trésorerie glissant à 13 semaines, IA prédictive, benchmark sectoriel, export PowerPoint — ces modules sont décrits dans le cahier des charges mais nécessitent des comptes/API tiers non disponibles dans cet environnement de développement.
 
 ## Tests
 

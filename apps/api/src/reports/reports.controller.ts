@@ -16,4 +16,12 @@ export class ReportsController {
     res.setHeader("Content-Disposition", `attachment; filename="cadran-rapport-${id}.pdf"`);
     res.send(pdf);
   }
+
+  @Get(":id/report.xlsx")
+  async downloadReportExcel(@CurrentUser() user: AuthUser, @Param("id") id: string, @Res() res: Response) {
+    const excel = await this.reportsService.generatePeriodReportExcel(user.organizationId, id);
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="cadran-rapport-${id}.xlsx"`);
+    res.send(excel);
+  }
 }

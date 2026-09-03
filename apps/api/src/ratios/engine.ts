@@ -40,7 +40,7 @@ export interface Aggregates {
   immobilisations: number;
 }
 
-const AGGREGATE_KEY_BY_POSTE: Record<LinePoste, keyof Aggregates> = {
+export const AGGREGATE_KEY_BY_POSTE: Record<LinePoste, keyof Aggregates> = {
   CHIFFRE_AFFAIRES: "chiffreAffaires",
   ACHATS_CONSOMMES: "achatsConsommes",
   CHARGES_EXTERNES: "chargesExternes",

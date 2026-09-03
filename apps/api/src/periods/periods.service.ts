@@ -3,34 +3,42 @@ import { PrismaService } from "../prisma/prisma.service";
 import { CreatePeriodDto } from "./dto/create-period.dto";
 import { BulkLineItemsDto } from "./dto/bulk-line-items.dto";
 import { RatiosService } from "../ratios/ratios.service";
+import { EntitiesService } from "../entities/entities.service";
+import { AlertsService } from "../alerts/alerts.service";
 
 @Injectable()
 export class PeriodsService {
   constructor(
     private prisma: PrismaService,
-    private ratiosService: RatiosService
+    private ratiosService: RatiosService,
+    private entitiesService: EntitiesService,
+    private alertsService: AlertsService
   ) {}
 
-  list(organizationId: string) {
+  list(organizationId: string, entityId?: string) {
     return this.prisma.accountingPeriod.findMany({
-      where: { organizationId },
+      where: { entity: { organizationId }, ...(entityId ? { entityId } : {}) },
       orderBy: { startDate: "asc" },
-      include: { _count: { select: { lineItems: true } } },
+      include: { _count: { select: { lineItems: true } }, entity: { select: { id: true, name: true } } },
     });
   }
 
   async getOrThrow(organizationId: string, periodId: string) {
     const period = await this.prisma.accountingPeriod.findFirst({
-      where: { id: periodId, organizationId },
+      where: { id: periodId, entity: { organizationId } },
     });
     if (!period) throw new NotFoundException("Période introuvable.");
     return period;
   }
 
-  create(organizationId: string, dto: CreatePeriodDto) {
+  async create(organizationId: string, dto: CreatePeriodDto) {
+    // Vérifie que l'entité appartient bien à l'organisation de l'utilisateur
+    // avant de lui rattacher une période.
+    await this.entitiesService.getOrThrow(organizationId, dto.entityId);
+
     return this.prisma.accountingPeriod.create({
       data: {
-        organizationId,
+        entityId: dto.entityId,
         label: dto.label,
         startDate: new Date(dto.startDate),
         endDate: new Date(dto.endDate),
@@ -69,6 +77,8 @@ export class PeriodsService {
 
     // Le cache de ratios est recalculé immédiatement : le dashboard ne doit
     // jamais afficher des ratios calculés sur les anciennes lignes.
-    return this.ratiosService.recomputeAndCache(periodId);
+    const result = await this.ratiosService.recomputeAndCache(periodId);
+    await this.alertsService.evaluateForPeriod(periodId);
+    return result;
   }
 }

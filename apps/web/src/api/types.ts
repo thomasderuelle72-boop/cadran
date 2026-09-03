@@ -14,12 +14,23 @@ export interface AuthResponse {
   user: AuthUser;
 }
 
+export interface Entity {
+  id: string;
+  name: string;
+  country: string | null;
+  currency: string;
+  fxRateToOrgCurrency: number;
+  _count?: { periods: number };
+}
+
 export interface Period {
   id: string;
   label: string;
   startDate: string;
   endDate: string;
   status: "OUVERTE" | "CLOTUREE";
+  entityId?: string;
+  entity?: { id: string; name: string };
   _count?: { lineItems: number };
 }
 
@@ -99,6 +110,7 @@ export interface RatioResultPayload {
 
 export interface TrendPoint {
   periodId: string;
+  entityId: string;
   label: string;
   startDate: string;
   chiffreAffaires: number;
@@ -115,4 +127,68 @@ export interface OrgUser {
   email: string;
   role: Role;
   createdAt: string;
+}
+
+export interface ConsolidationGroup {
+  key: string;
+  label: string;
+  startDate: string;
+  endDate: string;
+  entities: Array<{ id: string; name: string }>;
+}
+
+export interface ConsolidatedRatios {
+  label: string;
+  startDate: string;
+  endDate: string;
+  entities: Array<{ id: string; name: string }>;
+  aggregates: Aggregates;
+  derived: Derived;
+  ratios: RatioValue[];
+}
+
+export interface BudgetLine {
+  id: string;
+  poste: LinePoste;
+  amountBudgeted: string;
+}
+
+export interface BudgetVarianceRow {
+  poste: LinePoste;
+  label: string;
+  budgeted: number;
+  actual: number;
+  ecart: number;
+  ecartPct: number | null;
+}
+
+export interface BudgetVariance {
+  periodId: string;
+  rows: BudgetVarianceRow[];
+  summary: {
+    chiffreAffaires: { budgeted: number; actual: number; ecart: number };
+    ebitda: { budgeted: number; actual: number; ecart: number };
+    resultatNet: { budgeted: number; actual: number; ecart: number };
+  };
+}
+
+export type AlertOperator = "LT" | "LTE" | "GT" | "GTE";
+
+export interface AlertRule {
+  id: string;
+  label: string;
+  ratioId: string;
+  operator: AlertOperator;
+  threshold: number;
+  active: boolean;
+}
+
+export interface AlertEvent {
+  id: string;
+  value: number;
+  acknowledged: boolean;
+  updatedAt: string;
+  rule: { id: string; label: string; ratioId: string; operator: AlertOperator; threshold: number };
+  period: { id: string; label: string } | null;
+  entity: { id: string; name: string } | null;
 }

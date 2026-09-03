@@ -2,6 +2,9 @@ import { IsDateString, IsString, MinLength } from "class-validator";
 
 export class CreatePeriodDto {
   @IsString()
+  entityId!: string;
+
+  @IsString()
   @MinLength(2)
   label!: string;
 
