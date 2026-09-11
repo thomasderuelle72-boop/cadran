@@ -4,6 +4,8 @@ import { useAuth } from "../context/AuthContext";
 const NAV_ITEMS = [
   { to: "/", label: "Tableau de bord", end: true },
   { to: "/ratios", label: "Ratios" },
+  { to: "/analysis", label: "Analyse" },
+  { to: "/receivables", label: "Encours" },
   { to: "/budget", label: "Budget" },
   { to: "/cash", label: "Trésorerie" },
   { to: "/alerts", label: "Alertes" },

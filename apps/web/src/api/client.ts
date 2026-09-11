@@ -51,6 +51,35 @@ export const api = {
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
 };
 
+/**
+ * Envoi d'un fichier en multipart. Le Content-Type est délibérément laissé au
+ * navigateur : il doit y joindre la frontière (« boundary ») du corps, ce
+ * qu'il ne fait que si l'en-tête n'est pas déjà positionné.
+ */
+export async function uploadFile<T>(path: string, file: File, field = "file"): Promise<T> {
+  const token = getToken();
+  const headers = new Headers();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+
+  const body = new FormData();
+  body.append(field, file);
+
+  const response = await fetch(`${API_URL}${path}`, { method: "POST", headers, body });
+
+  if (!response.ok) {
+    let message = response.statusText;
+    try {
+      const corps = await response.json();
+      message = corps.message ?? message;
+    } catch {
+      // réponse sans corps JSON exploitable
+    }
+    throw new ApiError(response.status, Array.isArray(message) ? message.join(", ") : message);
+  }
+
+  return response.json() as Promise<T>;
+}
+
 export async function downloadFile(path: string, filename: string) {
   const token = getToken();
   const headers = new Headers();

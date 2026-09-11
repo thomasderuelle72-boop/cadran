@@ -1,7 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "./client";
+import { api, uploadFile } from "./client";
 import type {
   AlertEvent,
+  BalanceAgee,
+  Concentration,
+  ExerciceFec,
+  FluxPayload,
+  ResumeImportFec,
+  SensTiers,
+  SigPayload,
   AlertOperator,
   AlertRule,
   AuditLogPage,
@@ -64,8 +71,14 @@ export function useEntities() {
 export function useCreateEntity() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { name: string; country?: string; currency?: string; fxRateToOrgCurrency?: number }) =>
-      api.post<Entity>("/entities", input),
+    mutationFn: (input: {
+      name: string;
+      country?: string;
+      currency?: string;
+      fxRateToOrgCurrency?: number;
+      nafCode?: string;
+      headcount?: number;
+    }) => api.post<Entity>("/entities", input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["entities"] }),
   });
 }
@@ -268,5 +281,64 @@ export function useCreateOrgUser() {
     mutationFn: (input: { name: string; email: string; password: string; role: string }) =>
       api.post<OrgUser>("/users", input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["users"] }),
+  });
+}
+
+// --- Analyse ---------------------------------------------------------------
+
+export function useSig(periodId: string | null) {
+  return useQuery<SigPayload>({
+    queryKey: ["sig", periodId],
+    queryFn: () => api.get(`/analysis/sig/${periodId}`),
+    enabled: Boolean(periodId),
+  });
+}
+
+export function useFlux(periodId: string | null) {
+  return useQuery<FluxPayload>({
+    queryKey: ["flux", periodId],
+    queryFn: () => api.get(`/analysis/flux/${periodId}`),
+    enabled: Boolean(periodId),
+    // La première période d'une entité n'a pas de bilan d'ouverture à
+    // comparer : l'API répond 404, et réessayer n'y changera rien.
+    retry: false,
+  });
+}
+
+export function useBalanceAgee(entityId: string | null, sens: SensTiers, delai: number) {
+  return useQuery<BalanceAgee>({
+    queryKey: ["encours", entityId, sens, delai],
+    queryFn: () => api.get(`/analysis/encours?entityId=${entityId}&sens=${sens}&delai=${delai}`),
+    enabled: Boolean(entityId),
+  });
+}
+
+export function useConcentration(entityId: string | null, sens: SensTiers) {
+  return useQuery<Concentration>({
+    queryKey: ["concentration", entityId, sens],
+    queryFn: () => api.get(`/analysis/concentration?entityId=${entityId}&sens=${sens}`),
+    enabled: Boolean(entityId),
+  });
+}
+
+// --- Import FEC ------------------------------------------------------------
+
+export function useExercicesFec(entityId: string | null) {
+  return useQuery<ExerciceFec[]>({
+    queryKey: ["fec-exercices", entityId],
+    queryFn: () => api.get(`/fec/exercices?entityId=${entityId}`),
+    enabled: Boolean(entityId),
+  });
+}
+
+export function useImportFec() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ entityId, file }: { entityId: string; file: File }) =>
+      uploadFile<ResumeImportFec>(`/fec/import/${entityId}`, file),
+    onSuccess: () => {
+      // Un import touche tout : périodes, ratios, tendances, alertes, encours.
+      queryClient.invalidateQueries();
+    },
   });
 }

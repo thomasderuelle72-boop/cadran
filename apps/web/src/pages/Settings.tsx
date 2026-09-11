@@ -25,7 +25,14 @@ export function SettingsPage() {
   // conformité ; inutile de déclencher une requête refusée pour les autres.
   const peutVoirAudit = user?.role === "ADMIN" || user?.role === "DAF";
   const { data: auditLogs } = useAuditLogs(25, peutVoirAudit);
-  const [entityForm, setEntityForm] = useState({ name: "", country: "", currency: "EUR", fxRateToOrgCurrency: 1 });
+  const [entityForm, setEntityForm] = useState({
+    name: "",
+    country: "",
+    currency: "EUR",
+    fxRateToOrgCurrency: 1,
+    nafCode: "",
+    headcount: "",
+  });
   const [entityError, setEntityError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -45,8 +52,15 @@ export function SettingsPage() {
     e.preventDefault();
     setEntityError(null);
     try {
-      await createEntity.mutateAsync(entityForm);
-      setEntityForm({ name: "", country: "", currency: "EUR", fxRateToOrgCurrency: 1 });
+      await createEntity.mutateAsync({
+        name: entityForm.name,
+        country: entityForm.country || undefined,
+        currency: entityForm.currency,
+        fxRateToOrgCurrency: entityForm.fxRateToOrgCurrency,
+        nafCode: entityForm.nafCode || undefined,
+        headcount: entityForm.headcount ? Number(entityForm.headcount) : undefined,
+      });
+      setEntityForm({ name: "", country: "", currency: "EUR", fxRateToOrgCurrency: 1, nafCode: "", headcount: "" });
     } catch (err) {
       setEntityError(err instanceof ApiError ? err.message : "Création impossible.");
     }
@@ -68,6 +82,8 @@ export function SettingsPage() {
               <th className="py-2">Pays</th>
               <th className="py-2">Devise</th>
               <th className="py-2">Taux vers devise groupe</th>
+              <th className="py-2">Code NAF</th>
+              <th className="py-2">Effectif</th>
             </tr>
           </thead>
           <tbody>
@@ -77,6 +93,8 @@ export function SettingsPage() {
                 <td className="py-2 text-ink/60">{entity.country ?? "—"}</td>
                 <td className="py-2 text-ink/60">{entity.currency}</td>
                 <td className="py-2 font-mono text-ink/60">{entity.fxRateToOrgCurrency}</td>
+                <td className="py-2 font-mono text-ink/60">{entity.nafCode ?? "—"}</td>
+                <td className="py-2 font-mono text-ink/60">{entity.headcount ?? "—"}</td>
               </tr>
             ))}
           </tbody>
@@ -119,7 +137,31 @@ export function SettingsPage() {
                 onChange={(e) => setEntityForm({ ...entityForm, fxRateToOrgCurrency: Number(e.target.value) || 1 })}
               />
             </div>
+            <div>
+              <label className="label">Code NAF</label>
+              <input
+                className="input"
+                placeholder="2599B"
+                value={entityForm.nafCode}
+                onChange={(e) => setEntityForm({ ...entityForm, nafCode: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="label">Effectif</label>
+              <input
+                type="number"
+                min={0}
+                className="input"
+                value={entityForm.headcount}
+                onChange={(e) => setEntityForm({ ...entityForm, headcount: e.target.value })}
+              />
+            </div>
             <div className="col-span-4">
+              <p className="text-xs text-ink/40 mb-2">
+                Le code d&apos;activité et l&apos;effectif situent l&apos;entité dans une cohorte
+                sectorielle comparable : ils conditionnent le futur positionnement de ses ratios face
+                à son secteur.
+              </p>
               {entityError && <p className="text-critical text-sm mb-2">{entityError}</p>}
               <button type="submit" className="btn-secondary" disabled={createEntity.isPending}>
                 {createEntity.isPending ? "Création…" : "Ajouter une entité"}

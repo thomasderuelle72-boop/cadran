@@ -31,6 +31,11 @@ export class EntitiesService {
         country: dto.country,
         currency: dto.currency ?? "EUR",
         fxRateToOrgCurrency: dto.fxRateToOrgCurrency ?? 1,
+        // Le code NAF est stocké en majuscules : l'INSEE et les référentiels
+        // sectoriels l'écrivent ainsi, et une comparaison sensible à la casse
+        // manquerait sinon la cohorte.
+        nafCode: dto.nafCode?.toUpperCase(),
+        headcount: dto.headcount,
       },
     });
   }

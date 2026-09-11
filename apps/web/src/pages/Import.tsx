@@ -6,6 +6,7 @@ import { controlerEquilibre } from "../lib/balance";
 import { formatCurrency } from "../lib/format";
 import type { LinePoste } from "../api/types";
 import { ApiError } from "../api/client";
+import { FecImport } from "../components/FecImport";
 
 type Step = "period" | "upload" | "mapColumns" | "review";
 
@@ -145,7 +146,29 @@ export function ImportPage() {
       <div>
         <h1 className="font-display text-2xl font-semibold">Import de données</h1>
         <p className="text-sm text-ink/50">
-          Importez un export Excel ou CSV de votre balance comptable, puis validez la classification proposée.
+          Deux chemins : un FEC, qui apporte le détail des écritures, ou une balance de postes
+          agrégés, à classifier à la main.
+        </p>
+      </div>
+
+      {entities && entities.length > 0 && (
+        <div>
+          <label className="label">Entité</label>
+          <select className="input mb-4" value={entityId} onChange={(e) => setEntityId(e.target.value)}>
+            {entities.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.name}
+              </option>
+            ))}
+          </select>
+          <FecImport entityId={entityId} entityName={entities.find((e) => e.id === entityId)?.name} />
+        </div>
+      )}
+
+      <div className="border-t border-black/10 pt-6">
+        <h2 className="font-display text-lg font-semibold">Ou importer une balance</h2>
+        <p className="text-sm text-ink/50">
+          Un export Excel ou CSV de postes agrégés, dont la classification reste à valider.
         </p>
       </div>
 

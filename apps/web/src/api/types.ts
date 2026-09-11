@@ -20,6 +20,8 @@ export interface Entity {
   country: string | null;
   currency: string;
   fxRateToOrgCurrency: number;
+  nafCode: string | null;
+  headcount: number | null;
   _count?: { periods: number };
 }
 
@@ -29,6 +31,7 @@ export interface Period {
   startDate: string;
   endDate: string;
   status: "OUVERTE" | "CLOTUREE";
+  source?: "MANUEL" | "FEC";
   entityId?: string;
   entity?: { id: string; name: string };
   _count?: { lineItems: number };
@@ -266,4 +269,147 @@ export interface AlertEvent {
   rule: { id: string; label: string; ratioId: string; operator: AlertOperator; threshold: number };
   period: { id: string; label: string } | null;
   entity: { id: string; name: string } | null;
+}
+
+// --- Analyse ---------------------------------------------------------------
+
+export interface SoldeIntermediaire {
+  id: string;
+  label: string;
+  valeur: number;
+  formule: string;
+  partDuCa: number | null;
+  majeur: boolean;
+}
+
+export interface Sig {
+  soldes: SoldeIntermediaire[];
+  valeurAjoutee: number;
+  excedentBrutExploitation: number;
+  resultatExploitation: number;
+  resultatCourantAvantImpots: number;
+  resultatNet: number;
+  capaciteAutofinancement: number;
+  partageValeurAjoutee: Array<{ id: string; label: string; montant: number; part: number | null }> | null;
+}
+
+export interface SigPayload {
+  periodId: string;
+  periodLabel: string;
+  currency: string;
+  sig: Sig;
+  precedent: { periodId: string; periodLabel: string; sig: Sig } | null;
+}
+
+export interface LigneFlux {
+  id: string;
+  label: string;
+  montant: number;
+  explication: string;
+}
+
+export interface SectionFlux {
+  id: "exploitation" | "investissement" | "financement";
+  label: string;
+  lignes: LigneFlux[];
+  total: number;
+}
+
+export interface TableauFlux {
+  sections: SectionFlux[];
+  fluxExploitation: number;
+  fluxInvestissement: number;
+  fluxFinancement: number;
+  variationTresorerie: number;
+  tresorerieOuverture: number;
+  tresorerieCloture: number;
+  ecartReconciliation: number;
+}
+
+export interface FluxPayload {
+  periodId: string;
+  periodLabel: string;
+  currency: string;
+  ouverturePeriodId: string;
+  ouverturePeriodLabel: string;
+  flux: TableauFlux;
+}
+
+export type SensTiers = "CLIENT" | "FOURNISSEUR";
+
+export interface TrancheAge {
+  id: string;
+  label: string;
+  min: number;
+  max: number | null;
+  montant: number;
+  part: number | null;
+}
+
+export interface LigneTiers {
+  code: string;
+  label: string;
+  encours: number;
+  part: number | null;
+  ageMoyen: number | null;
+  enRetard: number;
+  ageMaximal: number | null;
+}
+
+export interface BalanceAgee {
+  sens: SensTiers;
+  entityId: string;
+  currency: string;
+  dateReference: string;
+  delaiPaiementJours: number;
+  encoursTotal: number;
+  encoursEnRetard: number;
+  ageMoyenPondere: number | null;
+  tranches: TrancheAge[];
+  tiers: LigneTiers[];
+  sansTiers: number;
+  ecrituresAnalysees: number;
+}
+
+export interface Concentration {
+  sens: SensTiers;
+  entityId: string;
+  currency: string;
+  total: number;
+  tiers: Array<{ code: string; label: string; montant: number; part: number | null }>;
+  partPremier: number | null;
+  partTroisPremiers: number | null;
+  partDixPremiers: number | null;
+  herfindahl: number | null;
+}
+
+// --- Import FEC ------------------------------------------------------------
+
+export interface ErreurFec {
+  ligne: number;
+  message: string;
+}
+
+export interface ResumeImportFec {
+  exercice: number;
+  debutExercice: string | null;
+  finExercice: string | null;
+  ecrituresImportees: number;
+  lignesIgnorees: number;
+  erreurs: ErreurFec[];
+  totalDebit: number;
+  totalCredit: number;
+  ecart: number;
+  equilibre: boolean;
+  periodes: Array<{ id: string; label: string; lignes: number }>;
+  periodesSupprimees: number;
+  comptesNonClasses: Array<{ accountCode: string; label: string; mouvement: number }>;
+  periodesManuellesRecouvrantes: Array<{ id: string; label: string }>;
+}
+
+export interface ExerciceFec {
+  exercice: number;
+  ecritures: number;
+  debut: string | null;
+  fin: string | null;
 }
