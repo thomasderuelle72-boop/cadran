@@ -6,6 +6,8 @@ import { UsersModule } from "./users/users.module";
 import { EntitiesModule } from "./entities/entities.module";
 import { PeriodsModule } from "./periods/periods.module";
 import { ImportModule } from "./import/import.module";
+import { FecModule } from "./fec/fec.module";
+import { AnalysisModule } from "./analysis/analysis.module";
 import { RatiosModule } from "./ratios/ratios.module";
 import { ReportsModule } from "./reports/reports.module";
 import { ConsolidationModule } from "./consolidation/consolidation.module";
@@ -24,6 +26,8 @@ import { AuditModule } from "./audit/audit.module";
     RatiosModule,
     PeriodsModule,
     ImportModule,
+    FecModule,
+    AnalysisModule,
     ReportsModule,
     ConsolidationModule,
     BudgetModule,

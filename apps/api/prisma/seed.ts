@@ -1,6 +1,8 @@
-import { PrismaClient, LinePoste, Role, AlertOperator } from "@prisma/client";
+import { PrismaClient, LinePoste, Role, AlertOperator, PeriodSource, Prisma } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 import { computeAggregates, computeDerived, computeRatios, Aggregates } from "../src/ratios/engine";
+import { genererGrandLivre } from "./demo-ledger";
+import { agregerParMois } from "../src/fec/fec-aggregation";
 
 const prisma = new PrismaClient();
 
@@ -17,6 +19,9 @@ interface DemoEntity {
   country: string;
   currency: string;
   fxRateToOrgCurrency: number;
+  /** Code d'activité et effectif : les deux clés du benchmark sectoriel. */
+  nafCode?: string;
+  headcount?: number;
   periods: DemoPeriod[];
 }
 
@@ -30,6 +35,8 @@ const DEMO_ENTITIES: DemoEntity[] = [
     country: "France",
     currency: "EUR",
     fxRateToOrgCurrency: 1,
+    nafCode: "2599B",
+    headcount: 24,
     periods: [
       {
         label: "T1 2026",
@@ -123,6 +130,8 @@ const DEMO_ENTITIES: DemoEntity[] = [
     country: "Allemagne",
     currency: "USD",
     fxRateToOrgCurrency: 0.92,
+    nafCode: "2599B",
+    headcount: 9,
     periods: [
       {
         label: "T1 2026",
@@ -209,6 +218,8 @@ async function main() {
         country: demoEntity.country,
         currency: demoEntity.currency,
         fxRateToOrgCurrency: demoEntity.fxRateToOrgCurrency,
+        nafCode: demoEntity.nafCode,
+        headcount: demoEntity.headcount,
       },
     });
 
@@ -261,6 +272,100 @@ async function main() {
       console.log(`Période créée : ${demoEntity.name} — ${demo.label}`);
     }
   }
+
+  // Troisième entité, alimentée non par une balance saisie mais par un grand
+  // livre complet — celui-là même que `npm run demo:fec` exporte au format
+  // FEC. Ses périodes sont mensuelles et dérivées des écritures, ce qui donne
+  // de la matière aux pages qui ont besoin du détail : balance âgée,
+  // concentration, et un tableau de flux mois par mois.
+  const industrie = await prisma.entity.create({
+    data: {
+      organizationId: organization.id,
+      name: "Atelier Nova Industrie",
+      country: "France",
+      currency: "EUR",
+      fxRateToOrgCurrency: 1,
+      nafCode: "2599B",
+      headcount: 16,
+    },
+  });
+
+  const grandLivre = genererGrandLivre();
+  await prisma.ledgerEntry.createMany({
+    data: grandLivre.map((ecriture) => ({
+      entityId: industrie.id,
+      fiscalYear: ecriture.entryDate.getUTCFullYear(),
+      journalCode: ecriture.journalCode,
+      journalLabel: ecriture.journalLabel,
+      entryNum: ecriture.entryNum,
+      entryDate: ecriture.entryDate,
+      accountCode: ecriture.accountCode,
+      accountLabel: ecriture.accountLabel,
+      auxAccountCode: ecriture.auxAccountCode,
+      auxAccountLabel: ecriture.auxAccountLabel,
+      pieceRef: ecriture.pieceRef,
+      pieceDate: ecriture.pieceDate,
+      label: ecriture.label,
+      debit: new Prisma.Decimal(ecriture.debit),
+      credit: new Prisma.Decimal(ecriture.credit),
+      lettering: ecriture.lettering,
+      letteringDate: ecriture.letteringDate,
+      validDate: ecriture.validDate,
+    })),
+  });
+
+  const { periodes: periodesMensuelles } = agregerParMois(
+    grandLivre.map((ecriture) => ({
+      entryDate: ecriture.entryDate,
+      accountCode: ecriture.accountCode,
+      accountLabel: ecriture.accountLabel,
+      debit: ecriture.debit,
+      credit: ecriture.credit,
+    }))
+  );
+
+  let precedentsMensuels: Aggregates | null = null;
+  for (const mensuelle of periodesMensuelles) {
+    const period = await prisma.accountingPeriod.create({
+      data: {
+        entityId: industrie.id,
+        label: mensuelle.label,
+        startDate: mensuelle.debut,
+        endDate: mensuelle.fin,
+        source: PeriodSource.FEC,
+      },
+    });
+
+    await prisma.financialLineItem.createMany({
+      data: mensuelle.lignes.map((ligne) => ({
+        periodId: period.id,
+        accountCode: ligne.accountCode,
+        label: ligne.label,
+        amount: new Prisma.Decimal(ligne.amount),
+        poste: ligne.poste,
+      })),
+    });
+
+    const derived = computeDerived(mensuelle.agregats);
+    const ratios = computeRatios(
+      mensuelle.agregats,
+      derived,
+      precedentsMensuels ? { aggregates: precedentsMensuels } : null
+    );
+    precedentsMensuels = mensuelle.agregats;
+
+    await prisma.ratioResult.create({
+      data: {
+        periodId: period.id,
+        aggregates: mensuelle.agregats as unknown as object,
+        derived: derived as unknown as object,
+        ratios: ratios as unknown as object,
+      },
+    });
+  }
+  console.log(
+    `Grand livre importé : Atelier Nova Industrie — ${grandLivre.length} écritures, ${periodesMensuelles.length} périodes mensuelles`
+  );
 
   // Prévisionnel de trésorerie de la maison-mère : flux mensuels récurrents
   // à partir du mois prochain, plus un investissement ponctuel qui creuse

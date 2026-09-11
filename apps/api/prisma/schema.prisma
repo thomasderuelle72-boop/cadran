@@ -114,10 +114,17 @@ model Entity {
   // montants de cette entité dans la devise de référence du groupe. Saisi
   // manuellement en V1 (pas d'flux de cours de change en temps réel).
   fxRateToOrgCurrency   Float    @default(1)
+  // Code d'activité principal (NAF/APE, ex. "4791B") et effectif moyen :
+  // les deux clés qui permettent de situer l'entité dans une cohorte
+  // sectorielle comparable. Facultatifs — sans eux, le benchmark est
+  // simplement indisponible pour cette entité.
+  nafCode               String?
+  headcount             Int?
   createdAt             DateTime @default(now())
 
   periods           AccountingPeriod[]
   cashForecastLines CashForecastLine[]
+  ledgerEntries     LedgerEntry[]
 
   @@unique([organizationId, name])
 }
@@ -159,6 +166,57 @@ model CashForecastLine {
   @@index([entityId, startDate])
 }
 
+enum PeriodSource {
+  MANUEL
+  FEC
+}
+
+// Écriture comptable issue d'un Fichier des Écritures Comptables (FEC), le
+// format normé par l'arrêté du 29 juillet 2013 que tout logiciel comptable
+// français sait exporter.
+//
+// C'est la couche de détail sous les agrégats : FinancialLineItem reste la
+// matière du moteur de ratios, mais elle est désormais *dérivée* de ces
+// lignes plutôt que saisie. Ce sont elles qui permettent de répondre aux
+// questions qu'un agrégat ne peut pas : quel client doit quoi, depuis
+// quand, et quel compte exactement a dérapé ce mois-ci.
+//
+// Les champs sont ceux du FEC, au nom près ; les quatre qui comptent sont
+// entryDate (mensualisation), accountCode (détail sous l'agrégat),
+// auxAccountCode (le tiers) et lettering (ce qui est réglé).
+model LedgerEntry {
+  id             String    @id @default(cuid())
+  entityId       String
+  entity         Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  // Exercice d'origine, au format AAAA : un réimport du même exercice
+  // remplace l'intégralité de ses écritures, sans toucher aux autres.
+  fiscalYear     Int
+  journalCode    String
+  journalLabel   String
+  entryNum       String
+  entryDate      DateTime
+  accountCode    String
+  accountLabel   String
+  auxAccountCode String?
+  auxAccountLabel String?
+  pieceRef       String?
+  pieceDate      DateTime?
+  label          String
+  debit          Decimal   @db.Decimal(14, 2)
+  credit         Decimal   @db.Decimal(14, 2)
+  // Lettrage : une écriture lettrée est rapprochée de sa contrepartie, donc
+  // réglée. L'encours d'une balance âgée, c'est exactement le non lettré.
+  lettering      String?
+  letteringDate  DateTime?
+  validDate      DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([entityId, fiscalYear])
+  @@index([entityId, entryDate])
+  @@index([entityId, accountCode])
+  @@index([entityId, auxAccountCode])
+}
+
 model AccountingPeriod {
   id        String       @id @default(cuid())
   entityId  String
@@ -167,6 +225,10 @@ model AccountingPeriod {
   startDate DateTime
   endDate   DateTime
   status    PeriodStatus @default(OUVERTE)
+  // Origine des montants : saisis/importés en balance (MANUEL) ou dérivés
+  // des écritures d'un FEC (FEC). Une période dérivée est régénérée à chaque
+  // réimport du fichier ; la modifier à la main n'aurait pas de sens.
+  source    PeriodSource @default(MANUEL)
   createdAt DateTime     @default(now())
 
   lineItems   FinancialLineItem[]
