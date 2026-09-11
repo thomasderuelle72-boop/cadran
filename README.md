@@ -9,7 +9,19 @@ Plateforme de pilotage financier pour l'entreprise : import de données comptabl
 
 ## Démarrer en local
 
-Prérequis : Node 20+, PostgreSQL 16 (ou Docker).
+Prérequis : Node 20+, et PostgreSQL 16 — soit déjà installé, soit via Docker.
+
+```bash
+cd cadran
+./demarrer.sh
+```
+
+Le script vérifie la version de Node, démarre PostgreSQL par Docker s'il n'est pas déjà joignable, génère un `JWT_SECRET` fort, installe les dépendances, applique les migrations, charge le jeu de démonstration puis lance l'API et le frontend. Il est réexécutable : le seed est idempotent et les fichiers `.env` existants ne sont pas écrasés. `Ctrl+C` arrête les deux serveurs.
+
+Ouvrez ensuite <http://localhost:5173> et connectez-vous avec `demo@cadran.fr` / `CadranDemo123!` — organisation « Atelier Nova Group » avec deux entités (Atelier Nova SAS en France/EUR, Atelier Nova GmbH en Allemagne/USD), cinq périodes importées, un budget T3 sur la SAS, une projection de trésorerie et deux règles d'alerte préconfigurées.
+
+<details>
+<summary>Les mêmes étapes à la main</summary>
 
 ```bash
 # 1. Base de données (via Docker)
@@ -34,9 +46,9 @@ npm run dev:api
 npm run dev:web
 ```
 
-Compte de démonstration créé par le seed : `demo@cadran.fr` / `CadranDemo123!` — organisation « Atelier Nova Group » avec deux entités (Atelier Nova SAS en France/EUR, Atelier Nova GmbH en Allemagne/USD), un budget T3 sur la SAS, et deux règles d'alerte préconfigurées.
+</details>
 
-Si PostgreSQL tourne déjà en local (hors Docker), adaptez simplement `DATABASE_URL` dans `apps/api/.env`.
+Si PostgreSQL tourne déjà en local sur un autre port, adaptez `DATABASE_URL` dans `apps/api/.env` : le script lit l'hôte et le port depuis ce fichier avant de tenter Docker.
 
 ## Ce qui est implémenté
 
