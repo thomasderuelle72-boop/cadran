@@ -4,6 +4,7 @@ import type {
   AlertEvent,
   BalanceAgee,
   Concentration,
+  DiagnosticPayload,
   ExerciceFec,
   FluxPayload,
   ResumeImportFec,
@@ -340,5 +341,13 @@ export function useImportFec() {
       // Un import touche tout : périodes, ratios, tendances, alertes, encours.
       queryClient.invalidateQueries();
     },
+  });
+}
+
+export function useDiagnostic(periodId: string | null) {
+  return useQuery<DiagnosticPayload>({
+    queryKey: ["diagnostic", periodId],
+    queryFn: () => api.get(`/analysis/diagnostic/${periodId}`),
+    enabled: Boolean(periodId),
   });
 }

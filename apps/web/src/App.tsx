@@ -7,6 +7,7 @@ import { Dashboard } from "./pages/Dashboard";
 import { RatiosPage } from "./pages/Ratios";
 import { AnalysisPage } from "./pages/Analysis";
 import { ReceivablesPage } from "./pages/Receivables";
+import { DiagnosticPage } from "./pages/Diagnostic";
 import { ImportPage } from "./pages/Import";
 import { ReportsPage } from "./pages/Reports";
 import { SettingsPage } from "./pages/Settings";
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="/ratios" element={<RatiosPage />} />
         <Route path="/analysis" element={<AnalysisPage />} />
         <Route path="/receivables" element={<ReceivablesPage />} />
+        <Route path="/diagnostic" element={<DiagnosticPage />} />
         <Route path="/budget" element={<BudgetPage />} />
         <Route path="/cash" element={<CashPage />} />
         <Route path="/alerts" element={<AlertsPage />} />

@@ -413,3 +413,75 @@ export interface ExerciceFec {
   debut: string | null;
   fin: string | null;
 }
+
+// --- Diagnostic ------------------------------------------------------------
+
+export type ZoneScore = "sain" | "incertain" | "danger" | "indisponible";
+
+export interface ComposanteScore {
+  id: string;
+  label: string;
+  formule: string;
+  valeur: number | null;
+  coefficient: number;
+  contribution: number | null;
+}
+
+export interface ScoreRisque {
+  id: string;
+  label: string;
+  source: string;
+  valeur: number | null;
+  zone: ZoneScore;
+  seuilDanger: number;
+  seuilSain: number;
+  composantes: ComposanteScore[];
+  limites: string;
+  avertissementCalibration: string | null;
+  motifIndisponibilite: string | null;
+}
+
+export interface VentilationCharge {
+  poste: LinePoste;
+  montant: number;
+  partVariable: number;
+  variable: number;
+  fixe: number;
+}
+
+export interface SeuilRentabilite {
+  ventilation: VentilationCharge[];
+  chargesVariables: number;
+  chargesFixes: number;
+  margeSurCoutVariable: number;
+  tauxMargeSurCoutVariable: number | null;
+  seuilRentabilite: number | null;
+  margeSecurite: number | null;
+  indiceSecurite: number | null;
+  pointMortJours: number | null;
+  levierOperationnel: number | null;
+  joursPeriode: number;
+}
+
+export interface BfrNormatif {
+  bfr: number;
+  caJournalier: number | null;
+  bfrEnJours: number | null;
+  composantes: Array<{ id: string; label: string; montant: number; jours: number | null }>;
+  besoinCroissance: Array<{ croissance: number; caSupplementaire: number; besoin: number }>;
+  joursPeriode: number;
+}
+
+export interface DiagnosticPayload {
+  periodId: string;
+  periodLabel: string;
+  currency: string;
+  joursPeriode: number;
+  diagnostic: {
+    scores: ScoreRisque[];
+    convergence: "convergente" | "divergente" | "partielle";
+    commentaire: string;
+  };
+  seuilRentabilite: SeuilRentabilite;
+  bfrNormatif: BfrNormatif;
+}

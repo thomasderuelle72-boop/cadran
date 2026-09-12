@@ -38,6 +38,11 @@ export class AnalysisController {
     return this.analysisService.sig(user.organizationId, periodId);
   }
 
+  @Get("diagnostic/:periodId")
+  diagnostic(@CurrentUser() user: AuthUser, @Param("periodId") periodId: string) {
+    return this.analysisService.diagnostic(user.organizationId, periodId);
+  }
+
   @Get("flux/:periodId")
   flux(@CurrentUser() user: AuthUser, @Param("periodId") periodId: string) {
     return this.analysisService.flux(user.organizationId, periodId);

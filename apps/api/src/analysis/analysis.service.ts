@@ -3,6 +3,14 @@ import { PrismaService } from "../prisma/prisma.service";
 import { EntitiesService } from "../entities/entities.service";
 import { RatiosService } from "../ratios/ratios.service";
 import { computeSig, type Sig } from "./sig";
+import { computeDiagnostic, type Diagnostic } from "./scores";
+import {
+  computeBfrNormatif,
+  computeSeuilRentabilite,
+  joursEntreDates,
+  type BfrNormatif,
+  type SeuilRentabilite,
+} from "./structure";
 import { computeTableauFlux, type TableauFlux } from "./tableau-flux";
 import {
   DELAI_PAIEMENT_DEFAUT_JOURS,
@@ -31,6 +39,24 @@ export interface FluxPayload {
   ouverturePeriodLabel: string;
   flux: TableauFlux;
 }
+
+export interface DiagnosticPayload {
+  periodId: string;
+  periodLabel: string;
+  currency: string;
+  joursPeriode: number;
+  diagnostic: Diagnostic;
+  seuilRentabilite: SeuilRentabilite;
+  bfrNormatif: BfrNormatif;
+}
+
+/**
+ * Comptes portant ce que l'entreprise a accumulé par elle-même : réserves,
+ * report à nouveau, et le résultat des exercices antérieurs non encore
+ * affecté. Le capital social (101) en est exclu — il a été apporté, pas gagné,
+ * et c'est précisément la distinction que mesure le modèle d'Altman.
+ */
+const PREFIXES_RESERVES = ["106", "11", "12"];
 
 @Injectable()
 export class AnalysisService {
@@ -107,6 +133,54 @@ export class AnalysisService {
       ouverturePeriodId: precedente.id,
       ouverturePeriodLabel: precedente.label,
       flux: computeTableauFlux(ouverture.aggregates, cloture.aggregates),
+    };
+  }
+
+  /**
+   * Réserves accumulées à une date donnée, lues sur le grand livre.
+   *
+   * Renvoie null quand l'entité n'a aucune écriture : le score qui en dépend
+   * se déclarera alors indisponible plutôt que de reposer sur une
+   * approximation muette.
+   */
+  private async reservesAccumulees(entityId: string, aLaDate: Date): Promise<number | null> {
+    const lignes = await this.prisma.ledgerEntry.findMany({
+      where: { entityId, entryDate: { lte: aLaDate } },
+      select: { accountCode: true, debit: true, credit: true },
+    });
+    if (lignes.length === 0) return null;
+
+    return lignes
+      .filter((ligne) => PREFIXES_RESERVES.some((prefixe) => ligne.accountCode.startsWith(prefixe)))
+      .reduce(
+        (somme, ligne) =>
+          somme + this.ratiosService.toNumber(ligne.credit) - this.ratiosService.toNumber(ligne.debit),
+        0
+      );
+  }
+
+  async diagnostic(organizationId: string, periodId: string): Promise<DiagnosticPayload> {
+    const periode = await this.periodeOuThrow(organizationId, periodId);
+    const { aggregates, derived } = await this.ratiosService.getForPeriod(organizationId, periodId);
+
+    // Les scores et le point mort se lisent sur la durée réelle de la
+    // période : un trimestre et un exercice ne se comparent pas tels quels.
+    const joursPeriode = joursEntreDates(periode.startDate, periode.endDate);
+    const reserves = await this.reservesAccumulees(periode.entityId, periode.endDate);
+
+    return {
+      periodId,
+      periodLabel: periode.label,
+      currency: periode.entity.currency,
+      joursPeriode,
+      diagnostic: computeDiagnostic({
+        aggregates,
+        derived,
+        reservesEtReportANouveau: reserves,
+        joursPeriode,
+      }),
+      seuilRentabilite: computeSeuilRentabilite(aggregates, joursPeriode),
+      bfrNormatif: computeBfrNormatif(aggregates, derived, joursPeriode),
     };
   }
 
