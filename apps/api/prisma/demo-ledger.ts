@@ -170,9 +170,11 @@ export function genererGrandLivre(): EcritureDemo[] {
     ["401000", "Fournisseurs", 0, 24000],
     ["445710", "TVA collectée", 0, 4000],
   ];
+  const ENCOURS_CLIENT_OUVERTURE = 96000;
+  const DETTE_FOURNISSEUR_OUVERTURE = 24000;
+  const dateReglementOuverture = jour(2, 31);
+
   for (const [code, libelle, debit, credit] of anouveaux) {
-    // Les créances et dettes d'ouverture sont lettrées : elles ont été
-    // réglées au premier trimestre et ne doivent pas polluer la balance âgée.
     const estTiers = code === "411000" || code === "401000";
     ajouter("AN", numAn, ouverture, code, libelle, debit, credit, "À-nouveau 2026", {
       pieceRef: "AN-2026",
@@ -181,11 +183,39 @@ export function genererGrandLivre(): EcritureDemo[] {
             auxAccountCode: code === "411000" ? "C001" : "F001",
             auxAccountLabel: code === "411000" ? "Constructions Vallier" : "Aciers Delmas",
             lettering: "AN",
-            letteringDate: jour(2, 31),
+            letteringDate: dateReglementOuverture,
           }
         : {}),
     });
   }
+
+  // Règlement effectif des créances et dettes d'ouverture, fin du premier
+  // trimestre.
+  //
+  // Sans ces deux écritures, les comptes de tiers garderaient éternellement
+  // leur solde d'ouverture alors que le lettrage les déclare réglés : le bilan
+  // afficherait 96 000 € de créances de plus que la balance âgée, qui ne
+  // compte que le non lettré. C'est exactement le genre d'incohérence qu'un
+  // jeu de démonstration doit éviter, puisque l'intérêt de la balance âgée est
+  // précisément de se raccorder au bilan.
+  sequence += 1;
+  const numReglementOuverture = `BQ${String(sequence).padStart(5, "0")}`;
+  ajouter("BQ", numReglementOuverture, dateReglementOuverture, "512000", "Banque", ENCOURS_CLIENT_OUVERTURE, 0, "Encaissement des créances d'ouverture", { pieceRef: "AN-2026" });
+  ajouter("BQ", numReglementOuverture, dateReglementOuverture, "411000", "Clients", 0, ENCOURS_CLIENT_OUVERTURE, "Encaissement des créances d'ouverture", {
+    auxAccountCode: "C001",
+    auxAccountLabel: "Constructions Vallier",
+    pieceRef: "AN-2026",
+    lettering: "AN",
+    letteringDate: dateReglementOuverture,
+  });
+  ajouter("BQ", numReglementOuverture, dateReglementOuverture, "401000", "Fournisseurs", DETTE_FOURNISSEUR_OUVERTURE, 0, "Règlement des dettes d'ouverture", {
+    auxAccountCode: "F001",
+    auxAccountLabel: "Aciers Delmas",
+    pieceRef: "AN-2026",
+    lettering: "AN",
+    letteringDate: dateReglementOuverture,
+  });
+  ajouter("BQ", numReglementOuverture, dateReglementOuverture, "512000", "Banque", 0, DETTE_FOURNISSEUR_OUVERTURE, "Règlement des dettes d'ouverture", { pieceRef: "AN-2026" });
 
   // --- Exploitation, mois par mois ----------------------------------------
   for (let mois = 0; mois < 12; mois++) {
