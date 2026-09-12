@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { Aggregates, computeAggregates, computeDerived, computeRatios, Derived, RatioValue } from "./engine";
+import { joursEntreDates } from "../analysis/structure";
 
 export interface RatioResultPayload {
   periodId: string;
@@ -49,7 +50,14 @@ export class RatiosService {
     );
     const derived = computeDerived(aggregates);
     const previous = await this.findPreviousPeriodAggregates(period.entityId, period.startDate);
-    const ratios = computeRatios(aggregates, derived, previous);
+    // Les ratios de rotation rapportent un stock de bilan à un flux : ils se
+    // calculent sur la durée réelle de la période, pas sur un exercice.
+    const ratios = computeRatios(
+      aggregates,
+      derived,
+      previous,
+      joursEntreDates(period.startDate, period.endDate)
+    );
 
     await this.prisma.ratioResult.upsert({
       where: { periodId },

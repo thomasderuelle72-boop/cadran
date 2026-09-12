@@ -8,6 +8,7 @@ import { PeriodsModule } from "./periods/periods.module";
 import { ImportModule } from "./import/import.module";
 import { FecModule } from "./fec/fec.module";
 import { AnalysisModule } from "./analysis/analysis.module";
+import { ActionsModule } from "./actions/actions.module";
 import { RatiosModule } from "./ratios/ratios.module";
 import { ReportsModule } from "./reports/reports.module";
 import { ConsolidationModule } from "./consolidation/consolidation.module";
@@ -28,6 +29,7 @@ import { AuditModule } from "./audit/audit.module";
     ImportModule,
     FecModule,
     AnalysisModule,
+    ActionsModule,
     ReportsModule,
     ConsolidationModule,
     BudgetModule,

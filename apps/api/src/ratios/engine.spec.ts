@@ -1,4 +1,10 @@
-import { bilanEstEquilibre, computeAggregates, computeDerived, computeRatios } from "./engine";
+import {
+  RATIO_IDS,
+  bilanEstEquilibre,
+  computeAggregates,
+  computeDerived,
+  computeRatios,
+} from "./engine";
 import { LinePoste } from "@prisma/client";
 
 describe("moteur de calcul des ratios", () => {
@@ -102,5 +108,74 @@ describe("moteur de calcul des ratios", () => {
     const croissance = ratios.find((r) => r.id === "croissance_ca")!;
     expect(croissance.value).toBeCloseTo(0.25);
     expect(croissance.status).toBe("bon");
+  });
+});
+
+describe("catalogue des identifiants de ratios", () => {
+  // RATIO_IDS sert à valider les saisies qui désignent un ratio (règles
+  // d'alerte, indicateur d'un plan d'action). S'il divergeait du moteur, une
+  // règle pourrait viser un ratio inexistant et ne jamais se déclencher, ou
+  // un ratio réel serait refusé à la saisie.
+  it("correspond exactement, et dans l'ordre, à ce que produit le moteur", () => {
+    const aggregates = computeAggregates([{ poste: LinePoste.CHIFFRE_AFFAIRES, amount: 1000 }]);
+    const produits = computeRatios(aggregates, computeDerived(aggregates)).map((r) => r.id);
+    expect(produits).toEqual([...RATIO_IDS]);
+  });
+});
+
+describe("ratios de rotation sur une période plus courte qu'un exercice", () => {
+  // 100 de créances pour 1 000 de chiffre d'affaires : un dixième du CA de la
+  // période reste à encaisser. Sur un exercice, cela fait 36,5 jours ; sur un
+  // trimestre, 9 jours — pas 36,5. Multiplier systématiquement par 365 gonflait
+  // le délai d'un facteur quatre sur un trimestre et douze sur un mois.
+  const aggregates = computeAggregates([
+    { poste: LinePoste.CHIFFRE_AFFAIRES, amount: 1000 },
+    { poste: LinePoste.ACHATS_CONSOMMES, amount: 500 },
+    { poste: LinePoste.CREANCES_CLIENTS, amount: 100 },
+    { poste: LinePoste.DETTES_FOURNISSEURS, amount: 50 },
+    { poste: LinePoste.STOCKS, amount: 75 },
+  ]);
+  const derived = computeDerived(aggregates);
+
+  const jours = (id: string, joursPeriode?: number) =>
+    computeRatios(aggregates, derived, null, joursPeriode).find((r) => r.id === id)?.value ?? null;
+
+  it("rapporte le délai client à la durée réelle de la période", () => {
+    expect(jours("dso", 365)).toBeCloseTo(36.5, 6);
+    expect(jours("dso", 90)).toBeCloseTo(9, 6);
+    expect(jours("dso", 31)).toBeCloseTo(3.1, 6);
+  });
+
+  it("applique la même durée au délai fournisseurs et à la rotation des stocks", () => {
+    expect(jours("dpo", 90)).toBeCloseTo(9, 6);
+    expect(jours("dio", 90)).toBeCloseTo(13.5, 6);
+  });
+
+  it("compose le cycle de conversion sur les trois délais corrigés", () => {
+    // 9 + 13,5 − 9 = 13,5
+    expect(jours("cycle_conversion_cash", 90)).toBeCloseTo(13.5, 6);
+  });
+
+  it("suppose un exercice complet quand la durée n'est pas fournie", () => {
+    expect(jours("dso")).toBeCloseTo(36.5, 6);
+  });
+
+  it("retombe sur l'exercice plutôt que de diviser par zéro", () => {
+    expect(jours("dso", 0)).toBeCloseTo(36.5, 6);
+  });
+
+  it("affiche la durée retenue dans la formule, pour que le chiffre soit relisible", () => {
+    const dso = computeRatios(aggregates, derived, null, 90).find((r) => r.id === "dso");
+    expect(dso?.formula).toContain("90 jours");
+  });
+
+  it("laisse les ratios sans dimension temporelle inchangés", () => {
+    const surAnnee = computeRatios(aggregates, derived, null, 365);
+    const surTrimestre = computeRatios(aggregates, derived, null, 90);
+    for (const id of ["marge_brute", "liquidite_generale", "gearing", "autonomie_financiere"]) {
+      expect(surTrimestre.find((r) => r.id === id)?.value).toBe(
+        surAnnee.find((r) => r.id === id)?.value
+      );
+    }
   });
 });

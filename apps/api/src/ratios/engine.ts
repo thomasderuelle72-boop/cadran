@@ -164,6 +164,38 @@ export function computeDerived(a: Aggregates): Derived {
   };
 }
 
+/**
+ * Identifiants des ratios produits par computeRatios, dans l'ordre.
+ *
+ * Sert à valider une saisie qui désigne un ratio (règle d'alerte, indicateur
+ * suivi par un plan d'action) : accepter un identifiant inconnu rendrait la
+ * règle silencieusement inopérante. Un test vérifie que cette liste et le
+ * moteur ne peuvent pas diverger.
+ */
+export const RATIO_IDS = [
+  "marge_brute",
+  "marge_ebitda",
+  "marge_nette",
+  "roe",
+  "roce",
+  "liquidite_generale",
+  "quick_ratio",
+  "fonds_de_roulement",
+  "bfr",
+  "tresorerie_nette",
+  "gearing",
+  "autonomie_financiere",
+  "capacite_remboursement",
+  "couverture_interets",
+  "dso",
+  "dpo",
+  "dio",
+  "cycle_conversion_cash",
+  "croissance_ca",
+] as const;
+
+export type RatioId = (typeof RATIO_IDS)[number];
+
 export interface RatioValue {
   id: string;
   label: string;
@@ -199,11 +231,28 @@ function safeDivide(numerator: number, denominator: number): number | null {
   return numerator / denominator;
 }
 
+/**
+ * Nombre de jours d'un exercice complet, valeur par défaut du paramètre
+ * `joursPeriode`.
+ */
+export const JOURS_EXERCICE = 365;
+
+/**
+ * @param joursPeriode Durée réelle de la période, en jours. Les ratios de
+ * rotation (DSO, DPO, DIO, cycle de conversion) rapportent un poste de bilan
+ * — un stock — à un flux de la période. Les multiplier par 365 quand la
+ * période est un trimestre gonfle le délai d'un facteur quatre, et d'un
+ * facteur douze sur un mois : « 83 jours de délai client » se lisait en
+ * réalité 21. Le paramètre est donc obligatoire en pratique, et sa valeur par
+ * défaut ne vaut que pour un exercice complet.
+ */
 export function computeRatios(
   aggregates: Aggregates,
   derived: Derived,
-  previous?: { aggregates: Aggregates } | null
+  previous?: { aggregates: Aggregates } | null,
+  joursPeriode: number = JOURS_EXERCICE
 ): RatioValue[] {
+  const jours = joursPeriode > 0 ? joursPeriode : JOURS_EXERCICE;
   const a = aggregates;
   const d = derived;
 
@@ -223,9 +272,9 @@ export function computeRatios(
   const dso = safeDivide(a.creancesClients, a.chiffreAffaires);
   const dpo = safeDivide(a.dettesFournisseurs, a.achatsConsommes);
   const dio = safeDivide(a.stocks, a.achatsConsommes);
-  const dsoDays = dso !== null ? dso * 365 : null;
-  const dpoDays = dpo !== null ? dpo * 365 : null;
-  const dioDays = dio !== null ? dio * 365 : null;
+  const dsoDays = dso !== null ? dso * jours : null;
+  const dpoDays = dpo !== null ? dpo * jours : null;
+  const dioDays = dio !== null ? dio * jours : null;
   const cycleConversionCash =
     dsoDays !== null && dioDays !== null && dpoDays !== null ? dsoDays + dioDays - dpoDays : null;
 
@@ -378,7 +427,7 @@ export function computeRatios(
       id: "dso",
       label: "DSO — délai clients",
       category: "ACTIVITE",
-      formula: "(Créances clients / CA) × 365",
+      formula: `(Créances clients / CA) × ${jours} jours de période`,
       unit: "jours",
       value: dsoDays,
       status: statusFromThreshold(dsoDays, 45, 60, "lower-better"),
@@ -388,7 +437,7 @@ export function computeRatios(
       id: "dpo",
       label: "DPO — délai fournisseurs",
       category: "ACTIVITE",
-      formula: "(Dettes fournisseurs / Achats) × 365",
+      formula: `(Dettes fournisseurs / Achats) × ${jours} jours de période`,
       unit: "jours",
       value: dpoDays,
       status: "neutre",
@@ -398,7 +447,7 @@ export function computeRatios(
       id: "dio",
       label: "DIO — rotation des stocks",
       category: "ACTIVITE",
-      formula: "(Stocks / Achats) × 365",
+      formula: `(Stocks / Achats) × ${jours} jours de période`,
       unit: "jours",
       value: dioDays,
       status: statusFromThreshold(dioDays, 60, 90, "lower-better"),

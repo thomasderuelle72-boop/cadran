@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { to: "/analysis", label: "Analyse" },
   { to: "/receivables", label: "Encours" },
   { to: "/diagnostic", label: "Diagnostic" },
+  { to: "/actions", label: "Plan d'action" },
   { to: "/budget", label: "Budget" },
   { to: "/cash", label: "Trésorerie" },
   { to: "/alerts", label: "Alertes" },

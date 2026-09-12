@@ -3,6 +3,7 @@ import * as bcrypt from "bcryptjs";
 import { computeAggregates, computeDerived, computeRatios, Aggregates } from "../src/ratios/engine";
 import { genererGrandLivre } from "./demo-ledger";
 import { agregerParMois } from "../src/fec/fec-aggregation";
+import { joursEntreDates } from "../src/analysis/structure";
 
 const prisma = new PrismaClient();
 
@@ -256,7 +257,8 @@ async function main() {
       const ratios = computeRatios(
         aggregates,
         derived,
-        previousAggregates ? { aggregates: previousAggregates } : null
+        previousAggregates ? { aggregates: previousAggregates } : null,
+        joursEntreDates(new Date(demo.start), new Date(demo.end))
       );
       previousAggregates = aggregates;
 
@@ -350,7 +352,8 @@ async function main() {
     const ratios = computeRatios(
       mensuelle.agregats,
       derived,
-      precedentsMensuels ? { aggregates: precedentsMensuels } : null
+      precedentsMensuels ? { aggregates: precedentsMensuels } : null,
+      joursEntreDates(mensuelle.debut, mensuelle.fin)
     );
     precedentsMensuels = mensuelle.agregats;
 

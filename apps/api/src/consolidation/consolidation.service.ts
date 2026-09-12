@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { computeAggregates, computeDerived, computeRatios, LineItemInput } from "../ratios/engine";
 import { RatiosService } from "../ratios/ratios.service";
+import { joursEntreDates } from "../analysis/structure";
 
 interface ConsolidationGroup {
   key: string;
@@ -92,7 +93,10 @@ export class ConsolidationService {
     // présentes dans les deux groupes. Sinon, une filiale absente d'une des
     // deux périodes ferait apparaître une variation qui n'est qu'un
     // changement de périmètre, pas une performance.
-    const ratios = computeRatios(aggregates, derived, null);
+    // La consolidation porte sur une plage de dates : les ratios de rotation
+    // se calculent sur sa durée réelle, comme pour une période simple.
+    const joursGroupe = joursEntreDates(start, end);
+    const ratios = computeRatios(aggregates, derived, null, joursGroupe);
     const currentEntityIds = new Set(periods.map((p) => p.entityId));
     const commonEntityIds = previousGroup
       ? previousGroup.entities.map((e) => e.id).filter((id) => currentEntityIds.has(id))
@@ -104,9 +108,12 @@ export class ConsolidationService {
         this.aggregateGroup(organizationId, start, end, commonEntityIds),
         this.aggregateGroup(organizationId, previousGroup.startDate, previousGroup.endDate, commonEntityIds),
       ]);
-      const likeForLike = computeRatios(currentCommon.aggregates, computeDerived(currentCommon.aggregates), {
-        aggregates: previousCommon.aggregates,
-      }).find((r) => r.id === "croissance_ca");
+      const likeForLike = computeRatios(
+        currentCommon.aggregates,
+        computeDerived(currentCommon.aggregates),
+        { aggregates: previousCommon.aggregates },
+        joursGroupe
+      ).find((r) => r.id === "croissance_ca");
       const index = ratios.findIndex((r) => r.id === "croissance_ca");
       if (likeForLike && index >= 0) ratios[index] = likeForLike;
       growthScope = {

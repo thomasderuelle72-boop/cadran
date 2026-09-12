@@ -71,6 +71,13 @@ Si PostgreSQL tourne déjà en local sur un autre port, adaptez `DATABASE_URL` d
 - **Piste d'audit** — chaque opération modifiant des données est enregistrée (auteur, rôle, route, cible, horodatage) par un interceptor global, donc sans risque d'oubli quand un module est ajouté. Les secrets sont expurgés et les imports volumineux réduits à leur volume. Consultable par les rôles ADMIN et DAF depuis Paramètres, en écriture seule : aucun code applicatif ne modifie ni ne supprime une entrée.
 - **Contrôle d'équilibre du bilan** — l'écart actif/passif est signalé pendant la revue de l'import, quand la classification est encore corrigeable en un clic, et rappelé sur le tableau de bord tant qu'une période reste déséquilibrée.
 
+### Conseil
+
+- **Plan d'action chiffré** — chaque recommandation est un objet suivi : constat, action, indicateur, valeur initiale et cible, impact estimé, responsable, échéance, statut. L'indicateur est relu automatiquement sur la dernière période de l'entité, ce qui permet de dire au point suivant si la cible a été atteinte. L'avancement mesure le chemin parcouru sur le chemin à parcourir — la seule façon de traiter un indicateur qu'on veut faire *baisser* : ramener un DSO de 91 à 60 jours et être à 75 vaut la moitié du trajet, là où un rapport valeur/cible ne voudrait rien dire. La progression n'est pas écrêtée : au-delà de 100 % la cible est battue, en dessous de zéro on s'est éloigné.
+- **Scores de fragilité** — Z' d'Altman (variante sociétés non cotées) et Conan & Holder, avec pour chacun ses composantes, coefficients et contributions affichés, son domaine de calibration, et ses limites. Un score dont une composante manque se déclare indisponible avec son motif plutôt que d'être approché en silence.
+- **Seuil de rentabilité** — ventilation fixe/variable paramétrable, point mort en euros et en date dans la période, marge et indice de sécurité, levier opérationnel.
+- **BFR normatif** — le besoin exprimé en jours de chiffre d'affaires, donc projetable, et la trésorerie qu'immobiliserait une croissance de 10, 25, 50 ou 100 %.
+
 ### Analyse détaillée
 
 - **Import FEC** — le Fichier des Écritures Comptables (arrêté du 29 juillet 2013) est le format normé que tout logiciel comptable français exporte. Ses 18 colonnes étant fixées, l'import ne demande aucune correspondance à établir : un fichier suffit pour un exercice entier. Le parseur accepte les trois séparateurs rencontrés en pratique (pipe, tabulation, point-virgule), un ordre de colonnes libre, la variante `Montant` + `Sens`, le BOM et les fins de ligne Windows ; les lignes fautives sont écartées une par une avec leur numéro plutôt que de faire échouer le fichier. Un réimport remplace l'exercice concerné et lui seul.
@@ -100,6 +107,7 @@ La CI (`.github/workflows/cadran-ci.yml`) lance sur chaque PR touchant `cadran/`
 - La valeur ajoutée est calculée sans isoler la production stockée et immobilisée (71, 72) ni les subventions d'exploitation (74), regroupées dans « autres produits et charges » et prises au niveau de l'excédent brut. L'écart est nul pour une entreprise de services ; le lever demande de scinder ce poste, ce que le détail d'un FEC permet.
 - La CAF ne retire pas les plus et moins-values de cession (675 / 775), comprises dans le résultat exceptionnel et non séparables au niveau d'agrégat actuel : elle est juste à une cession près.
 - Le positionnement sectoriel des ratios n'est pas encore branché ; le code NAF et l'effectif se saisissent sur l'entité, mais les seuils bon/attention/critique restent des constantes communes à tous les métiers.
+- La ventilation fixe/variable du seuil de rentabilité repose sur des hypothèses d'activité de transformation, affichées poste par poste. Une comptabilité analytique donnerait la vraie répartition ; la comptabilité générale ne la porte pas.
 
 ## Ce qui reste hors périmètre (V2 et au-delà)
 
@@ -111,7 +119,9 @@ Connecteurs ERP/bancaires automatiques (Open Banking, Sage, Cegid…), SSO entre
 npm run test:api
 ```
 
-104 tests couvrant le moteur de ratios (agrégats, EBITDA/EBIT/résultat net, FR/BFR/trésorerie nette, statuts de seuil, croissance, équilibre du bilan), le parseur FEC (séparateurs, ordre des colonnes, variante Montant + Sens, dates et montants, signalement ligne à ligne), la mensualisation (flux contre stock, sens naturel des comptes, résultat couru, exercice à cheval sur deux années), les soldes intermédiaires et la CAF (dont la concordance des méthodes additive et soustractive), le tableau de flux (réconciliation exacte avec la variation des disponibilités), la balance âgée et la concentration, le moteur de projection de trésorerie, et l'expurgation des secrets dans la piste d'audit.
+157 tests couvrant le moteur de ratios (agrégats, EBITDA/EBIT/résultat net, FR/BFR/trésorerie nette, statuts de seuil, croissance, équilibre du bilan), le parseur FEC (séparateurs, ordre des colonnes, variante Montant + Sens, dates et montants, signalement ligne à ligne), la mensualisation (flux contre stock, sens naturel des comptes, résultat couru, exercice à cheval sur deux années), les soldes intermédiaires et la CAF (dont la concordance des méthodes additive et soustractive), le tableau de flux (réconciliation exacte avec la variation des disponibilités), la balance âgée et la concentration, les scores de fragilité (composition, annualisation des flux rapportés à un stock, seuils publiés, indisponibilité motivée), le seuil de rentabilité et le BFR normatif, l'avancement d'un plan d'action vers sa cible, le moteur de projection de trésorerie, et l'expurgation des secrets dans la piste d'audit.
+
+Deux invariants y sont verrouillés parce que leur rupture serait silencieuse : la liste des identifiants de ratios doit correspondre exactement à ce que produit le moteur (sinon une règle d'alerte peut viser un ratio inexistant et ne jamais se déclencher), et les ratios de rotation doivent se calculer sur la durée réelle de la période.
 
 Le lint s'exécute depuis la racine du projet :
 

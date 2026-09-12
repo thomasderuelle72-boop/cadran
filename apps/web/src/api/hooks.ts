@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, uploadFile } from "./client";
 import type {
+  ActionPlan,
+  ActionStatus,
   AlertEvent,
   BalanceAgee,
   Concentration,
@@ -10,6 +12,7 @@ import type {
   ResumeImportFec,
   SensTiers,
   SigPayload,
+  SyntheseActions,
   AlertOperator,
   AlertRule,
   AuditLogPage,
@@ -349,5 +352,68 @@ export function useDiagnostic(periodId: string | null) {
     queryKey: ["diagnostic", periodId],
     queryFn: () => api.get(`/analysis/diagnostic/${periodId}`),
     enabled: Boolean(periodId),
+  });
+}
+
+// --- Plan d'action ---------------------------------------------------------
+
+export function useActions(entityId?: string, statut?: ActionStatus) {
+  const params = new URLSearchParams();
+  if (entityId) params.set("entityId", entityId);
+  if (statut) params.set("statut", statut);
+  const suffixe = params.toString() ? `?${params.toString()}` : "";
+
+  return useQuery<ActionPlan[]>({
+    queryKey: ["actions", entityId ?? "all", statut ?? "all"],
+    queryFn: () => api.get(`/actions${suffixe}`),
+  });
+}
+
+export function useSyntheseActions() {
+  return useQuery<SyntheseActions>({
+    queryKey: ["actions-synthese"],
+    queryFn: () => api.get("/actions/synthese"),
+  });
+}
+
+interface EntreeAction {
+  constat: string;
+  action: string;
+  entityId?: string;
+  ratioId?: string;
+  valeurInitiale?: number;
+  valeurCible?: number;
+  impactEstime?: number;
+  responsable?: string;
+  echeance?: string;
+}
+
+function invaliderActions(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: ["actions"] });
+  queryClient.invalidateQueries({ queryKey: ["actions-synthese"] });
+}
+
+export function useCreateAction() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: EntreeAction) => api.post<ActionPlan>("/actions", input),
+    onSuccess: () => invaliderActions(queryClient),
+  });
+}
+
+export function useUpdateAction() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...input }: Partial<EntreeAction> & { id: string; statut?: ActionStatus }) =>
+      api.patch<ActionPlan>(`/actions/${id}`, input),
+    onSuccess: () => invaliderActions(queryClient),
+  });
+}
+
+export function useDeleteAction() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete<void>(`/actions/${id}`),
+    onSuccess: () => invaliderActions(queryClient),
   });
 }

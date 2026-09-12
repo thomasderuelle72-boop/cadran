@@ -485,3 +485,47 @@ export interface DiagnosticPayload {
   seuilRentabilite: SeuilRentabilite;
   bfrNormatif: BfrNormatif;
 }
+
+// --- Plan d'action ---------------------------------------------------------
+
+export type ActionStatus = "A_FAIRE" | "EN_COURS" | "FAITE" | "ABANDONNEE";
+
+export interface AvancementAction {
+  ratioId: string;
+  ratioLabel: string;
+  valeurInitiale: number | null;
+  valeurCible: number | null;
+  valeurActuelle: number | null;
+  periodeLue: string | null;
+  progression: number | null;
+  cibleAtteinte: boolean | null;
+  sens: "hausse" | "baisse" | null;
+}
+
+export interface ActionPlan {
+  id: string;
+  entityId: string | null;
+  entityName: string | null;
+  constat: string;
+  action: string;
+  ratioId: string | null;
+  valeurInitiale: number | null;
+  valeurCible: number | null;
+  impactEstime: number | null;
+  responsable: string | null;
+  echeance: string | null;
+  statut: ActionStatus;
+  auteurEmail: string;
+  createdAt: string;
+  updatedAt: string;
+  avancement: AvancementAction | null;
+  enRetard: boolean;
+}
+
+export interface SyntheseActions {
+  total: number;
+  parStatut: Record<ActionStatus, number>;
+  enRetard: number;
+  impactOuvert: number;
+  impactRealise: number;
+}

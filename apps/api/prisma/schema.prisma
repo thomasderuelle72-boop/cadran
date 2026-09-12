@@ -63,6 +63,7 @@ model Organization {
   entities   Entity[]
   alertRules AlertRule[]
   auditLogs  AuditLog[]
+  actionPlans ActionPlan[]
 }
 
 // Piste d'audit : trace chaque opération qui modifie des données, écrite par
@@ -125,6 +126,7 @@ model Entity {
   periods           AccountingPeriod[]
   cashForecastLines CashForecastLine[]
   ledgerEntries     LedgerEntry[]
+  actionPlans       ActionPlan[]
 
   @@unique([organizationId, name])
 }
@@ -164,6 +166,13 @@ model CashForecastLine {
   createdAt  DateTime       @default(now())
 
   @@index([entityId, startDate])
+}
+
+enum ActionStatus {
+  A_FAIRE
+  EN_COURS
+  FAITE
+  ABANDONNEE
 }
 
 enum PeriodSource {
@@ -312,4 +321,42 @@ model AlertEvent {
   updatedAt    DateTime  @updatedAt
 
   @@unique([alertRuleId, periodId])
+}
+
+// Recommandation de conseil, tracée et mesurée.
+//
+// C'est ce qui distingue un outil de conseil d'un outil de reporting : sans
+// cette table, une recommandation n'est qu'une phrase dite en réunion. Avec
+// elle, le constat, l'action, son impact chiffré, son responsable et son
+// échéance sont écrits, et l'outil peut relire l'indicateur au point suivant
+// pour dire si la cible a été atteinte.
+//
+// Un indicateur suivi (ratioId) est facultatif : certaines actions ne se
+// mesurent pas par un ratio. Quand il est renseigné, la progression se lit
+// automatiquement contre la dernière période de l'entité — c'est ce qui rend
+// le conseil facturable sur sa valeur plutôt que sur son temps.
+model ActionPlan {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  entityId       String?
+  entity         Entity?      @relation(fields: [entityId], references: [id])
+  constat        String
+  action         String
+  /// Identifiant du ratio suivi, au sens du moteur (ratios/engine.ts).
+  ratioId        String?
+  valeurInitiale Float?
+  valeurCible    Float?
+  /// Gain de trésorerie ou de résultat attendu, dans la devise de l'entité.
+  impactEstime   Decimal?     @db.Decimal(14, 2)
+  responsable    String?
+  echeance       DateTime?
+  statut         ActionStatus @default(A_FAIRE)
+  /// Auteur de la recommandation, recopié pour rester lisible si le compte part.
+  auteurEmail    String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, statut])
+  @@index([entityId])
 }
