@@ -5,6 +5,7 @@ import { EntitiesService } from "../entities/entities.service";
 import { RatiosService } from "../ratios/ratios.service";
 import type { RatioValue } from "../ratios/engine";
 import { CreateActionPlanDto, UpdateActionPlanDto } from "./dto/action-plan.dto";
+import { donneesMiseAJour } from "./mise-a-jour";
 import { calculerProgression } from "./progression";
 
 /**
@@ -223,19 +224,7 @@ export class ActionsService {
 
     return this.prisma.actionPlan.update({
       where: { id },
-      data: {
-        ...(dto.constat !== undefined ? { constat: dto.constat } : {}),
-        ...(dto.action !== undefined ? { action: dto.action } : {}),
-        ...(dto.ratioId !== undefined ? { ratioId: dto.ratioId } : {}),
-        ...(dto.valeurInitiale !== undefined ? { valeurInitiale: dto.valeurInitiale } : {}),
-        ...(dto.valeurCible !== undefined ? { valeurCible: dto.valeurCible } : {}),
-        ...(dto.impactEstime !== undefined
-          ? { impactEstime: new Prisma.Decimal(dto.impactEstime) }
-          : {}),
-        ...(dto.responsable !== undefined ? { responsable: dto.responsable } : {}),
-        ...(dto.echeance !== undefined ? { echeance: new Date(dto.echeance) } : {}),
-        ...(dto.statut !== undefined ? { statut: dto.statut } : {}),
-      },
+      data: donneesMiseAJour(dto),
     });
   }
 

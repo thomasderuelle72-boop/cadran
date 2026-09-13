@@ -1,10 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCreatePeriod, useEntities, useImportReference, usePeriods, useSubmitLineItems } from "../api/hooks";
+import {
+  useCreatePeriod,
+  useDeletePeriod,
+  useEntities,
+  useImportReference,
+  usePeriods,
+  useSubmitLineItems,
+} from "../api/hooks";
+import { useAuth } from "../context/AuthContext";
 import { parseAmount, parseFile, type ParsedFile } from "../lib/parseFile";
 import { controlerEquilibre } from "../lib/balance";
-import { formatCurrency } from "../lib/format";
-import type { LinePoste } from "../api/types";
+import { formatCurrency, formatDate } from "../lib/format";
+import type { LinePoste, Period } from "../api/types";
 import { ApiError } from "../api/client";
 import { FecImport } from "../components/FecImport";
 
@@ -27,7 +35,138 @@ function suggestPosteFromPrefix(
   return match ? match.poste : null;
 }
 
+
+/**
+ * Ce qui a déjà été importé, et comment le corriger.
+ *
+ * L'import ne savait qu'ajouter. Une période créée avec la mauvaise date, un
+ * fichier chargé sur le mauvais trimestre, un exercice de test resté en
+ * place : rien ne permettait d'y revenir depuis l'interface, alors que l'API
+ * sait supprimer une période depuis le début. Le tableau dit aussi ce qui se
+ * passe en cas de réimport, parce que « remplacer » et « ajouter » ne
+ * donnent pas du tout le même résultat.
+ */
+function PeriodesImportees({
+  periods,
+  onCorriger,
+  peutSupprimer,
+}: {
+  periods: Period[] | undefined;
+  onCorriger: (periodId: string) => void;
+  peutSupprimer: boolean;
+}) {
+  const deletePeriod = useDeletePeriod();
+  const [aSupprimer, setASupprimer] = useState<string | null>(null);
+  const [erreur, setErreur] = useState<string | null>(null);
+
+  if (!periods || periods.length === 0) return null;
+
+  return (
+    <div className="card">
+      <h2 className="font-display text-lg font-semibold mb-1">Périodes déjà importées</h2>
+      <p className="text-sm text-ink/50 mb-4">
+        Réimporter sur une période <strong>remplace</strong> ses lignes : c&apos;est la façon de
+        corriger un fichier mal classé, sans créer de doublon.
+      </p>
+
+      {erreur && <p className="text-sm text-critical mb-3">{erreur}</p>}
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[560px]">
+          <thead>
+            <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
+              <th className="py-2">Période</th>
+              <th className="py-2">Dates</th>
+              <th className="py-2">Source</th>
+              <th className="py-2 text-right">Lignes</th>
+              <th className="py-2 text-right">Corriger</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...periods]
+              .sort((a, b) => b.startDate.localeCompare(a.startDate))
+              .map((period) => (
+                <tr key={period.id} className="border-b border-rule/5 last:border-0">
+                  <td className="py-2 font-medium">{period.label}</td>
+                  <td className="py-2 text-ink/60 whitespace-nowrap">
+                    {formatDate(period.startDate)} → {formatDate(period.endDate)}
+                  </td>
+                  <td className="py-2 text-ink/50">
+                    {period.source === "FEC" ? "FEC" : "Balance"}
+                  </td>
+                  <td className="py-2 text-right font-mono text-ink/60">
+                    {period._count?.lineItems ?? "—"}
+                  </td>
+                  <td className="py-2 text-right whitespace-nowrap">
+                    <button
+                      type="button"
+                      className="text-xs text-ink/50 hover:text-primary"
+                      onClick={() => onCorriger(period.id)}
+                    >
+                      Réimporter
+                    </button>
+                    {peutSupprimer && (
+                      <>
+                        <span className="text-ink/20 mx-2">·</span>
+                        {aSupprimer === period.id ? (
+                          <span className="text-xs">
+                            <button
+                              type="button"
+                              className="text-critical font-medium"
+                              onClick={async () => {
+                                setErreur(null);
+                                try {
+                                  await deletePeriod.mutateAsync(period.id);
+                                } catch (err) {
+                                  setErreur(
+                                    err instanceof ApiError
+                                      ? err.message
+                                      : "Suppression impossible."
+                                  );
+                                }
+                                setASupprimer(null);
+                              }}
+                            >
+                              Confirmer
+                            </button>
+                            <button
+                              type="button"
+                              className="text-ink/40 ml-2"
+                              onClick={() => setASupprimer(null)}
+                            >
+                              Non
+                            </button>
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="text-xs text-ink/40 hover:text-critical"
+                            onClick={() => setASupprimer(period.id)}
+                          >
+                            Supprimer
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
+      </div>
+
+      {peutSupprimer && (
+        <p className="text-xs text-ink/40 mt-3">
+          Supprimer une période efface ses lignes, ses ratios et son budget. Les périodes
+          postérieures sont recalculées : leur croissance se lisait contre celle-ci.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function ImportPage() {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { data: entities } = useEntities();
   const [entityId, setEntityId] = useState<string>("");
@@ -165,7 +304,7 @@ export function ImportPage() {
         </div>
       )}
 
-      <div className="border-t border-black/10 pt-6">
+      <div className="border-t border-rule/10 pt-6">
         <h2 className="font-display text-lg font-semibold">Ou importer une balance</h2>
         <p className="text-sm text-ink/50">
           Un export Excel ou CSV de postes agrégés, dont la classification reste à valider.
@@ -215,7 +354,7 @@ export function ImportPage() {
               </button>
             </div>
           )}
-          <div className="border-t border-black/10 pt-4">
+          <div className="border-t border-rule/10 pt-4">
             <p className="text-sm font-medium mb-3">Ou créer une nouvelle période</p>
             <div className="grid grid-cols-3 gap-3">
               <div>
@@ -307,9 +446,9 @@ export function ImportPage() {
               </select>
             </div>
           </div>
-          <div className="overflow-x-auto text-xs border border-black/10 rounded-lg">
+          <div className="overflow-x-auto text-xs border border-rule/10 rounded-lg">
             <table className="w-full">
-              <thead className="bg-black/5">
+              <thead className="bg-ink/5">
                 <tr>
                   {parsed.headers.map((h) => (
                     <th key={h} className="text-left px-2 py-1.5 font-medium">
@@ -320,7 +459,7 @@ export function ImportPage() {
               </thead>
               <tbody>
                 {parsed.rows.slice(0, 4).map((row, i) => (
-                  <tr key={i} className="border-t border-black/5">
+                  <tr key={i} className="border-t border-rule/5">
                     {parsed.headers.map((h) => (
                       <td key={h} className="px-2 py-1.5 text-ink/60">
                         {String(row[h] ?? "")}
@@ -344,9 +483,9 @@ export function ImportPage() {
             Chaque compte est pré-classé selon le plan comptable général. Corrigez si besoin avant de valider — ce
             classement détermine directement le calcul des ratios.
           </p>
-          <div className="overflow-x-auto max-h-96 border border-black/10 rounded-lg">
+          <div className="overflow-x-auto max-h-96 border border-rule/10 rounded-lg">
             <table className="w-full text-sm">
-              <thead className="bg-black/5 sticky top-0">
+              <thead className="bg-ink/5 sticky top-0">
                 <tr>
                   <th className="text-left px-3 py-2">Compte</th>
                   <th className="text-left px-3 py-2">Libellé</th>
@@ -356,7 +495,7 @@ export function ImportPage() {
               </thead>
               <tbody>
                 {groups.map((g) => (
-                  <tr key={g.accountCode} className="border-t border-black/5">
+                  <tr key={g.accountCode} className="border-t border-rule/5">
                     <td className="px-3 py-2 font-mono">{g.accountCode}</td>
                     <td className="px-3 py-2 text-ink/60">{g.label}</td>
                     <td className="px-3 py-2 text-right font-mono">{g.total.toLocaleString("fr-FR")}</td>
@@ -397,6 +536,16 @@ export function ImportPage() {
           </button>
         </div>
       )}
+
+      <PeriodesImportees
+        periods={periods}
+        peutSupprimer={user?.role === "ADMIN" || user?.role === "DAF"}
+        onCorriger={(id) => {
+          setPeriodId(id);
+          setStep("upload");
+          setError(null);
+        }}
+      />
     </div>
   );
 }

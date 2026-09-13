@@ -38,8 +38,16 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     throw new ApiError(response.status, Array.isArray(message) ? message.join(", ") : message);
   }
 
-  if (response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
+  /*
+   * Un corps vide n'est pas réservé au 204. Nest renvoie 200 sans corps pour
+   * un contrôleur qui ne retourne rien — c'est le cas de toutes les
+   * suppressions. Appeler response.json() dessus lève une erreur de syntaxe,
+   * la mutation est rejetée, son onSuccess n'invalide rien : la ligne
+   * supprimée en base restait affichée à l'écran.
+   */
+  const corps = await response.text();
+  if (!corps) return undefined as T;
+  return JSON.parse(corps) as T;
 }
 
 export const api = {

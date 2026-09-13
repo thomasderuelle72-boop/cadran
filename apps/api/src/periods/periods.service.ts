@@ -47,8 +47,26 @@ export class PeriodsService {
   }
 
   async remove(organizationId: string, periodId: string) {
-    await this.getOrThrow(organizationId, periodId);
+    const period = await this.getOrThrow(organizationId, periodId);
+
+    // Les périodes postérieures sont relevées avant la suppression : après,
+    // la période n'existe plus et on ne saurait plus lesquelles la suivaient.
+    const suivantes = await this.prisma.accountingPeriod.findMany({
+      where: { entityId: period.entityId, startDate: { gt: period.startDate } },
+      orderBy: { startDate: "asc" },
+      select: { id: true },
+    });
+
     await this.prisma.accountingPeriod.delete({ where: { id: periodId } });
+
+    // Même raison qu'au réimport : la croissance du CA d'une période se lit
+    // contre celle qui la précède. Supprimer une période intercalaire sans
+    // recalculer laisserait les suivantes afficher une croissance mesurée
+    // contre des données qui n'existent plus.
+    for (const suivante of suivantes) {
+      await this.ratiosService.recomputeAndCache(suivante.id);
+      await this.alertsService.evaluateForPeriod(suivante.id);
+    }
   }
 
   async listLineItems(organizationId: string, periodId: string) {

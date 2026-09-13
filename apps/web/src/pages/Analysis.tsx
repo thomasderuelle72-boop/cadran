@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useEntities, useFlux, usePeriods, useSig } from "../api/hooks";
+import { DetailComptes } from "../components/DetailComptes";
 import { EntitySelector } from "../components/EntitySelector";
+import { EntetePage, EtatVide, SqueletteCarte, SqueletteTableau, Zone } from "../components/etats";
 import { formatCurrency } from "../lib/format";
 import type { LigneFlux, SoldeIntermediaire } from "../api/types";
 
@@ -26,7 +28,7 @@ function LigneSolde({
     precedent && precedent.valeur !== 0 ? (solde.valeur - precedent.valeur) / Math.abs(precedent.valeur) : null;
 
   return (
-    <tr className={solde.majeur ? "border-b border-black/10" : "border-b border-black/5"}>
+    <tr className={solde.majeur ? "border-b border-rule/10" : "border-b border-rule/5"}>
       <td className={`py-2 ${solde.majeur ? "font-semibold" : "pl-4 text-ink/60"}`}>
         {solde.label}
         <span className="block text-xs font-normal text-ink/40">{solde.formule}</span>
@@ -51,7 +53,7 @@ function LigneSolde({
 
 function LigneDeFlux({ ligne, currency }: { ligne: LigneFlux; currency: string }) {
   return (
-    <div className="flex items-start justify-between gap-4 py-2 border-b border-black/5 last:border-0">
+    <div className="flex items-start justify-between gap-4 py-2 border-b border-rule/5 last:border-0">
       <div className="min-w-0">
         <div className="text-sm">{ligne.label}</div>
         <div className="text-xs text-ink/40">{ligne.explication}</div>
@@ -90,43 +92,52 @@ export function AnalysisPage() {
     }
   }, [periods, periodId]);
 
-  const { data: sigData } = useSig(periodId);
-  const { data: fluxData, error: fluxError } = useFlux(periodId);
+  const {
+    data: sigData,
+    isLoading: sigChargement,
+    error: sigErreur,
+    refetch: recharger,
+  } = useSig(periodId);
+  const { data: fluxData, isLoading: fluxChargement, error: fluxError } = useFlux(periodId);
 
   const currency = sigData?.currency ?? "EUR";
   const flux = fluxData?.flux;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Analyse</h1>
-          <p className="text-sm text-ink/50">
-            Soldes intermédiaires de gestion et tableau de flux de trésorerie.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <EntitySelector value={entityId} onChange={setEntityId} />
-          <select
-            className="input w-48"
-            value={periodId ?? ""}
-            onChange={(e) => setPeriodId(e.target.value || null)}
-          >
-            {periods?.map((period) => (
-              <option key={period.id} value={period.id}>
-                {period.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <EntetePage
+        titre="Analyse"
+        sousTitre="Soldes intermédiaires de gestion et tableau de flux de trésorerie."
+      >
+        <EntitySelector value={entityId} onChange={setEntityId} />
+        <select
+          className="input w-48"
+          value={periodId ?? ""}
+          aria-label="Période"
+          onChange={(e) => setPeriodId(e.target.value || null)}
+        >
+          {periods?.map((period) => (
+            <option key={period.id} value={period.id}>
+              {period.label}
+            </option>
+          ))}
+        </select>
+      </EntetePage>
 
       {!periodId && (
-        <div className="card text-sm text-ink/50">
-          Aucune période pour cette entité. Importez un FEC ou une balance depuis la page Import.
-        </div>
+        <EtatVide titre="Aucune période" action={{ to: "/import", label: "Importer des données" }}>
+          Cette entité n&apos;a aucune période. Importez un FEC ou une balance pour la remplir.
+        </EtatVide>
       )}
 
+      {periodId && (
+        <Zone
+          chargement={sigChargement}
+          erreur={sigErreur}
+          onReessayer={() => void recharger()}
+          quoi="les soldes de gestion"
+          squelette={<SqueletteTableau lignes={10} colonnes={4} />}
+        >
       {sigData && (
         <div className="card">
           <div className="flex items-baseline justify-between gap-4 mb-1">
@@ -140,7 +151,7 @@ export function AnalysisPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[560px]">
               <thead>
-                <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-black/10">
+                <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
                   <th className="py-2">Solde</th>
                   <th className="py-2 text-right">Montant</th>
                   <th className="py-2 text-right">% du CA</th>
@@ -163,14 +174,14 @@ export function AnalysisPage() {
           </div>
 
           {sigData.sig.partageValeurAjoutee && (
-            <div className="mt-5 pt-4 border-t border-black/10">
+            <div className="mt-5 pt-4 border-t border-rule/10">
               <h3 className="text-sm font-semibold mb-1">Partage de la valeur ajoutée</h3>
               <p className="text-xs text-ink/40 mb-3">
                 Ce que la richesse créée sur la période revient à chacun.
               </p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {sigData.sig.partageValeurAjoutee.map((part) => (
-                  <div key={part.id} className="rounded-lg bg-black/[0.03] px-3 py-2">
+                  <div key={part.id} className="rounded-lg bg-ink/[0.03] px-3 py-2">
                     <div className="text-xs text-ink/50">{part.label}</div>
                     <div className="font-mono font-semibold">{formatPart(part.part)}</div>
                     <div className="text-xs text-ink/40 font-mono">
@@ -184,6 +195,10 @@ export function AnalysisPage() {
         </div>
       )}
 
+        </Zone>
+      )}
+
+      {periodId && (
       <div className="card">
         <div className="flex items-baseline justify-between gap-4 mb-1">
           <h2 className="font-display text-lg font-semibold">Tableau de flux de trésorerie</h2>
@@ -197,6 +212,8 @@ export function AnalysisPage() {
           « Je suis rentable, pourquoi je n&apos;ai pas de trésorerie ? » — la réponse tient dans ces
           trois flux.
         </p>
+
+        {fluxChargement && !fluxError && <SqueletteCarte hauteur="8rem" />}
 
         {fluxError && (
           <p className="text-sm text-ink/50">
@@ -263,6 +280,11 @@ export function AnalysisPage() {
           </>
         )}
       </div>
+      )}
+
+      {periodId && entityId && (
+        <DetailComptes periodId={periodId} entityId={entityId} currency={currency} />
+      )}
     </div>
   );
 }

@@ -87,6 +87,15 @@ Si PostgreSQL tourne déjà en local sur un autre port, adaptez `DATABASE_URL` d
 - **Balance âgée** — encours par tiers, ventilé par ancienneté, calculé sur les seules écritures non lettrées à partir de la date de pièce. L'âge moyen est pondéré par les montants, donc sans le biais de TVA dont souffre un DSO rapporté au chiffre d'affaires. Le délai de paiement est paramétrable (30 jours par défaut, délai supplétif du code de commerce).
 - **Concentration** — part de chaque tiers dans la facturation hors taxes et indice de Herfindahl. Le montant hors taxes est rattaché au tiers en rapprochant, au sein d'une même écriture, la ligne de compte auxiliaire et les lignes de produit — retenir le TTC de la ligne de tiers mélangerait la TVA au chiffre d'affaires. Une dépendance au-delà de 25 % est signalée pour ce qu'elle est : un risque de continuité d'exploitation.
 
+### Interface
+
+- **Navigation par intention** — les douze écrans sont groupés en *Piloter*, *Comprendre*, *Agir*, *Données* : l'ordre du conseil, et non l'ordre des modules. La latérale se replie en tiroir sous 1024 px ; les tableaux larges défilent dans leur propre cadre plutôt que de faire déborder la page.
+- **Thème clair et sombre** — les couleurs vivent dans des tokens CSS, redéfinis par thème, ce qui inclut les graphiques : la grille et les axes sont peints depuis les mêmes variables, sinon ils disparaissaient sur fond sombre. Trois états (système, clair, sombre), le réglage système étant un choix explicite et non un défaut caché.
+- **Trois états par écran** — chargement (un squelette à la forme du contenu attendu), erreur (le code HTTP traduit en ce que l'utilisateur peut en faire, avec le message brut et un bouton Réessayer) et vide (qui nomme l'action qui remplit l'écran). Une requête en échec ne laisse plus une page blanche.
+- **Du constat à l'explication** — sur le tableau de bord, un ratio en attention ou en critique porte le lien vers l'écran qui l'explique : le cycle de conversion vers le besoin de financement, le DSO vers la balance âgée.
+- **Détail par compte** — sur la page Analyse, chaque poste se déplie en comptes et chaque compte en écritures du grand livre. C'est le dernier échelon du « pourquoi » : sous « charges de personnel : 412 000 € », les comptes, puis les pièces. Les écritures ne sont chargées qu'au dépliage, et le nombre affiché est borné, avec le total indiqué à côté.
+- **Corriger** — une action du plan se modifie entièrement (et pas seulement son statut) ; vider un champ facultatif l'efface. Une période s'efface depuis la page Import, qui rappelle aussi qu'un réimport *remplace* les lignes de la période visée — c'est la façon de corriger un fichier mal classé. Les suppressions demandent confirmation sur la ligne même, et les périodes postérieures sont recalculées puisque leur croissance se lisait contre celle qu'on retire.
+
 ## Essayer l'import FEC
 
 ```bash

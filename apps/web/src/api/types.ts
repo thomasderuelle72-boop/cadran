@@ -529,3 +529,38 @@ export interface SyntheseActions {
   impactOuvert: number;
   impactRealise: number;
 }
+
+/**
+ * Une ligne du grand livre, telle que la restitue le drill-down. C'est le
+ * dernier échelon du « pourquoi » : sous l'agrégat il y a le compte, et sous
+ * le compte la pièce comptable elle-même.
+ */
+export interface EcritureLigne {
+  id: string;
+  journalCode: string;
+  entryNum: string;
+  entryDate: string;
+  accountCode: string;
+  accountLabel: string;
+  auxAccountCode: string | null;
+  auxAccountLabel: string | null;
+  pieceRef: string | null;
+  label: string;
+  debit: number;
+  credit: number;
+  lettering: string | null;
+}
+
+export interface EcrituresCompte {
+  entityId: string;
+  currency: string;
+  compte: string;
+  /** Nombre total de lignes correspondantes, indépendamment de la limite. */
+  total: number;
+  /** Nombre effectivement renvoyé : inférieur au total si la limite mord. */
+  affichees: number;
+  debitTotal: number;
+  creditTotal: number;
+  solde: number;
+  ecritures: EcritureLigne[];
+}

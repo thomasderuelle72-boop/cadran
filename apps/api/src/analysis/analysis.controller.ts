@@ -48,6 +48,28 @@ export class AnalysisController {
     return this.analysisService.flux(user.organizationId, periodId);
   }
 
+  @Get("ecritures")
+  ecritures(
+    @CurrentUser() user: AuthUser,
+    @Query("entityId") entityId: string,
+    @Query("compte") compte: string,
+    @Query("debut") debut?: string,
+    @Query("fin") fin?: string,
+    @Query("limite") limite?: string
+  ) {
+    if (!entityId) throw new BadRequestException("entityId est requis.");
+    // Un préfixe vide ramènerait le grand livre entier : mieux vaut le
+    // refuser que de renvoyer une page inexploitable.
+    if (!compte || compte.trim().length < 2) {
+      throw new BadRequestException("Indiquez un numéro de compte de deux chiffres au moins.");
+    }
+    return this.analysisService.ecrituresDuCompte(user.organizationId, entityId, compte.trim(), {
+      debut: lireDate(debut, "de début"),
+      fin: lireDate(fin, "de fin"),
+      limite: limite ? Number(limite) : undefined,
+    });
+  }
+
   @Get("encours")
   encours(
     @CurrentUser() user: AuthUser,

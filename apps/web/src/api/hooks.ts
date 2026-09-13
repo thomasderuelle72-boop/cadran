@@ -7,6 +7,7 @@ import type {
   BalanceAgee,
   Concentration,
   DiagnosticPayload,
+  EcrituresCompte,
   ExerciceFec,
   FluxPayload,
   ResumeImportFec,
@@ -65,6 +66,26 @@ export function useCreatePeriod() {
     mutationFn: (input: { entityId: string; label: string; startDate: string; endDate: string }) =>
       api.post<Period>("/periods", input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["periods"] }),
+  });
+}
+
+/**
+ * Suppression d'une période.
+ *
+ * Tout est invalidé, pas seulement la liste : les ratios, la tendance et les
+ * alertes de l'entité se lisaient contre cette période, et l'API recalcule
+ * les périodes suivantes en cascade.
+ */
+export function useDeletePeriod() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (periodId: string) => api.delete<void>(`/periods/${periodId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["periods"] });
+      queryClient.invalidateQueries({ queryKey: ["ratios"] });
+      queryClient.invalidateQueries({ queryKey: ["trend"] });
+      queryClient.invalidateQueries({ queryKey: ["alerts"] });
+    },
   });
 }
 
@@ -317,6 +338,25 @@ export function useBalanceAgee(entityId: string | null, sens: SensTiers, delai: 
   });
 }
 
+/**
+ * Écritures du grand livre d'un compte ou d'une racine de compte.
+ *
+ * `actif` laisse l'appelant décider du moment de la requête : le détail ne
+ * s'ouvre qu'à la demande, et un compte de banque à plusieurs milliers de
+ * lignes n'a aucune raison d'être chargé tant que personne ne l'a déplié.
+ */
+export function useEcritures(entityId: string | null, compte: string | null, actif = true) {
+  return useQuery<EcrituresCompte>({
+    queryKey: ["ecritures", entityId, compte],
+    queryFn: () =>
+      api.get(`/analysis/ecritures?entityId=${entityId}&compte=${encodeURIComponent(compte ?? "")}`),
+    enabled: actif && Boolean(entityId) && Boolean(compte) && (compte ?? "").length >= 2,
+    // Le grand livre est immuable après import : inutile de le redemander à
+    // chaque ouverture du panneau.
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useConcentration(entityId: string | null, sens: SensTiers) {
   return useQuery<Concentration>({
     queryKey: ["concentration", entityId, sens],
@@ -388,6 +428,23 @@ interface EntreeAction {
   echeance?: string;
 }
 
+/**
+ * Modification d'une action. Les champs facultatifs acceptent `null`, qui
+ * efface : sans lui, une cible ou une échéance posée par erreur resterait
+ * pour toujours, l'absence de champ voulant dire « ne touche pas ».
+ */
+interface ModificationAction {
+  constat?: string;
+  action?: string;
+  ratioId?: string | null;
+  valeurInitiale?: number | null;
+  valeurCible?: number | null;
+  impactEstime?: number | null;
+  responsable?: string | null;
+  echeance?: string | null;
+  statut?: ActionStatus;
+}
+
 function invaliderActions(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: ["actions"] });
   queryClient.invalidateQueries({ queryKey: ["actions-synthese"] });
@@ -404,7 +461,7 @@ export function useCreateAction() {
 export function useUpdateAction() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...input }: Partial<EntreeAction> & { id: string; statut?: ActionStatus }) =>
+    mutationFn: ({ id, ...input }: ModificationAction & { id: string }) =>
       api.patch<ActionPlan>(`/actions/${id}`, input),
     onSuccess: () => invaliderActions(queryClient),
   });

@@ -184,6 +184,76 @@ export class AnalysisService {
     };
   }
 
+  /**
+   * Écritures du grand livre pour un compte donné.
+   *
+   * C'est le dernier échelon du « pourquoi » : après l'agrégat puis le compte,
+   * la pièce elle-même. Le nombre de lignes est borné et le total renvoyé à
+   * part, pour qu'un compte de banque à quinze mille mouvements ne fasse pas
+   * tomber la page tout en restant honnête sur ce qu'il montre.
+   */
+  async ecrituresDuCompte(
+    organizationId: string,
+    entityId: string,
+    compte: string,
+    options: { debut?: Date; fin?: Date; limite?: number } = {}
+  ) {
+    const entite = await this.entitiesService.getOrThrow(organizationId, entityId);
+    const limite = Math.min(Math.max(options.limite ?? 200, 1), 1000);
+
+    const where = {
+      entityId,
+      accountCode: { startsWith: compte },
+      ...(options.debut || options.fin
+        ? {
+            entryDate: {
+              ...(options.debut ? { gte: options.debut } : {}),
+              ...(options.fin ? { lte: options.fin } : {}),
+            },
+          }
+        : {}),
+    };
+
+    const [lignes, total, sommes] = await Promise.all([
+      this.prisma.ledgerEntry.findMany({
+        where,
+        orderBy: [{ entryDate: "desc" }, { entryNum: "desc" }],
+        take: limite,
+      }),
+      this.prisma.ledgerEntry.count({ where }),
+      this.prisma.ledgerEntry.aggregate({ where, _sum: { debit: true, credit: true } }),
+    ]);
+
+    const debitTotal = this.ratiosService.toNumber(sommes._sum.debit ?? 0);
+    const creditTotal = this.ratiosService.toNumber(sommes._sum.credit ?? 0);
+
+    return {
+      entityId,
+      currency: entite.currency,
+      compte,
+      total,
+      affichees: lignes.length,
+      debitTotal,
+      creditTotal,
+      solde: Math.round((debitTotal - creditTotal) * 100) / 100,
+      ecritures: lignes.map((ligne) => ({
+        id: ligne.id,
+        journalCode: ligne.journalCode,
+        entryNum: ligne.entryNum,
+        entryDate: ligne.entryDate,
+        accountCode: ligne.accountCode,
+        accountLabel: ligne.accountLabel,
+        auxAccountCode: ligne.auxAccountCode,
+        auxAccountLabel: ligne.auxAccountLabel,
+        pieceRef: ligne.pieceRef,
+        label: ligne.label,
+        debit: this.ratiosService.toNumber(ligne.debit),
+        credit: this.ratiosService.toNumber(ligne.credit),
+        lettering: ligne.lettering,
+      })),
+    };
+  }
+
   private async ecrituresTiers(entityId: string, debut?: Date, fin?: Date): Promise<EcritureTiers[]> {
     const lignes = await this.prisma.ledgerEntry.findMany({
       where: {

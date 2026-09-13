@@ -8,6 +8,7 @@ import {
   IsString,
   MaxLength,
   MinLength,
+  ValidateIf,
 } from "class-validator";
 import { RATIO_IDS } from "../../ratios/engine";
 
@@ -56,6 +57,13 @@ export class CreateActionPlanDto {
   echeance?: string;
 }
 
+/**
+ * Modification partielle d'une action.
+ *
+ * Les champs facultatifs acceptent `null` en plus d'une valeur : c'est ce qui
+ * permet de retirer une cible ou une échéance posée par erreur. Absent veut
+ * dire « ne touche pas », `null` veut dire « efface » — cf. mise-a-jour.ts.
+ */
 export class UpdateActionPlanDto {
   @IsOptional()
   @IsString()
@@ -70,29 +78,35 @@ export class UpdateActionPlanDto {
   action?: string;
 
   @IsOptional()
+  @ValidateIf((_, valeur) => valeur !== null)
   @IsIn(RATIO_IDS, { message: "Ce ratio n'existe pas dans le moteur de calcul." })
-  ratioId?: string;
+  ratioId?: string | null;
 
   @IsOptional()
+  @ValidateIf((_, valeur) => valeur !== null)
   @IsNumber()
-  valeurInitiale?: number;
+  valeurInitiale?: number | null;
 
   @IsOptional()
+  @ValidateIf((_, valeur) => valeur !== null)
   @IsNumber()
-  valeurCible?: number;
+  valeurCible?: number | null;
 
   @IsOptional()
+  @ValidateIf((_, valeur) => valeur !== null)
   @IsNumber()
-  impactEstime?: number;
+  impactEstime?: number | null;
 
   @IsOptional()
+  @ValidateIf((_, valeur) => valeur !== null)
   @IsString()
   @MaxLength(120)
-  responsable?: string;
+  responsable?: string | null;
 
   @IsOptional()
+  @ValidateIf((_, valeur) => valeur !== null)
   @IsDateString()
-  echeance?: string;
+  echeance?: string | null;
 
   @IsOptional()
   @IsEnum(ActionStatus)

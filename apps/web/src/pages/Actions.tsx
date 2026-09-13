@@ -8,7 +8,13 @@ import {
   useUpdateAction,
 } from "../api/hooks";
 import { ApiError } from "../api/client";
-import { RATIO_CATALOG } from "../lib/ratioCatalog";
+import { EntetePage, EtatVide, SqueletteTableau, SqueletteTuiles, Zone } from "../components/etats";
+import {
+  FormulaireAction,
+  VALEURS_VIDES,
+  valeursDe,
+  type ValeursAction,
+} from "../components/FormulaireAction";
 import { formatCurrency, formatDate } from "../lib/format";
 import { useAuth } from "../context/AuthContext";
 import type { ActionPlan, ActionStatus } from "../api/types";
@@ -21,25 +27,13 @@ const LIBELLE_STATUT: Record<ActionStatus, string> = {
 };
 
 const COULEUR_STATUT: Record<ActionStatus, string> = {
-  A_FAIRE: "text-ink/60 bg-black/5",
+  A_FAIRE: "text-ink/60 bg-ink/5",
   EN_COURS: "text-warning bg-warning/10",
   FAITE: "text-success bg-success/10",
-  ABANDONNEE: "text-ink/40 bg-black/5",
+  ABANDONNEE: "text-ink/40 bg-ink/5",
 };
 
 const STATUTS: ActionStatus[] = ["A_FAIRE", "EN_COURS", "FAITE", "ABANDONNEE"];
-
-const FORMULAIRE_VIDE = {
-  constat: "",
-  action: "",
-  entityId: "",
-  ratioId: "",
-  valeurInitiale: "",
-  valeurCible: "",
-  impactEstime: "",
-  responsable: "",
-  echeance: "",
-};
 
 /**
  * Barre d'avancement d'une action vers sa cible. La progression peut sortir
@@ -54,7 +48,7 @@ function Avancement({ action }: { action: ActionPlan }) {
   const largeur = progression === null ? 0 : Math.min(100, Math.max(0, progression * 100));
   const couleur =
     progression === null
-      ? "bg-black/10"
+      ? "bg-ink/10"
       : avancement.cibleAtteinte
         ? "bg-success"
         : progression < 0
@@ -72,7 +66,7 @@ function Avancement({ action }: { action: ActionPlan }) {
           {progression === null ? "—" : `${Math.round(progression * 100)} %`}
         </span>
       </div>
-      <div className="h-1.5 rounded-full bg-black/5 overflow-hidden">
+      <div className="h-1.5 rounded-full bg-ink/5 overflow-hidden">
         <div className={`h-full rounded-full ${couleur}`} style={{ width: `${largeur}%` }} />
       </div>
       <div className="text-xs text-ink/40 font-mono mt-1">
@@ -90,73 +84,103 @@ export function ActionsPage() {
   const { user } = useAuth();
   const { data: entities } = useEntities();
   const [filtre, setFiltre] = useState<ActionStatus | "">("");
-  const { data: actions } = useActions(undefined, filtre || undefined);
+  const { data: actions, isLoading, error, refetch } = useActions(undefined, filtre || undefined);
   const { data: synthese } = useSyntheseActions();
 
   const createAction = useCreateAction();
   const updateAction = useUpdateAction();
   const deleteAction = useDeleteAction();
 
-  const [form, setForm] = useState(FORMULAIRE_VIDE);
   const [ouvert, setOuvert] = useState(false);
+  const [enEdition, setEnEdition] = useState<ActionPlan | null>(null);
+  // Une suppression est définitive et emporte l'historique de l'action : on
+  // demande confirmation sur la ligne elle-même, sans boîte de dialogue qui
+  // masquerait ce qu'on est en train de supprimer.
+  const [aSupprimer, setASupprimer] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
 
   const peutEcrire = user?.role === "ADMIN" || user?.role === "DAF" || user?.role === "CONTROLEUR";
   const peutSupprimer = user?.role === "ADMIN" || user?.role === "DAF";
 
+  /** À la création, un champ vide est simplement omis. */
   const nombre = (valeur: string) => (valeur.trim() === "" ? undefined : Number(valeur));
+  /** À la modification, un champ vidé doit être effacé : c'est `null`. */
+  const nombreOuVide = (valeur: string) => (valeur.trim() === "" ? null : Number(valeur));
 
-  async function soumettre(e: React.FormEvent) {
-    e.preventDefault();
+  async function creer(valeurs: ValeursAction) {
     setErreur(null);
     try {
       await createAction.mutateAsync({
-        constat: form.constat,
-        action: form.action,
-        entityId: form.entityId || undefined,
-        ratioId: form.ratioId || undefined,
-        valeurInitiale: nombre(form.valeurInitiale),
-        valeurCible: nombre(form.valeurCible),
-        impactEstime: nombre(form.impactEstime),
-        responsable: form.responsable || undefined,
-        echeance: form.echeance ? new Date(form.echeance).toISOString() : undefined,
+        constat: valeurs.constat,
+        action: valeurs.action,
+        entityId: valeurs.entityId || undefined,
+        ratioId: valeurs.ratioId || undefined,
+        valeurInitiale: nombre(valeurs.valeurInitiale),
+        valeurCible: nombre(valeurs.valeurCible),
+        impactEstime: nombre(valeurs.impactEstime),
+        responsable: valeurs.responsable || undefined,
+        echeance: valeurs.echeance ? new Date(valeurs.echeance).toISOString() : undefined,
       });
-      setForm(FORMULAIRE_VIDE);
       setOuvert(false);
     } catch (err) {
       setErreur(err instanceof ApiError ? err.message : "Création impossible.");
     }
   }
 
+  async function enregistrer(valeurs: ValeursAction) {
+    if (!enEdition) return;
+    setErreur(null);
+    try {
+      await updateAction.mutateAsync({
+        id: enEdition.id,
+        constat: valeurs.constat,
+        action: valeurs.action,
+        ratioId: valeurs.ratioId || null,
+        valeurInitiale: nombreOuVide(valeurs.valeurInitiale),
+        valeurCible: nombreOuVide(valeurs.valeurCible),
+        impactEstime: nombreOuVide(valeurs.impactEstime),
+        responsable: valeurs.responsable || null,
+        echeance: valeurs.echeance ? new Date(valeurs.echeance).toISOString() : null,
+      });
+      setEnEdition(null);
+    } catch (err) {
+      setErreur(err instanceof ApiError ? err.message : "Modification impossible.");
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Plan d&apos;action</h1>
-          <p className="text-sm text-ink/50">
-            Une recommandation non tracée n&apos;est pas un conseil, c&apos;est une conversation.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <select
-            className="input w-44"
-            value={filtre}
-            onChange={(e) => setFiltre(e.target.value as ActionStatus | "")}
+      <EntetePage
+        titre="Plan d'action"
+        sousTitre="Une recommandation non tracée n'est pas un conseil, c'est une conversation."
+      >
+        <select
+          className="input w-44"
+          value={filtre}
+          aria-label="Filtrer par statut"
+          onChange={(e) => setFiltre(e.target.value as ActionStatus | "")}
+        >
+          <option value="">Tous les statuts</option>
+          {STATUTS.map((statut) => (
+            <option key={statut} value={statut}>
+              {LIBELLE_STATUT[statut]}
+            </option>
+          ))}
+        </select>
+        {peutEcrire && (
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => {
+              setOuvert(!ouvert);
+              setEnEdition(null);
+              setErreur(null);
+            }}
           >
-            <option value="">Tous les statuts</option>
-            {STATUTS.map((statut) => (
-              <option key={statut} value={statut}>
-                {LIBELLE_STATUT[statut]}
-              </option>
-            ))}
-          </select>
-          {peutEcrire && (
-            <button type="button" className="btn-primary" onClick={() => setOuvert(!ouvert)}>
-              {ouvert ? "Annuler" : "Nouvelle action"}
-            </button>
-          )}
-        </div>
-      </div>
+            {ouvert ? "Annuler" : "Nouvelle action"}
+          </button>
+        )}
+      </EntetePage>
 
       {synthese && synthese.total > 0 && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -194,163 +218,60 @@ export function ActionsPage() {
       )}
 
       {ouvert && (
-        <form onSubmit={soumettre} className="card space-y-4">
-          <h2 className="font-display text-lg font-semibold">Nouvelle action</h2>
-
-          <div>
-            <label className="label" htmlFor="constat">
-              Constat — ce qu&apos;on a observé
-            </label>
-            <input
-              id="constat"
-              className="input"
-              placeholder="Le DSO est à 83 jours, contre 45 dans le secteur"
-              value={form.constat}
-              onChange={(e) => setForm({ ...form, constat: e.target.value })}
-              required
-              minLength={3}
-            />
-          </div>
-
-          <div>
-            <label className="label" htmlFor="action">
-              Action — ce qu&apos;on fait
-            </label>
-            <input
-              id="action"
-              className="input"
-              placeholder="Relancer à J+30 et passer les trois plus gros clients en prélèvement"
-              value={form.action}
-              onChange={(e) => setForm({ ...form, action: e.target.value })}
-              required
-              minLength={3}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-            <div>
-              <label className="label" htmlFor="entite">
-                Entité
-              </label>
-              <select
-                id="entite"
-                className="input"
-                value={form.entityId}
-                onChange={(e) => setForm({ ...form, entityId: e.target.value })}
-              >
-                <option value="">— Aucune —</option>
-                {entities?.map((entity) => (
-                  <option key={entity.id} value={entity.id}>
-                    {entity.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="label" htmlFor="indicateur">
-                Indicateur suivi
-              </label>
-              <select
-                id="indicateur"
-                className="input"
-                value={form.ratioId}
-                onChange={(e) => setForm({ ...form, ratioId: e.target.value })}
-              >
-                <option value="">— Aucun —</option>
-                {RATIO_CATALOG.map((ratio) => (
-                  <option key={ratio.id} value={ratio.id}>
-                    {ratio.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="label" htmlFor="impact">
-                Impact estimé
-              </label>
-              <input
-                id="impact"
-                type="number"
-                step="any"
-                className="input"
-                placeholder="84000"
-                value={form.impactEstime}
-                onChange={(e) => setForm({ ...form, impactEstime: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="label" htmlFor="initiale">
-                Valeur initiale
-              </label>
-              <input
-                id="initiale"
-                type="number"
-                step="any"
-                className="input"
-                placeholder="83"
-                value={form.valeurInitiale}
-                onChange={(e) => setForm({ ...form, valeurInitiale: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="label" htmlFor="cible">
-                Valeur cible
-              </label>
-              <input
-                id="cible"
-                type="number"
-                step="any"
-                className="input"
-                placeholder="65"
-                value={form.valeurCible}
-                onChange={(e) => setForm({ ...form, valeurCible: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="label" htmlFor="echeance">
-                Échéance
-              </label>
-              <input
-                id="echeance"
-                type="date"
-                className="input"
-                value={form.echeance}
-                onChange={(e) => setForm({ ...form, echeance: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="label" htmlFor="responsable">
-                Responsable
-              </label>
-              <input
-                id="responsable"
-                className="input"
-                value={form.responsable}
-                onChange={(e) => setForm({ ...form, responsable: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <p className="text-xs text-ink/40">
-            L&apos;indicateur suivi est relu automatiquement sur la dernière période de
-            l&apos;entité : c&apos;est ce qui permet de dire au point suivant si la cible a été
-            atteinte. Il demande donc de préciser une entité.
-          </p>
-
-          {erreur && <p className="text-critical text-sm">{erreur}</p>}
-
-          <button type="submit" className="btn-primary" disabled={createAction.isPending}>
-            {createAction.isPending ? "Enregistrement…" : "Enregistrer l'action"}
-          </button>
-        </form>
+        <FormulaireAction
+          titre="Nouvelle action"
+          libelleBouton="Enregistrer l'action"
+          valeursInitiales={VALEURS_VIDES}
+          entities={entities}
+          enCours={createAction.isPending}
+          erreur={erreur}
+          onValider={(valeurs) => void creer(valeurs)}
+          onAnnuler={() => {
+            setOuvert(false);
+            setErreur(null);
+          }}
+        />
       )}
 
+      {enEdition && (
+        <FormulaireAction
+          /* La clé remonte le formulaire quand on passe d'une action à une
+             autre : sans elle, React garderait l'état de la précédente. */
+          key={enEdition.id}
+          titre="Modifier l'action"
+          libelleBouton="Enregistrer les modifications"
+          valeursInitiales={valeursDe(enEdition)}
+          entities={entities}
+          enCours={updateAction.isPending}
+          erreur={erreur}
+          modeEdition
+          nomEntite={enEdition.entityName}
+          onValider={(valeurs) => void enregistrer(valeurs)}
+          onAnnuler={() => {
+            setEnEdition(null);
+            setErreur(null);
+          }}
+        />
+      )}
+
+      <Zone
+        chargement={isLoading}
+        erreur={error}
+        onReessayer={() => void refetch()}
+        quoi="le plan d'action"
+        squelette={
+          <div className="space-y-6">
+            <SqueletteTuiles />
+            <SqueletteTableau lignes={4} colonnes={3} />
+          </div>
+        }
+      >
       {actions && actions.length === 0 && (
-        <div className="card text-sm text-ink/50">
-          Aucune action enregistrée. Une recommandation devient mesurable quand on écrit le constat,
-          l&apos;action, son impact chiffré et son échéance — et que l&apos;outil relit
-          l&apos;indicateur au point suivant.
-        </div>
+        <EtatVide titre="Aucune action enregistrée">
+          Une recommandation devient mesurable quand on écrit le constat, l&apos;action, son impact
+          chiffré et son échéance — et que l&apos;outil relit l&apos;indicateur au point suivant.
+          {filtre && " Aucune action ne porte ce statut : essayez « Tous les statuts »."}
+        </EtatVide>
       )}
 
       {actions && actions.length > 0 && (
@@ -430,15 +351,48 @@ export function ActionsPage() {
                           </option>
                         ))}
                       </select>
-                      {peutSupprimer && (
-                        <button
-                          type="button"
-                          className="text-xs text-ink/40 hover:text-critical"
-                          onClick={() => deleteAction.mutate(action.id)}
-                        >
-                          Supprimer
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        className="text-xs text-ink/40 hover:text-primary"
+                        onClick={() => {
+                          setEnEdition(action);
+                          setOuvert(false);
+                          setErreur(null);
+                          setASupprimer(null);
+                        }}
+                      >
+                        Modifier
+                      </button>
+                      {peutSupprimer &&
+                        (aSupprimer === action.id ? (
+                          <span className="flex items-center gap-2 text-xs">
+                            <button
+                              type="button"
+                              className="text-critical font-medium"
+                              onClick={() => {
+                                deleteAction.mutate(action.id);
+                                setASupprimer(null);
+                              }}
+                            >
+                              Confirmer
+                            </button>
+                            <button
+                              type="button"
+                              className="text-ink/40"
+                              onClick={() => setASupprimer(null)}
+                            >
+                              Non
+                            </button>
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="text-xs text-ink/40 hover:text-critical"
+                            onClick={() => setASupprimer(action.id)}
+                          >
+                            Supprimer
+                          </button>
+                        ))}
                     </div>
                   )}
                 </div>
@@ -447,6 +401,7 @@ export function ActionsPage() {
           ))}
         </div>
       )}
+      </Zone>
     </div>
   );
 }
