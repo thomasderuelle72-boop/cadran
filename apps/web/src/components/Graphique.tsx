@@ -70,11 +70,15 @@ export function useCouleursGraphique(): CouleursGraphique {
 
   useEffect(() => {
     const relire = () => setCouleurs(lireCouleurs());
-    // Un choix explicite pose data-theme sur la racine…
+    // Deux attributs portent l'apparence, et il faut les deux : data-theme
+    // pour le mode clair/sombre, data-palette pour la famille de couleurs.
+    // N'observer que le premier laissait les courbes peintes aux couleurs de
+    // la palette précédente après un changement de palette — le reste de la
+    // page changeait, les graphiques non.
     const observateur = new MutationObserver(relire);
     observateur.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ["data-theme"],
+      attributeFilter: ["data-theme", "data-palette"],
     });
     // …et le réglage « système » n'en pose aucun : il faut écouter l'OS.
     const media = window.matchMedia("(prefers-color-scheme: dark)");

@@ -67,7 +67,12 @@ function Marque() {
     <div className="flex items-center gap-2.5">
       <span
         className="w-7 h-7 rounded-full flex-none"
-        style={{ background: "conic-gradient(from -90deg, #9C5F26 0 25%, #E5E7DD 25% 100%)" }}
+        style={{
+          // La marque suit les tokens : figée en cuivre, elle devenait un
+          // corps étranger dès qu'on changeait de palette.
+          background:
+            "conic-gradient(from -90deg, rgb(var(--accent)) 0 25%, rgb(var(--surface-2)) 25% 100%)",
+        }}
         aria-hidden="true"
       />
       <span className="font-display font-semibold text-lg leading-none">Cadran</span>

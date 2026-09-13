@@ -38,6 +38,16 @@
     --serie-1: 0 121 92;
     --serie-2: 162 94 34;
 
+    /*
+     * Géométrie. Elle fait autant que la couleur pour l'identité d'un thème :
+     * un rayon et une ombre identiques d'une palette à l'autre les feraient
+     * toutes se ressembler, quelles que soient les teintes.
+     */
+    --rayon-carte: 0.75rem;
+    --rayon-controle: 0.5rem;
+    --force-filet: 0.1;
+    --ombre-carte: none;
+
     color-scheme: light;
   }
 
@@ -54,7 +64,7 @@
    * échouerait silencieusement en laissant l'application en clair.
    */
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
+    :root:not([data-palette]):not([data-theme="light"]) {
       --paper: 18 22 18;
       --surface: 26 30 25;
       --surface-2: 34 39 32;
@@ -80,7 +90,7 @@
     }
   }
 
-  :root[data-theme="dark"] {
+  :root:not([data-palette])[data-theme="dark"] {
     --paper: 18 22 18;
     --surface: 26 30 25;
     --surface-2: 34 39 32;
@@ -101,6 +111,200 @@
 
     --serie-1: 30 155 120;
     --serie-2: 196 132 47;
+
+    color-scheme: dark;
+  }
+
+  /* ======================================================================
+   * Palettes
+   *
+   * Le thème a deux axes indépendants : la *palette* (data-palette) dit
+   * quelle famille de couleurs, le *mode* (data-theme) dit clair ou sombre.
+   * Les croiser dans un seul attribut aurait produit six valeurs à tenir en
+   * correspondance ; séparés, chacun se choisit sans toucher à l'autre.
+   *
+   * Cadran est la palette par défaut et ne pose aucun attribut, exactement
+   * comme « système » n'en pose aucun pour le mode : les règles ci-dessus,
+   * sur :root nu, sont donc le socle, et une page chargée sans JavaScript
+   * reste habillée.
+   *
+   * Conséquence à connaître : les blocs sombres de Cadran portent
+   * :not([data-palette]). Si la bascule posait data-palette="cadran" au lieu
+   * de le retirer, ils cesseraient de s'appliquer et le sombre reviendrait
+   * au clair. La bascule retire donc l'attribut — cf. BasculeTheme.tsx.
+   *
+   * Chaque palette change aussi la géométrie, pas seulement la teinte : un
+   * thème qui ne fait que recolorer se reconnaît tout de suite pour ce qu'il
+   * est, une variante. Registre pince les angles et marque les filets, à la
+   * façon d'un livre-journal ; Ardoise arrondit et adoucit.
+   * ====================================================================== */
+
+  /* --- Registre : papier, encre bleue, oxblood ------------------------- */
+  :root[data-palette="registre"] {
+    --paper: 245 241 233;
+    --surface: 251 248 241;
+    --surface-2: 240 235 224;
+    --ink: 26 32 44;
+    --rule: 26 32 44;
+
+    --primary: 17 78 116;
+    --primary-soft: 214 228 238;
+    --accent: 140 47 57;
+    --accent-soft: 240 219 219;
+
+    --success: 32 106 74;
+    --success-soft: 214 235 224;
+    --warning: 150 106 20;
+    --warning-soft: 243 231 205;
+    --critical: 163 57 47;
+    --critical-soft: 244 220 215;
+
+    /* Couple validé : ΔE 18,9 en vision protanope sur fond #FBF8F1. */
+    --serie-1: 17 113 166;
+    --serie-2: 168 57 47;
+
+    --rayon-carte: 0.25rem;
+    --rayon-controle: 0.2rem;
+    --force-filet: 0.16;
+    --ombre-carte: none;
+
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root[data-palette="registre"]:not([data-theme="light"]) {
+      --paper: 17 21 28;
+      --surface: 23 28 36;
+      --surface-2: 31 37 47;
+      --ink: 228 232 238;
+      --rule: 228 232 238;
+
+      --primary: 106 176 214;
+      --primary-soft: 22 45 62;
+      --accent: 216 122 122;
+      --accent-soft: 60 30 33;
+
+      --success: 94 186 146;
+      --success-soft: 22 51 41;
+      --warning: 213 170 74;
+      --warning-soft: 55 46 22;
+      --critical: 224 130 116;
+      --critical-soft: 60 31 28;
+
+      /* Couple validé : ΔE 16,9 en vision protanope sur fond #171C24. */
+      --serie-1: 52 146 198;
+      --serie-2: 208 106 82;
+
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-palette="registre"][data-theme="dark"] {
+    --paper: 17 21 28;
+    --surface: 23 28 36;
+    --surface-2: 31 37 47;
+    --ink: 228 232 238;
+    --rule: 228 232 238;
+
+    --primary: 106 176 214;
+    --primary-soft: 22 45 62;
+    --accent: 216 122 122;
+    --accent-soft: 60 30 33;
+
+    --success: 94 186 146;
+    --success-soft: 22 51 41;
+    --warning: 213 170 74;
+    --warning-soft: 55 46 22;
+    --critical: 224 130 116;
+    --critical-soft: 60 31 28;
+
+    --serie-1: 52 146 198;
+    --serie-2: 208 106 82;
+
+    color-scheme: dark;
+  }
+
+  /* --- Ardoise : gris froid, indigo, ambre ----------------------------- */
+  :root[data-palette="ardoise"] {
+    --paper: 244 245 247;
+    --surface: 255 255 255;
+    --surface-2: 247 248 250;
+    --ink: 24 27 34;
+    --rule: 24 27 34;
+
+    --primary: 79 70 199;
+    --primary-soft: 226 224 250;
+    --accent: 176 106 16;
+    --accent-soft: 247 232 205;
+
+    --success: 30 116 80;
+    --success-soft: 218 239 228;
+    --warning: 152 112 18;
+    --warning-soft: 246 236 208;
+    --critical: 187 52 52;
+    --critical-soft: 250 223 223;
+
+    /* Couple validé : ΔE 29,5 en vision protanope sur fond blanc. */
+    --serie-1: 79 70 199;
+    --serie-2: 176 106 16;
+
+    --rayon-carte: 1rem;
+    --rayon-controle: 0.6rem;
+    --force-filet: 0.07;
+    --ombre-carte: 0 1px 2px rgb(24 27 34 / 0.04), 0 8px 24px -16px rgb(24 27 34 / 0.28);
+
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root[data-palette="ardoise"]:not([data-theme="light"]) {
+      --paper: 16 18 23;
+      --surface: 26 29 36;
+      --surface-2: 34 38 47;
+      --ink: 232 234 240;
+      --rule: 232 234 240;
+
+      --primary: 152 145 245;
+      --primary-soft: 38 35 76;
+      --accent: 214 158 74;
+      --accent-soft: 58 44 22;
+
+      --success: 92 190 145;
+      --success-soft: 23 54 42;
+      --warning: 214 172 78;
+      --warning-soft: 56 47 23;
+      --critical: 230 126 126;
+      --critical-soft: 63 30 30;
+
+      /* Couple validé : ΔE 28,1 en vision protanope sur fond #1A1D24. */
+      --serie-1: 128 120 232;
+      --serie-2: 188 134 41;
+
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-palette="ardoise"][data-theme="dark"] {
+    --paper: 16 18 23;
+    --surface: 26 29 36;
+    --surface-2: 34 38 47;
+    --ink: 232 234 240;
+    --rule: 232 234 240;
+
+    --primary: 152 145 245;
+    --primary-soft: 38 35 76;
+    --accent: 214 158 74;
+    --accent-soft: 58 44 22;
+
+    --success: 92 190 145;
+    --success-soft: 23 54 42;
+    --warning: 214 172 78;
+    --warning-soft: 56 47 23;
+    --critical: 230 126 126;
+    --critical-soft: 63 30 30;
+
+    --serie-1: 128 120 232;
+    --serie-2: 188 134 41;
 
     color-scheme: dark;
   }
@@ -151,27 +355,44 @@
    * douze pages, et `panneau-discret` sert aux blocs qui accompagnent sans
    * réclamer l'attention.
    */
+  /*
+   * Rayon, filet et ombre viennent des variables de palette et non de classes
+   * Tailwind figées : c'est ce qui permet à un thème de changer de géométrie,
+   * pas seulement de teinte. Une valeur en dur ici annulerait l'effet.
+   */
   .card,
   .panneau {
-    @apply bg-surface border border-rule/10 rounded-xl p-4 sm:p-5;
+    background-color: rgb(var(--surface));
+    border: 1px solid rgb(var(--rule) / var(--force-filet));
+    border-radius: var(--rayon-carte);
+    box-shadow: var(--ombre-carte);
+    @apply p-4 sm:p-5;
   }
 
   .panneau-discret {
-    @apply bg-surface-2 border border-rule/[0.07] rounded-xl p-4 sm:p-5;
+    background-color: rgb(var(--surface-2));
+    border: 1px solid rgb(var(--rule) / calc(var(--force-filet) * 0.7));
+    border-radius: var(--rayon-carte);
+    @apply p-4 sm:p-5;
   }
 
   .btn-primary {
-    @apply bg-primary text-paper rounded-lg px-4 py-2 text-sm font-medium transition
+    border-radius: var(--rayon-controle);
+    @apply bg-primary text-paper px-4 py-2 text-sm font-medium transition
       hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
-    @apply bg-surface border border-rule/15 text-ink rounded-lg px-4 py-2 text-sm font-medium
+    border-radius: var(--rayon-controle);
+    border: 1px solid rgb(var(--rule) / calc(var(--force-filet) * 1.5));
+    @apply bg-surface text-ink px-4 py-2 text-sm font-medium
       transition hover:bg-surface-2 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .input {
-    @apply w-full rounded-lg border border-rule/15 bg-surface text-ink px-3 py-2 text-sm
+    border-radius: var(--rayon-controle);
+    border: 1px solid rgb(var(--rule) / calc(var(--force-filet) * 1.5));
+    @apply w-full bg-surface text-ink px-3 py-2 text-sm
       placeholder:text-ink/35 focus:outline-none focus:ring-2 focus:ring-primary/40;
   }
 

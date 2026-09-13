@@ -32,7 +32,12 @@ export function Login() {
         <div className="flex items-center gap-2 mb-8 justify-center">
           <span
             className="w-7 h-7 rounded-full flex-none"
-            style={{ background: "conic-gradient(from -90deg, #9C5F26 0 25%, #E5E7DD 25% 100%)" }}
+            style={{
+          // La marque suit les tokens : figée en cuivre, elle devenait un
+          // corps étranger dès qu'on changeait de palette.
+          background:
+            "conic-gradient(from -90deg, rgb(var(--accent)) 0 25%, rgb(var(--surface-2)) 25% 100%)",
+        }}
           />
           <span className="font-display font-semibold text-2xl">Cadran</span>
         </div>
