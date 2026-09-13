@@ -1,6 +1,6 @@
 # Cadran — MVP + V1
 
-Plateforme de pilotage financier pour l'entreprise : import de données comptables, calcul automatique de 19 ratios financiers, tableau de bord, budget vs réalisé, alertes, consolidation multi-entités et export PDF/Excel. Voir le [cahier des charges complet](../) pour la vision produit et la roadmap.
+Plateforme de pilotage financier pour l'entreprise : import de données comptables, calcul automatique de 19 ratios financiers, tableau de bord, budget vs réalisé, alertes, consolidation multi-entités et export PDF/Excel.
 
 ## Stack
 
@@ -12,7 +12,6 @@ Plateforme de pilotage financier pour l'entreprise : import de données comptabl
 Prérequis : Node 20+, et PostgreSQL 16 — soit déjà installé, soit via Docker.
 
 ```bash
-cd cadran
 ./demarrer.sh
 ```
 
@@ -108,7 +107,7 @@ Le jeu de démonstration contient déjà une entité alimentée de cette façon,
 
 ## Vérifications automatiques
 
-La CI (`.github/workflows/cadran-ci.yml`) lance sur chaque PR touchant `cadran/` : ESLint sur les deux applications, les tests unitaires des moteurs de calcul, puis les builds API et web (ce dernier incluant le typage TypeScript).
+La CI (`.github/workflows/ci.yml`) lance sur chaque PR : ESLint sur les deux applications, les tests unitaires des moteurs de calcul, puis les builds API et web (ce dernier incluant le typage TypeScript).
 
 ### Limites connues
 - Le pré-remplissage de trésorerie répartit le rythme de la dernière période en flux mensuels : il ne modélise ni les délais d'encaissement (DSO) ni la TVA. C'est un point de départ à ajuster, pas une prévision.
