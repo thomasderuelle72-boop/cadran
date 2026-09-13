@@ -8,7 +8,10 @@ import { ValidationPipe } from "@nestjs/common";
 import { AppModule } from "./app.module";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // rawBody conserve le corps brut des requêtes en plus du corps analysé.
+  // Le webhook Stripe en a besoin : sa signature porte sur les octets
+  // reçus, et un JSON re-sérialisé ne la vérifie plus.
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   app.enableCors();
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true })

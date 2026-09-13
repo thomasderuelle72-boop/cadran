@@ -200,6 +200,14 @@ async function main() {
     data: { name: "Atelier Nova Group", sector: "Industrie manufacturière", currency: "EUR" },
   });
 
+  // Le compte de démonstration reçoit la formule « Groupe » : il montre trois
+  // entités et la consolidation, et l'essai n'en autorise qu'une. Le laisser
+  // en essai donnerait une démonstration qui bute sur ses propres quotas,
+  // ce qui vend l'inverse de ce qu'on veut montrer.
+  await prisma.subscription.create({
+    data: { organizationId: organization.id, plan: "groupe", statut: "actif" },
+  });
+
   const passwordHash = await bcrypt.hash("CadranDemo123!", 10);
   await prisma.user.create({
     data: {

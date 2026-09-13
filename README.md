@@ -95,6 +95,17 @@ Si PostgreSQL tourne déjà en local sur un autre port, adaptez `DATABASE_URL` d
 - **Détail par compte** — sur la page Analyse, chaque poste se déplie en comptes et chaque compte en écritures du grand livre. C'est le dernier échelon du « pourquoi » : sous « charges de personnel : 412 000 € », les comptes, puis les pièces. Les écritures ne sont chargées qu'au dépliage, et le nombre affiché est borné, avec le total indiqué à côté.
 - **Corriger** — une action du plan se modifie entièrement (et pas seulement son statut) ; vider un champ facultatif l'efface. Une période s'efface depuis la page Import, qui rappelle aussi qu'un réimport *remplace* les lignes de la période visée — c'est la façon de corriger un fichier mal classé. Les suppressions demandent confirmation sur la ligne même, et les périodes postérieures sont recalculées puisque leur croissance se lisait contre celle qu'on retire.
 
+### Abonnements
+
+- **Quatre formules** — Essai (14 jours, sans carte), Indépendant, Cabinet, Groupe — décrites dans `apps/api/src/billing/plans.ts` avec leurs quotas : nombre d'entités, d'utilisateurs, de périodes, accès à la consolidation et à l'import FEC. Les quotas sont vérifiés avant l'écriture, jamais après : créer puis refuser laisserait un compte au-dessus de sa formule.
+- **Aucun montant dans le code.** Les prix vivent dans Stripe ; le catalogue ne connaît que le nom de la variable d'environnement qui porte l'identifiant de tarif. Un test le vérifie, parce que c'est le genre de règle qui se perd — et un prix dupliqué finit toujours par diverger de celui facturé, au détriment du client qui le découvre sur son relevé.
+- **L'accès s'accorde par webhook, jamais sur l'URL de retour.** Un client peut fermer l'onglet après avoir payé, et un autre peut appeler l'URL de succès sans payer. Les événements sont dédupliqués en base : Stripe garantit une livraison « au moins une fois », et rejouer un événement accorderait deux fois un changement de formule.
+- **Un impayé ne coupe pas l'accès.** Stripe relance la carte plusieurs jours ; fermer au premier échec punit un client solvable dont la carte a expiré. L'accès ne se ferme qu'à la résiliation effective. En revanche un abonnement dont le premier paiement n'a jamais abouti reste bloqué, et un état Stripe inconnu ferme la porte plutôt que de l'ouvrir par défaut.
+- **Sans clé Stripe, l'application fonctionne.** Elle démarre, prévient dans les journaux, accorde l'essai et refuse proprement toute souscription. C'est le mode attendu tant qu'aucune société n'est immatriculée : Stripe exige une identité vérifiée pour encaisser.
+- **Résiliation en ligne** assurée par le portail client Stripe, qui répond à l'obligation française de pouvoir résilier aussi simplement qu'on a souscrit.
+
+Les variables à renseigner le jour de l'ouverture sont documentées dans `apps/api/.env.example`.
+
 ## Essayer l'import FEC
 
 ```bash

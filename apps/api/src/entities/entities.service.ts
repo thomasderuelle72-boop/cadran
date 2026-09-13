@@ -1,10 +1,14 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateEntityDto } from "./dto/create-entity.dto";
+import { BillingService } from "../billing/billing.service";
 
 @Injectable()
 export class EntitiesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private billing: BillingService
+  ) {}
 
   list(organizationId: string) {
     return this.prisma.entity.findMany({
@@ -23,6 +27,14 @@ export class EntitiesService {
   async create(organizationId: string, dto: CreateEntityDto) {
     const existing = await this.prisma.entity.findFirst({ where: { organizationId, name: dto.name } });
     if (existing) throw new ConflictException("Une entité porte déjà ce nom dans votre organisation.");
+
+    // Le quota se vérifie avant d'écrire, et non après : créer puis refuser
+    // laisserait l'entité en base, et un compte au-dessus de sa formule.
+    await this.billing.exigerQuota(
+      organizationId,
+      "entites",
+      await this.prisma.entity.count({ where: { organizationId } })
+    );
 
     return this.prisma.entity.create({
       data: {

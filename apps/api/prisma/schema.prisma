@@ -64,6 +64,82 @@ model Organization {
   alertRules AlertRule[]
   auditLogs  AuditLog[]
   actionPlans ActionPlan[]
+  subscription Subscription?
+}
+
+enum PlanId {
+  essai
+  solo
+  cabinet
+  groupe
+}
+
+// Les statuts sont ceux de Stripe, traduits mais non réinventés : un second
+// vocabulaire obligerait à tenir une table de correspondance, qui finirait
+// par diverger au premier statut ajouté chez Stripe.
+enum StatutAbonnement {
+  essai
+  actif
+  impaye
+  resilie
+  incomplet
+}
+
+// L'abonnement d'une organisation.
+//
+// Il n'y a délibérément aucun prix ici : le montant facturé est celui que
+// Stripe applique au tarif référencé, et le dupliquer en base garantit qu'un
+// jour les deux diffèrent — au détriment du client, qui le découvre sur son
+// relevé.
+//
+// Les champs Stripe sont facultatifs parce qu'un essai n'a ni client ni
+// abonnement chez Stripe : il naît à l'inscription, sans qu'aucun moyen de
+// paiement n'ait été demandé.
+model Subscription {
+  id             String       @id @default(cuid())
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  plan   PlanId           @default(essai)
+  statut StatutAbonnement @default(essai)
+
+  stripeCustomerId     String? @unique
+  stripeSubscriptionId String? @unique
+  /// Tarif effectivement souscrit, pour détecter un changement de formule.
+  stripePriceId        String?
+
+  /// Fin de l'essai, ou fin de la période payée en cours.
+  finPeriode DateTime?
+  /// Posé quand le client résilie : l'accès court jusqu'à finPeriode.
+  resiliationDemandee Boolean @default(false)
+
+  // Assujettissement : un client professionnel avec numéro intracommunautaire
+  // valide relève de l'autoliquidation, un particulier de la TVA de son pays.
+  // Le numéro est conservé parce qu'il doit être reporté sur la facture.
+  numeroTva String?
+  paysTva   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([statut])
+}
+
+// Journal des événements Stripe déjà traités.
+//
+// Stripe garantit une livraison « au moins une fois » : le même événement
+// peut arriver deux fois, et le rejouer accorderait deux fois un changement
+// de formule ou un crédit. L'identifiant Stripe est unique ici, ce qui rend
+// le second passage inoffensif.
+model StripeEvent {
+  id        String   @id
+  type      String
+  recuLe    DateTime @default(now())
+  traiteLe  DateTime?
+  /// Renseigné si le traitement a échoué : garde la trace pour rejouer.
+  erreur    String?
+
+  @@index([type])
 }
 
 // Piste d'audit : trace chaque opération qui modifie des données, écrite par
