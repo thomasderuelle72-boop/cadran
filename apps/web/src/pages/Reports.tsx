@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { usePeriods } from "../api/hooks";
 import { downloadFile } from "../api/client";
+import { EntetePage, EtatVide, SqueletteTableau, Zone } from "../components/etats";
 import { formatDate } from "../lib/format";
 
 export function ReportsPage() {
-  const { data: periods, isLoading } = usePeriods();
+  const { data: periods, isLoading, error, refetch } = usePeriods();
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   async function handleDownload(periodId: string, label: string, format: "pdf" | "xlsx") {
@@ -21,20 +22,29 @@ export function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-semibold">Rapports</h1>
-        <p className="text-sm text-ink/50">Générez un rapport PDF ou Excel de synthèse pour chaque période.</p>
-      </div>
+      <EntetePage
+        titre="Rapports"
+        sousTitre="Générez un rapport PDF ou Excel de synthèse pour chaque période."
+      />
 
-      {isLoading && <p className="text-ink/50">Chargement…</p>}
-
-      {periods && periods.length === 0 && <p className="text-ink/50">Aucune période disponible pour le moment.</p>}
+      <Zone
+        chargement={isLoading}
+        erreur={error}
+        onReessayer={() => void refetch()}
+        quoi="les périodes"
+        squelette={<SqueletteTableau lignes={6} colonnes={4} />}
+      >
+      {periods && periods.length === 0 && (
+        <EtatVide titre="Aucune période" action={{ to: "/import", label: "Importer des données" }}>
+          Un rapport se génère par période : importez des données pour en produire un.
+        </EtatVide>
+      )}
 
       {periods && periods.length > 0 && (
-        <div className="card">
-          <table className="w-full text-sm">
+        <div className="card overflow-x-auto">
+          <table className="w-full text-sm min-w-[560px]">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-black/10">
+              <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
                 <th className="py-2">Entité</th>
                 <th className="py-2">Période</th>
                 <th className="py-2">Dates</th>
@@ -44,7 +54,7 @@ export function ReportsPage() {
             </thead>
             <tbody>
               {periods.map((p) => (
-                <tr key={p.id} className="border-b border-black/5 last:border-0">
+                <tr key={p.id} className="border-b border-rule/5 last:border-0">
                   <td className="py-2.5 text-ink/60">{p.entity?.name ?? "—"}</td>
                   <td className="py-2.5 font-medium">{p.label}</td>
                   <td className="py-2.5 text-ink/60">
@@ -73,6 +83,7 @@ export function ReportsPage() {
           </table>
         </div>
       )}
+      </Zone>
     </div>
   );
 }

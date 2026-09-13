@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useDiagnostic, useEntities, usePeriods } from "../api/hooks";
 import { EntitySelector } from "../components/EntitySelector";
+import { EntetePage, EtatVide, SqueletteCarte, SqueletteTuiles, Zone } from "../components/etats";
 import { formatCurrency } from "../lib/format";
 import type { ScoreRisque, ZoneScore } from "../api/types";
 
@@ -15,7 +16,7 @@ const COULEUR_ZONE: Record<ZoneScore, string> = {
   sain: "text-success bg-success/10",
   incertain: "text-warning bg-warning/10",
   danger: "text-critical bg-critical/10",
-  indisponible: "text-ink/50 bg-black/5",
+  indisponible: "text-ink/50 bg-ink/5",
 };
 
 const LIBELLE_POSTE: Record<string, string> = {
@@ -120,7 +121,7 @@ function CarteScore({ score }: { score: ScoreRisque }) {
         <div className="mt-3 overflow-x-auto">
           <table className="w-full text-xs min-w-[440px]">
             <thead>
-              <tr className="text-left uppercase tracking-wide text-ink/40 border-b border-black/10">
+              <tr className="text-left uppercase tracking-wide text-ink/40 border-b border-rule/10">
                 <th className="py-1.5">Composante</th>
                 <th className="py-1.5 text-right">Valeur</th>
                 <th className="py-1.5 text-right">Coefficient</th>
@@ -129,7 +130,7 @@ function CarteScore({ score }: { score: ScoreRisque }) {
             </thead>
             <tbody>
               {score.composantes.map((composante) => (
-                <tr key={composante.id} className="border-b border-black/5 last:border-0">
+                <tr key={composante.id} className="border-b border-rule/5 last:border-0">
                   <td className="py-1.5">
                     {composante.label}
                     <span className="block text-ink/40 font-mono">{composante.formule}</span>
@@ -170,45 +171,55 @@ export function DiagnosticPage() {
     if (!periods.some((p) => p.id === periodId)) setPeriodId(periods[periods.length - 1].id);
   }, [periods, periodId]);
 
-  const { data } = useDiagnostic(periodId);
+  const { data, isLoading, error, refetch } = useDiagnostic(periodId);
   const currency = data?.currency ?? "EUR";
   const seuil = data?.seuilRentabilite;
   const bfr = data?.bfrNormatif;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Diagnostic</h1>
-          <p className="text-sm text-ink/50">
-            Fragilité, point mort et besoin de financement du cycle.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <EntitySelector value={entityId} onChange={setEntityId} />
-          <select
-            className="input w-48"
-            value={periodId ?? ""}
-            onChange={(e) => setPeriodId(e.target.value || null)}
-          >
-            {periods?.map((period) => (
-              <option key={period.id} value={period.id}>
-                {period.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <EntetePage titre="Diagnostic" sousTitre="Fragilité, point mort et besoin de financement du cycle.">
+        <EntitySelector value={entityId} onChange={setEntityId} />
+        <select
+          className="input w-48"
+          value={periodId ?? ""}
+          aria-label="Période"
+          onChange={(e) => setPeriodId(e.target.value || null)}
+        >
+          {periods?.map((period) => (
+            <option key={period.id} value={period.id}>
+              {period.label}
+            </option>
+          ))}
+        </select>
+      </EntetePage>
 
       {!periodId && (
-        <div className="card text-sm text-ink/50">
-          Aucune période pour cette entité. Importez un FEC ou une balance depuis la page Import.
-        </div>
+        <EtatVide titre="Aucune période" action={{ to: "/import", label: "Importer des données" }}>
+          Cette entité n&apos;a aucune période. Importez un FEC ou une balance pour la remplir.
+        </EtatVide>
       )}
 
+      {periodId && (
+        <Zone
+          chargement={isLoading}
+          erreur={error}
+          onReessayer={() => void refetch()}
+          quoi="le diagnostic"
+          squelette={
+            <div className="space-y-6">
+              <SqueletteCarte hauteur="4rem" />
+              <div className="grid lg:grid-cols-2 gap-4">
+                <SqueletteCarte hauteur="7rem" />
+                <SqueletteCarte hauteur="7rem" />
+              </div>
+              <SqueletteTuiles />
+            </div>
+          }
+        >
       {data && (
-        <>
-          <div className="card bg-black/[0.02]">
+        <div className="space-y-6">
+          <div className="card bg-ink/[0.02]">
             <h2 className="font-display text-lg font-semibold mb-1">Scores de fragilité</h2>
             <p className="text-sm text-ink/50">
               Deux modèles statistiques publiés, appliqués à {data.periodLabel} ({data.joursPeriode}{" "}
@@ -299,7 +310,7 @@ export function DiagnosticPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm min-w-[520px]">
                   <thead>
-                    <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-black/10">
+                    <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
                       <th className="py-2">Poste de charge</th>
                       <th className="py-2 text-right">Montant</th>
                       <th className="py-2 text-right">Part variable</th>
@@ -309,7 +320,7 @@ export function DiagnosticPage() {
                   </thead>
                   <tbody>
                     {seuil.ventilation.map((ligne) => (
-                      <tr key={ligne.poste} className="border-b border-black/5">
+                      <tr key={ligne.poste} className="border-b border-rule/5">
                         <td className="py-2">{LIBELLE_POSTE[ligne.poste] ?? ligne.poste}</td>
                         <td className="py-2 text-right font-mono">
                           {formatCurrency(ligne.montant, currency)}
@@ -381,7 +392,7 @@ export function DiagnosticPage() {
               <table className="w-full text-sm mb-5">
                 <tbody>
                   {bfr.composantes.map((composante) => (
-                    <tr key={composante.id} className="border-b border-black/5">
+                    <tr key={composante.id} className="border-b border-rule/5">
                       <td className="py-2">{composante.label}</td>
                       <td className="py-2 text-right font-mono">
                         {formatCurrency(composante.montant, currency)}
@@ -405,7 +416,7 @@ export function DiagnosticPage() {
                   </p>
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                     {bfr.besoinCroissance.map((hypothese) => (
-                      <div key={hypothese.croissance} className="rounded-lg bg-black/[0.03] px-3 py-2">
+                      <div key={hypothese.croissance} className="rounded-lg bg-ink/[0.03] px-3 py-2">
                         <div className="text-xs text-ink/50">
                           +{(hypothese.croissance * 100).toFixed(0)} % de CA
                         </div>
@@ -422,7 +433,9 @@ export function DiagnosticPage() {
               )}
             </div>
           )}
-        </>
+        </div>
+      )}
+        </Zone>
       )}
     </div>
   );

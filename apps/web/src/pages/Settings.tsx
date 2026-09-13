@@ -3,6 +3,7 @@ import { useAuditLogs, useCreateEntity, useCreateOrgUser, useEntities, useOrgUse
 import { ApiError } from "../api/client";
 import type { Role } from "../api/types";
 import { useAuth } from "../context/AuthContext";
+import { EntetePage } from "../components/etats";
 
 const ROLE_LABELS: Record<Role, string> = {
   ADMIN: "Administrateur",
@@ -68,16 +69,14 @@ export function SettingsPage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="font-display text-2xl font-semibold">Paramètres</h1>
-        <p className="text-sm text-ink/50">Organisation : {user?.organizationName}</p>
-      </div>
+      <EntetePage titre="Paramètres" sousTitre={`Organisation : ${user?.organizationName ?? ""}`} />
 
       <div className="card">
         <h2 className="font-display text-lg font-semibold mb-3">Entités du groupe</h2>
-        <table className="w-full text-sm mb-4">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm mb-4 min-w-[560px]">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-black/10">
+            <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
               <th className="py-2">Nom</th>
               <th className="py-2">Pays</th>
               <th className="py-2">Devise</th>
@@ -88,7 +87,7 @@ export function SettingsPage() {
           </thead>
           <tbody>
             {entities?.map((entity) => (
-              <tr key={entity.id} className="border-b border-black/5 last:border-0">
+              <tr key={entity.id} className="border-b border-rule/5 last:border-0">
                 <td className="py-2 font-medium">{entity.name}</td>
                 <td className="py-2 text-ink/60">{entity.country ?? "—"}</td>
                 <td className="py-2 text-ink/60">{entity.currency}</td>
@@ -99,6 +98,7 @@ export function SettingsPage() {
             ))}
           </tbody>
         </table>
+        </div>
 
         {user?.role === "ADMIN" || user?.role === "DAF" ? (
           <form onSubmit={handleCreateEntity} className="grid grid-cols-4 gap-3 items-end">
@@ -175,7 +175,7 @@ export function SettingsPage() {
         <h2 className="font-display text-lg font-semibold mb-3">Utilisateurs</h2>
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-black/10">
+            <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
               <th className="py-2">Nom</th>
               <th className="py-2">E-mail</th>
               <th className="py-2">Rôle</th>
@@ -183,7 +183,7 @@ export function SettingsPage() {
           </thead>
           <tbody>
             {users?.map((u) => (
-              <tr key={u.id} className="border-b border-black/5 last:border-0">
+              <tr key={u.id} className="border-b border-rule/5 last:border-0">
                 <td className="py-2 font-medium">{u.name}</td>
                 <td className="py-2 text-ink/60">{u.email}</td>
                 <td className="py-2 text-ink/60">{ROLE_LABELS[u.role]}</td>
@@ -249,8 +249,8 @@ export function SettingsPage() {
           {auditLogs && auditLogs.items.length > 0 && (
             <div className="overflow-x-auto max-h-96">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-white">
-                  <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-black/10">
+                <thead className="sticky top-0 bg-surface">
+                  <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
                     <th className="py-2 pr-3">Date</th>
                     <th className="py-2 pr-3">Auteur</th>
                     <th className="py-2 pr-3">Opération</th>
@@ -259,7 +259,7 @@ export function SettingsPage() {
                 </thead>
                 <tbody>
                   {auditLogs.items.map((entry) => (
-                    <tr key={entry.id} className="border-b border-black/5 last:border-0">
+                    <tr key={entry.id} className="border-b border-rule/5 last:border-0">
                       <td className="py-2 pr-3 whitespace-nowrap text-ink/60">
                         {new Date(entry.createdAt).toLocaleString("fr-FR")}
                       </td>

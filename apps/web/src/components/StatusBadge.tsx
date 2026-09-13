@@ -4,7 +4,7 @@ const STYLES: Record<RatioStatus, string> = {
   bon: "bg-success-soft text-success",
   attention: "bg-warning-soft text-warning",
   critique: "bg-critical-soft text-critical",
-  neutre: "bg-black/5 text-ink/50",
+  neutre: "bg-ink/5 text-ink/50",
 };
 
 const LABELS: Record<RatioStatus, string> = {

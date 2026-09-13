@@ -17,7 +17,7 @@ export function RatioTable({
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-black/10">
+            <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
               <th className="py-2 pr-3">Ratio</th>
               <th className="py-2 pr-3 font-mono normal-case">Formule</th>
               <th className="py-2 pr-3">Valeur</th>
@@ -26,7 +26,7 @@ export function RatioTable({
           </thead>
           <tbody>
             {ratios.map((ratio) => (
-              <tr key={ratio.id} className="border-b border-black/5 last:border-0">
+              <tr key={ratio.id} className="border-b border-rule/5 last:border-0">
                 <td className="py-2 pr-3 font-medium">{ratio.label}</td>
                 <td className="py-2 pr-3 font-mono text-xs text-ink/50 whitespace-nowrap">{ratio.formula}</td>
                 <td className="py-2 pr-3 font-mono font-semibold">{formatRatioValue(ratio.value, ratio.unit, currency)}</td>

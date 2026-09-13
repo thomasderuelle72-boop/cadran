@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useBalanceAgee, useConcentration, useEntities } from "../api/hooks";
 import { EntitySelector } from "../components/EntitySelector";
+import { EntetePage, EtatVide, SqueletteTableau, SqueletteTuiles, Zone } from "../components/etats";
 import { formatCurrency } from "../lib/format";
 import type { SensTiers } from "../api/types";
 
@@ -26,7 +27,7 @@ function formatPart(part: number | null): string {
 function Jauge({ part }: { part: number | null }) {
   const largeur = Math.min(100, Math.max(0, (part ?? 0) * 100));
   return (
-    <div className="h-1.5 rounded-full bg-black/5 overflow-hidden">
+    <div className="h-1.5 rounded-full bg-ink/5 overflow-hidden">
       <div className="h-full rounded-full bg-primary" style={{ width: `${largeur}%` }} />
     </div>
   );
@@ -42,7 +43,7 @@ export function ReceivablesPage() {
     if (!entityId && entities && entities.length > 0) setEntityId(entities[0].id);
   }, [entities, entityId]);
 
-  const { data: balance, isLoading } = useBalanceAgee(entityId || null, sens, delai);
+  const { data: balance, isLoading, error, refetch } = useBalanceAgee(entityId || null, sens, delai);
   const { data: concentration } = useConcentration(entityId || null, sens);
 
   const estClient = sens === "CLIENT";
@@ -54,43 +55,53 @@ export function ReceivablesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Encours</h1>
-          <p className="text-sm text-ink/50">
-            Qui doit quoi, depuis quand, et quel poids il pèse.
-          </p>
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          <EntitySelector value={entityId} onChange={setEntityId} />
-          <select
-            className="input w-40"
-            value={sens}
-            onChange={(e) => setSens(e.target.value as SensTiers)}
-          >
-            <option value="CLIENT">Clients</option>
-            <option value="FOURNISSEUR">Fournisseurs</option>
-          </select>
-          <select className="input w-56" value={delai} onChange={(e) => setDelai(Number(e.target.value))}>
-            {DELAIS.map((option) => (
-              <option key={option.valeur} value={option.valeur}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <EntetePage titre="Encours" sousTitre="Qui doit quoi, depuis quand, et quel poids il pèse.">
+        <EntitySelector value={entityId} onChange={setEntityId} />
+        <select
+          className="input w-40"
+          value={sens}
+          aria-label="Sens"
+          onChange={(e) => setSens(e.target.value as SensTiers)}
+        >
+          <option value="CLIENT">Clients</option>
+          <option value="FOURNISSEUR">Fournisseurs</option>
+        </select>
+        <select
+          className="input w-56"
+          value={delai}
+          aria-label="Délai de paiement"
+          onChange={(e) => setDelai(Number(e.target.value))}
+        >
+          {DELAIS.map((option) => (
+            <option key={option.valeur} value={option.valeur}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </EntetePage>
 
-      {!isLoading && balance && balance.ecrituresAnalysees === 0 && (
-        <div className="card text-sm text-ink/50">
-          Cette entité n&apos;a aucune écriture comptable. La balance âgée se lit sur le détail des
-          écritures : importez un FEC depuis la page Import pour la faire apparaître. Une balance de
-          postes agrégés ne suffit pas — elle ne porte ni le tiers, ni le lettrage.
-        </div>
+      <Zone
+        chargement={isLoading}
+        erreur={error}
+        onReessayer={() => void refetch()}
+        quoi="l'encours"
+        squelette={
+          <div className="space-y-6">
+            <SqueletteTuiles />
+            <SqueletteTableau lignes={8} colonnes={5} />
+          </div>
+        }
+      >
+      {balance && balance.ecrituresAnalysees === 0 && (
+        <EtatVide titre="Aucune écriture comptable" action={{ to: "/import", label: "Importer un FEC" }}>
+          La balance âgée se lit sur le détail des écritures : elle a besoin du tiers et du lettrage,
+          qu&apos;une balance de postes agrégés ne porte pas. Importez un Fichier des Écritures
+          Comptables pour la faire apparaître.
+        </EtatVide>
       )}
 
       {balance && balance.ecrituresAnalysees > 0 && (
-        <>
+        <div className="space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="card">
               <div className="text-xs uppercase tracking-wide text-ink/40 mb-1">
@@ -190,7 +201,7 @@ export function ReceivablesPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[560px]">
                 <thead>
-                  <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-black/10">
+                  <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
                     <th className="py-2">Tiers</th>
                     <th className="py-2 text-right">Encours</th>
                     <th className="py-2 text-right">Part</th>
@@ -201,7 +212,7 @@ export function ReceivablesPage() {
                 </thead>
                 <tbody>
                   {balance.tiers.map((tiers) => (
-                    <tr key={tiers.code} className="border-b border-black/5 last:border-0">
+                    <tr key={tiers.code} className="border-b border-rule/5 last:border-0">
                       <td className="py-2 font-medium">
                         {tiers.label}
                         <span className="text-ink/40 font-mono text-xs ml-2">{tiers.code}</span>
@@ -286,8 +297,9 @@ export function ReceivablesPage() {
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
+      </Zone>
     </div>
   );
 }

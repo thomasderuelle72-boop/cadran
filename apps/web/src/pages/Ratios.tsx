@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useEntities, usePeriods, useRatios } from "../api/hooks";
 import { EntitySelector } from "../components/EntitySelector";
 import { RatioTable } from "../components/RatioTable";
+import { EntetePage, EtatVide, SqueletteTableau, Zone } from "../components/etats";
 import type { RatioCategory } from "../api/types";
 
 const CATEGORY_LABELS: Record<RatioCategory, string> = {
@@ -27,41 +28,61 @@ export function RatiosPage() {
     else setPeriodId(null);
   }, [periods]);
 
-  const { data: ratioResult, isLoading } = useRatios(periodId);
+  const { data: ratioResult, isLoading, error, refetch } = useRatios(periodId);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Catalogue des ratios</h1>
-          <p className="text-sm text-ink/50">Les 19 ratios calculés automatiquement à chaque import.</p>
-        </div>
-        <div className="flex gap-2">
-          <EntitySelector value={entityId} onChange={setEntityId} />
-          {periods && periods.length > 0 && (
-            <select className="input w-40" value={periodId ?? ""} onChange={(e) => setPeriodId(e.target.value)}>
-              {periods.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
+      <EntetePage
+        titre="Catalogue des ratios"
+        sousTitre="Les 19 ratios calculés automatiquement à chaque import."
+      >
+        <EntitySelector value={entityId} onChange={setEntityId} />
+        {periods && periods.length > 0 && (
+          <select
+            className="input w-40"
+            value={periodId ?? ""}
+            aria-label="Période"
+            onChange={(e) => setPeriodId(e.target.value)}
+          >
+            {periods.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+        )}
+      </EntetePage>
+
+      {periods && periods.length === 0 ? (
+        <EtatVide titre="Aucune période" action={{ to: "/import", label: "Importer des données" }}>
+          Cette entité n&apos;a aucune période à analyser.
+        </EtatVide>
+      ) : (
+        <Zone
+          chargement={isLoading}
+          erreur={error}
+          onReessayer={() => void refetch()}
+          quoi="les ratios"
+          squelette={
+            <div className="space-y-6">
+              <SqueletteTableau lignes={5} colonnes={4} />
+              <SqueletteTableau lignes={5} colonnes={4} />
+            </div>
+          }
+        >
+          <div className="space-y-6">
+            {ratioResult &&
+              (Object.keys(CATEGORY_LABELS) as RatioCategory[]).map((category) => (
+                <RatioTable
+                  key={category}
+                  title={CATEGORY_LABELS[category]}
+                  ratios={ratioResult.ratios.filter((r) => r.category === category)}
+                  currency={ratioResult.currency}
+                />
               ))}
-            </select>
-          )}
-        </div>
-      </div>
-
-      {isLoading && <p className="text-ink/50">Chargement…</p>}
-      {periods && periods.length === 0 && <p className="text-ink/50">Aucune période pour cette entité.</p>}
-
-      {ratioResult &&
-        (Object.keys(CATEGORY_LABELS) as RatioCategory[]).map((category) => (
-          <RatioTable
-            key={category}
-            title={CATEGORY_LABELS[category]}
-            ratios={ratioResult.ratios.filter((r) => r.category === category)}
-            currency={ratioResult.currency}
-          />
-        ))}
+          </div>
+        </Zone>
+      )}
     </div>
   );
 }

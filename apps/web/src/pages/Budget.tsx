@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useBudgetVariance, useEntities, useImportReference, usePeriods, useSubmitBudget } from "../api/hooks";
 import { EntitySelector } from "../components/EntitySelector";
+import { EntetePage, EtatVide, SqueletteTableau, Zone } from "../components/etats";
 import { formatCurrency } from "../lib/format";
 import type { LinePoste } from "../api/types";
 import { ApiError } from "../api/client";
@@ -43,7 +44,7 @@ export function BudgetPage() {
   }, [periods]);
 
   const { data: reference } = useImportReference();
-  const { data: variance, isLoading } = useBudgetVariance(periodId);
+  const { data: variance, isLoading, error: erreurChargement, refetch } = useBudgetVariance(periodId);
   const submitBudget = useSubmitBudget();
 
   const [draft, setDraft] = useState<Record<string, number>>({});
@@ -83,31 +84,43 @@ export function BudgetPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Budget vs réalisé</h1>
-          <p className="text-sm text-ink/50">Saisissez le montant budgété par poste pour suivre les écarts.</p>
-        </div>
-        <div className="flex gap-2">
-          <EntitySelector value={entityId} onChange={setEntityId} />
-          {periods && periods.length > 0 && (
-            <select className="input w-40" value={periodId ?? ""} onChange={(e) => setPeriodId(e.target.value)}>
-              {periods.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-      </div>
+      <EntetePage
+        titre="Budget vs réalisé"
+        sousTitre="Saisissez le montant budgété par poste pour suivre les écarts."
+      >
+        <EntitySelector value={entityId} onChange={setEntityId} />
+        {periods && periods.length > 0 && (
+          <select
+            className="input w-40"
+            value={periodId ?? ""}
+            aria-label="Période"
+            onChange={(e) => setPeriodId(e.target.value)}
+          >
+            {periods.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+        )}
+      </EntetePage>
 
-      {isLoading && <p className="text-ink/50">Chargement…</p>}
-      {periods && periods.length === 0 && <p className="text-ink/50">Aucune période pour cette entité.</p>}
+      {periods && periods.length === 0 && (
+        <EtatVide titre="Aucune période" action={{ to: "/import", label: "Importer des données" }}>
+          Un budget se compare à un réalisé : il faut d&apos;abord une période importée.
+        </EtatVide>
+      )}
 
+      <Zone
+        chargement={isLoading}
+        erreur={erreurChargement}
+        onReessayer={() => void refetch()}
+        quoi="le budget"
+        squelette={<SqueletteTableau lignes={8} colonnes={5} />}
+      >
       {variance && (
-        <>
-          <div className="grid grid-cols-3 gap-4">
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {(
               [
                 ["chiffreAffaires", "Chiffre d'affaires"],
@@ -134,9 +147,9 @@ export function BudgetPage() {
 
           <div className="card">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm min-w-[600px]">
                 <thead>
-                  <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-black/10">
+                  <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
                     <th className="py-2 pr-3">Poste</th>
                     <th className="py-2 pr-3">Budgété</th>
                     <th className="py-2 pr-3">Réalisé</th>
@@ -149,7 +162,7 @@ export function BudgetPage() {
                     const budgeted = draft[poste] ?? 0;
                     const ecart = actual - budgeted;
                     return (
-                      <tr key={poste} className="border-b border-black/5 last:border-0">
+                      <tr key={poste} className="border-b border-rule/5 last:border-0">
                         <td className="py-2 pr-3">{label}</td>
                         <td className="py-2 pr-3">
                           <input
@@ -177,8 +190,9 @@ export function BudgetPage() {
               {submitBudget.isPending ? "Enregistrement…" : "Enregistrer le budget"}
             </button>
           </div>
-        </>
+        </div>
       )}
+      </Zone>
     </div>
   );
 }

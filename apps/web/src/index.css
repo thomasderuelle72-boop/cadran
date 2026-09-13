@@ -2,31 +2,185 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Tokens de couleur, en triplets RVB pour que Tailwind puisse leur appliquer
+ * une opacité (`text-ink/50`). Les classes utilitaires ne connaissent que les
+ * noms ; seules les valeurs changent d'un thème à l'autre, ce qui évite
+ * d'écrire deux fois chaque composant.
+ *
+ * Le thème a trois états, pas deux : un choix explicite pose data-theme sur
+ * la racine, et le réglage « système » n'en pose aucun. Les valeurs claires
+ * vivent donc sur :root nu, le sombre est redéfini deux fois — sous
+ * prefers-color-scheme pour l'état non marqué, et sous data-theme="dark" pour
+ * que la bascule gagne dans les deux sens.
+ */
 @layer base {
+  :root {
+    --paper: 242 243 236;
+    --surface: 255 255 255;
+    --surface-2: 249 250 244;
+    --ink: 23 31 25;
+    --rule: 23 31 25;
+
+    --primary: 31 92 78;
+    --primary-soft: 220 233 227;
+    --accent: 156 95 38;
+    --accent-soft: 240 223 194;
+
+    --success: 47 125 79;
+    --success-soft: 221 238 225;
+    --warning: 156 122 22;
+    --warning-soft: 243 236 210;
+    --critical: 174 59 50;
+    --critical-soft: 245 223 219;
+
+    /* Séries de graphique : valeurs validées, cf. components/Graphique.tsx. */
+    --serie-1: 0 121 92;
+    --serie-2: 162 94 34;
+
+    color-scheme: light;
+  }
+
+  /*
+   * Le sombre n'est pas un clair inversé. Les fonds gardent la nuance verte
+   * de l'encre claire pour que l'identité tienne, les couleurs de marque et
+   * de statut sont remontées en clarté (une couleur calibrée sur du blanc
+   * devient illisible sur du noir), et les séries de graphique ont leur
+   * propre couple, validé contre le fond sombre.
+   */
+  /*
+   * Écrit à plat plutôt qu'imbriqué : l'imbrication de @media dans un
+   * sélecteur demande un plugin PostCSS qui n'est pas configuré ici, et
+   * échouerait silencieusement en laissant l'application en clair.
+   */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: 18 22 18;
+      --surface: 26 30 25;
+      --surface-2: 34 39 32;
+      --ink: 231 234 226;
+      --rule: 231 234 226;
+
+      --primary: 95 185 159;
+      --primary-soft: 30 56 48;
+      --accent: 196 132 47;
+      --accent-soft: 62 46 25;
+
+      --success: 95 191 146;
+      --success-soft: 27 54 41;
+      --warning: 214 168 60;
+      --warning-soft: 58 48 20;
+      --critical: 224 136 120;
+      --critical-soft: 62 33 29;
+
+      --serie-1: 30 155 120;
+      --serie-2: 196 132 47;
+
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: 18 22 18;
+    --surface: 26 30 25;
+    --surface-2: 34 39 32;
+    --ink: 231 234 226;
+    --rule: 231 234 226;
+
+    --primary: 95 185 159;
+    --primary-soft: 30 56 48;
+    --accent: 196 132 47;
+    --accent-soft: 62 46 25;
+
+    --success: 95 191 146;
+    --success-soft: 27 54 41;
+    --warning: 214 168 60;
+    --warning-soft: 58 48 20;
+    --critical: 224 136 120;
+    --critical-soft: 62 33 29;
+
+    --serie-1: 30 155 120;
+    --serie-2: 196 132 47;
+
+    color-scheme: dark;
+  }
+
   body {
     @apply bg-paper text-ink;
   }
+
   h1,
   h2,
   h3 {
     @apply font-display;
   }
+
+  /*
+   * Des colonnes de chiffres ne s'alignent que si tous les chiffres ont la
+   * même largeur. Sans cela, « 1 111 » est visiblement plus court que
+   * « 8 888 » et une colonne de montants ondule.
+   */
+  .font-mono,
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Un focus invisible rend l'application inutilisable au clavier. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary/50 ring-offset-1 ring-offset-paper;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
 
 @layer components {
-  .card {
-    @apply bg-white border border-black/10 rounded-xl shadow-sm p-5;
+  /*
+   * Trois niveaux de surface, et non un seul.
+   *
+   * Bordure, fond, rayon et ombre disent tous « objet distinct » : les
+   * appliquer identiquement à chaque bloc aplatit la hiérarchie. `panneau`
+   * est le contenant ordinaire, `card` garde son nom pour ne pas réécrire
+   * douze pages, et `panneau-discret` sert aux blocs qui accompagnent sans
+   * réclamer l'attention.
+   */
+  .card,
+  .panneau {
+    @apply bg-surface border border-rule/10 rounded-xl p-4 sm:p-5;
   }
+
+  .panneau-discret {
+    @apply bg-surface-2 border border-rule/[0.07] rounded-xl p-4 sm:p-5;
+  }
+
   .btn-primary {
-    @apply bg-primary text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition;
+    @apply bg-primary text-paper rounded-lg px-4 py-2 text-sm font-medium transition
+      hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed;
   }
+
   .btn-secondary {
-    @apply bg-white border border-black/15 text-ink rounded-lg px-4 py-2 text-sm font-medium hover:bg-black/5 transition;
+    @apply bg-surface border border-rule/15 text-ink rounded-lg px-4 py-2 text-sm font-medium
+      transition hover:bg-surface-2 disabled:opacity-50 disabled:cursor-not-allowed;
   }
+
   .input {
-    @apply w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40;
+    @apply w-full rounded-lg border border-rule/15 bg-surface text-ink px-3 py-2 text-sm
+      placeholder:text-ink/35 focus:outline-none focus:ring-2 focus:ring-primary/40;
   }
+
   .label {
     @apply block text-xs font-medium text-ink/60 mb-1;
+  }
+
+  /* Intitulé de colonne ou de rubrique : petites capitales espacées. */
+  .oeil {
+    @apply text-xs uppercase tracking-wide text-ink/45 font-medium;
   }
 }

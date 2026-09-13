@@ -1,22 +1,48 @@
+/**
+ * Les couleurs pointent vers des variables CSS définies dans src/index.css,
+ * et non vers des valeurs figées : c'est ce qui permet au thème sombre de
+ * n'exister qu'à un seul endroit. La syntaxe `<alpha-value>` conserve les
+ * opacités de Tailwind (`text-ink/50`).
+ */
+const avecOpacite = (variable) => `rgb(var(${variable}) / <alpha-value>)`;
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        ink: "#171F19",
-        paper: "#F2F3EC",
+        paper: avecOpacite("--paper"),
+        surface: {
+          DEFAULT: avecOpacite("--surface"),
+          2: avecOpacite("--surface-2"),
+        },
+        ink: avecOpacite("--ink"),
+        rule: avecOpacite("--rule"),
         primary: {
-          DEFAULT: "#1F5C4E",
-          soft: "#DCE9E3",
+          DEFAULT: avecOpacite("--primary"),
+          soft: avecOpacite("--primary-soft"),
         },
         accent: {
-          DEFAULT: "#9C5F26",
-          soft: "#F0DFC2",
+          DEFAULT: avecOpacite("--accent"),
+          soft: avecOpacite("--accent-soft"),
         },
-        success: { DEFAULT: "#2F7D4F", soft: "#DDEEE1" },
-        warning: { DEFAULT: "#9C7A16", soft: "#F3ECD2" },
-        critical: { DEFAULT: "#AE3B32", soft: "#F5DFDB" },
+        success: {
+          DEFAULT: avecOpacite("--success"),
+          soft: avecOpacite("--success-soft"),
+        },
+        warning: {
+          DEFAULT: avecOpacite("--warning"),
+          soft: avecOpacite("--warning-soft"),
+        },
+        critical: {
+          DEFAULT: avecOpacite("--critical"),
+          soft: avecOpacite("--critical-soft"),
+        },
+        serie: {
+          1: avecOpacite("--serie-1"),
+          2: avecOpacite("--serie-2"),
+        },
       },
       fontFamily: {
         display: ["'Source Serif 4'", "Georgia", "serif"],

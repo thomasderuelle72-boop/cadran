@@ -10,6 +10,8 @@ import {
   usePrefillCash,
 } from "../api/hooks";
 import { EntitySelector } from "../components/EntitySelector";
+import { abregerMontant, useCouleursGraphique } from "../components/Graphique";
+import { EntetePage, SqueletteCarte, SqueletteTuiles, Zone } from "../components/etats";
 import { KpiTile } from "../components/KpiTile";
 import { StatusBadge } from "../components/StatusBadge";
 import { formatCurrency, formatDate } from "../lib/format";
@@ -25,6 +27,7 @@ const RECURRENCE_LABELS: Record<CashRecurrence, string> = {
 const HORIZONS = [13, 26, 52];
 
 export function CashPage() {
+  const couleurs = useCouleursGraphique();
   const { data: entities } = useEntities();
   const [entityId, setEntityId] = useState("");
   const [weeks, setWeeks] = useState(13);
@@ -33,7 +36,12 @@ export function CashPage() {
     if (!entityId && entities && entities.length > 0) setEntityId(entities[0].id);
   }, [entities, entityId]);
 
-  const { data: projection, isLoading } = useCashProjection(entityId || null, weeks);
+  const {
+    data: projection,
+    isLoading,
+    error: erreurProjection,
+    refetch: rechargerProjection,
+  } = useCashProjection(entityId || null, weeks);
   const { data: lines } = useCashLines(entityId || null);
   const { data: categories } = useCashCategories(entityId || null);
   const createLine = useCreateCashLine();
@@ -88,29 +96,42 @@ export function CashPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Trésorerie prévisionnelle</h1>
-          <p className="text-sm text-ink/50">Projection glissante du solde de trésorerie, semaine par semaine.</p>
-        </div>
-        <div className="flex gap-2">
-          <EntitySelector value={entityId} onChange={setEntityId} />
-          <select className="input w-36" value={weeks} onChange={(e) => setWeeks(Number(e.target.value))}>
-            {HORIZONS.map((h) => (
-              <option key={h} value={h}>
-                {h} semaines
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <EntetePage
+        titre="Trésorerie prévisionnelle"
+        sousTitre="Projection glissante du solde de trésorerie, semaine par semaine."
+      >
+        <EntitySelector value={entityId} onChange={setEntityId} />
+        <select
+          className="input w-36"
+          value={weeks}
+          aria-label="Horizon"
+          onChange={(e) => setWeeks(Number(e.target.value))}
+        >
+          {HORIZONS.map((h) => (
+            <option key={h} value={h}>
+              {h} semaines
+            </option>
+          ))}
+        </select>
+      </EntetePage>
 
       {error && <div className="card border-critical/40 text-critical text-sm">{error}</div>}
       {notice && <div className="card border-success/40 text-success text-sm">{notice}</div>}
-      {isLoading && <p className="text-ink/50">Calcul de la projection…</p>}
 
+      <Zone
+        chargement={isLoading}
+        erreur={erreurProjection}
+        onReessayer={() => void rechargerProjection()}
+        quoi="la projection"
+        squelette={
+          <div className="space-y-6">
+            <SqueletteTuiles />
+            <SqueletteCarte />
+          </div>
+        }
+      >
       {projection && (
-        <>
+        <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <KpiTile
               label="Solde d'ouverture"
@@ -151,20 +172,56 @@ export function CashPage() {
 
           <div className="card">
             <h3 className="font-display text-lg font-semibold mb-3">Solde de trésorerie projeté</h3>
+            {/*
+              Les couleurs viennent des tokens : écrites en dur, la grille et
+              les axes disparaissaient en thème sombre — encre foncée sur fond
+              foncé — alors que la courbe, elle, restait visible. Un graphique
+              à moitié lisible est pire qu'un graphique absent.
+            */}
             <ResponsiveContainer width="100%" height={240}>
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="soldeFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#1F5C4E" stopOpacity={0.25} />
-                    <stop offset="100%" stopColor="#1F5C4E" stopOpacity={0} />
+                    <stop offset="0%" stopColor={couleurs.series[0]} stopOpacity={0.25} />
+                    <stop offset="100%" stopColor={couleurs.series[0]} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#00000012" />
-                <XAxis dataKey="label" fontSize={11} stroke="#171F1980" interval="preserveStartEnd" />
-                <YAxis fontSize={12} stroke="#171F1980" tickFormatter={(v) => `${Math.round(Number(v) / 1000)}k`} />
-                <Tooltip formatter={(value) => formatCurrency(Number(value ?? 0), currency)} />
-                <ReferenceLine y={0} stroke="#AE3B32" strokeDasharray="4 4" />
-                <Area type="monotone" dataKey="solde" name="Solde" stroke="#1F5C4E" strokeWidth={2} fill="url(#soldeFill)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-ink/[0.08]" />
+                <XAxis
+                  dataKey="label"
+                  fontSize={11}
+                  stroke="currentColor"
+                  className="text-ink/50"
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  fontSize={12}
+                  stroke="currentColor"
+                  className="text-ink/50"
+                  tickFormatter={(v) => abregerMontant(Number(v))}
+                />
+                <Tooltip
+                  formatter={(value) => formatCurrency(Number(value ?? 0), currency)}
+                  contentStyle={{
+                    borderRadius: "0.5rem",
+                    border: `1px solid ${couleurs.trait}26`,
+                    background: couleurs.surface,
+                    color: couleurs.encre,
+                    fontSize: "0.8rem",
+                  }}
+                  itemStyle={{ color: couleurs.encre }}
+                  labelStyle={{ color: couleurs.encre }}
+                />
+                {/* Le zéro est la ligne qui compte : en dessous, découvert. */}
+                <ReferenceLine y={0} stroke="currentColor" className="text-critical" strokeDasharray="4 4" />
+                <Area
+                  type="monotone"
+                  dataKey="solde"
+                  name="Solde"
+                  stroke={couleurs.series[0]}
+                  strokeWidth={2}
+                  fill="url(#soldeFill)"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -172,9 +229,9 @@ export function CashPage() {
           <div className="card">
             <h3 className="font-display text-lg font-semibold mb-3">Détail par semaine</h3>
             <div className="overflow-x-auto max-h-96">
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-white">
-                  <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-black/10">
+              <table className="w-full text-sm min-w-[640px]">
+                <thead className="sticky top-0 bg-surface">
+                  <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
                     <th className="py-2 pr-3">Semaine</th>
                     <th className="py-2 pr-3 text-right">Encaissements</th>
                     <th className="py-2 pr-3 text-right">Décaissements</th>
@@ -185,7 +242,7 @@ export function CashPage() {
                 </thead>
                 <tbody>
                   {projection.weeks.map((w) => (
-                    <tr key={w.weekStart} className="border-b border-black/5 last:border-0">
+                    <tr key={w.weekStart} className="border-b border-rule/5 last:border-0">
                       <td className="py-2 pr-3">
                         {formatDate(w.weekStart)}
                         {w.movements.length > 0 && (
@@ -205,8 +262,9 @@ export function CashPage() {
               </table>
             </div>
           </div>
-        </>
+        </div>
       )}
+      </Zone>
 
       <div className="card">
         <div className="flex items-center justify-between mb-3">
@@ -219,9 +277,10 @@ export function CashPage() {
         </div>
         {lines && lines.length === 0 && <p className="text-sm text-ink/50 mb-3">Aucune ligne pour cette entité.</p>}
         {lines && lines.length > 0 && (
-          <table className="w-full text-sm mb-4">
+          <div className="overflow-x-auto mb-4">
+          <table className="w-full text-sm min-w-[560px]">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-black/10">
+              <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
                 <th className="py-2 pr-3">Libellé</th>
                 <th className="py-2 pr-3">Catégorie</th>
                 <th className="py-2 pr-3 text-right">Montant</th>
@@ -232,7 +291,7 @@ export function CashPage() {
             </thead>
             <tbody>
               {lines.map((line) => (
-                <tr key={line.id} className="border-b border-black/5 last:border-0">
+                <tr key={line.id} className="border-b border-rule/5 last:border-0">
                   <td className="py-2 pr-3">{line.label}</td>
                   <td className="py-2 pr-3 text-ink/60">
                     {categories?.find((c) => c.category === line.category)?.label ?? line.category}
@@ -257,10 +316,11 @@ export function CashPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
 
-        <form onSubmit={handleCreate} className="grid grid-cols-6 gap-3 items-end">
-          <div className="col-span-2">
+        <form onSubmit={handleCreate} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 items-end">
+          <div className="col-span-2 sm:col-span-3 lg:col-span-2">
             <label className="label">Libellé</label>
             <input className="input" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} required />
           </div>
@@ -306,7 +366,7 @@ export function CashPage() {
               <input type="date" className="input" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} />
             </div>
           )}
-          <div className="col-span-6">
+          <div className="col-span-2 sm:col-span-3 lg:col-span-6">
             <button type="submit" className="btn-primary" disabled={createLine.isPending || !entityId}>
               {createLine.isPending ? "Ajout…" : "Ajouter le flux"}
             </button>
