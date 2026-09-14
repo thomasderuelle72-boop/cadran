@@ -12,7 +12,22 @@ async function bootstrap() {
   // Le webhook Stripe en a besoin : sa signature porte sur les octets
   // reçus, et un JSON re-sérialisé ne la vérifie plus.
   const app = await NestFactory.create(AppModule, { rawBody: true });
-  app.enableCors();
+  /*
+   * CORS restreint aux origines déclarées.
+   *
+   * `enableCors()` sans argument autorise n'importe quel site à appeler
+   * l'API depuis le navigateur d'un utilisateur connecté. En développement
+   * c'est commode ; en production, sur une application qui détient la
+   * comptabilité d'entreprises, c'est une porte ouverte.
+   *
+   * Sans CORS_ORIGINS, on retombe sur le frontend local : une instance mal
+   * configurée refuse les appels plutôt que de les accepter tous.
+   */
+  const origines = (process.env.CORS_ORIGINS ?? "http://localhost:5173")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
+  app.enableCors({ origin: origines, credentials: true });
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true })
   );
