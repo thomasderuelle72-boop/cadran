@@ -35,6 +35,9 @@ jobs:
       - name: Tests unitaires (moteurs de calcul)
         run: npm run test:api
 
+      - name: Tests unitaires (frontend)
+        run: npm run test:web
+
       - name: Build API
         run: npm run build:api
 

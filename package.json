@@ -16,7 +16,8 @@
     "prisma:generate": "npm run prisma:generate --workspace=apps/api",
     "prisma:migrate": "npm run prisma:migrate --workspace=apps/api",
     "prisma:seed": "npm run prisma:seed --workspace=apps/api",
-    "demo:fec": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/generer-fec-demo.ts"
+    "demo:fec": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/generer-fec-demo.ts",
+    "test:web": "npm run test --workspace=apps/web"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

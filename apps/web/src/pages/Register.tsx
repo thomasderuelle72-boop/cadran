@@ -11,7 +11,7 @@ export function Register() {
   const [form, setForm] = useState({ organizationName: "", name: "", email: "", password: "" });
   const [error, setError] = useState<string | null>(null);
 
-  if (isAuthenticated) return <Navigate to="/" replace />;
+  if (isAuthenticated) return <Navigate to="/tableau-de-bord" replace />;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

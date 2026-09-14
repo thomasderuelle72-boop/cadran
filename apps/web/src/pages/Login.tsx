@@ -12,7 +12,7 @@ export function Login() {
   const [password, setPassword] = useState("CadranDemo123!");
   const [error, setError] = useState<string | null>(null);
 
-  if (isAuthenticated) return <Navigate to="/" replace />;
+  if (isAuthenticated) return <Navigate to="/tableau-de-bord" replace />;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -20,7 +20,7 @@ export function Login() {
     try {
       const result = await loginMutation.mutateAsync({ email, password });
       login(result.accessToken, result.user);
-      navigate("/");
+      navigate("/tableau-de-bord");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Connexion impossible.");
     }

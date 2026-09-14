@@ -1,6 +1,8 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
 import { Layout } from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { Accueil } from "./pages/Accueil";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
 import { Dashboard } from "./pages/Dashboard";
@@ -16,9 +18,25 @@ import { BudgetPage } from "./pages/Budget";
 import { AlertsPage } from "./pages/Alerts";
 import { CashPage } from "./pages/Cash";
 
+/**
+ * La racine sert deux publics.
+ *
+ * Un visiteur y trouve la page de présentation ; un utilisateur connecté n'a
+ * rien à y faire et part directement à son tableau de bord. Le temps de
+ * vérifier le jeton, on n'affiche ni l'un ni l'autre : montrer la page
+ * commerciale à un client qui revient, même une demi-seconde, donne
+ * l'impression d'avoir été déconnecté.
+ */
+function Racine() {
+  const { isAuthenticated, isLoading } = useAuth();
+  if (isLoading) return <div className="min-h-screen bg-paper" />;
+  return isAuthenticated ? <Navigate to="/tableau-de-bord" replace /> : <Accueil />;
+}
+
 export default function App() {
   return (
     <Routes>
+      <Route path="/" element={<Racine />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route
@@ -28,7 +46,7 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/tableau-de-bord" element={<Dashboard />} />
         <Route path="/ratios" element={<RatiosPage />} />
         <Route path="/analysis" element={<AnalysisPage />} />
         <Route path="/receivables" element={<ReceivablesPage />} />

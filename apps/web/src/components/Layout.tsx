@@ -24,7 +24,7 @@ const FAMILLES: Array<{ titre: string; entrees: Entree[] }> = [
   {
     titre: "Piloter",
     entrees: [
-      { to: "/", label: "Tableau de bord", end: true },
+      { to: "/tableau-de-bord", label: "Tableau de bord" },
       { to: "/ratios", label: "Ratios" },
       { to: "/budget", label: "Budget" },
       { to: "/cash", label: "Trésorerie" },
