@@ -1,3 +1,4 @@
+import { describe, expect, it } from "vitest";
 import { FORMULES, REMISE_ANNUELLE, economieAnnuelle, prixAnnualise } from "./formules";
 
 describe("grille tarifaire", () => {

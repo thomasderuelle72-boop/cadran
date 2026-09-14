@@ -5,6 +5,15 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
+
+    /*
+     * Sans cette liste, TypeScript charge tous les @types/* qu'il rencontre
+     * en remontant l'arborescence — y compris ceux que npm remonte à la
+     * racine du monorepo pour l'API. La compilation passait donc en local
+     * grâce à des types que le frontend ne déclare pas, et échouait chez
+     * l'hébergeur, qui n'installe que cet espace de travail.
+     */
+    "types": ["vite/client"],
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
