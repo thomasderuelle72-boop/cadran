@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import type { Request } from "express";
+import { SkipThrottle } from "@nestjs/throttler";
 import { Role } from "@prisma/client";
 import { BillingService } from "./billing.service";
 import { StripeService } from "./stripe.service";
@@ -83,6 +84,11 @@ export class BillingController {
    */
   @Post("webhook")
   @HttpCode(200)
+  // Exclu de la limitation de débit : c'est Stripe qui appelle, depuis un
+  // petit nombre d'adresses. Le limiter ferait perdre des événements de
+  // paiement lors d'une rafale légitime — un remboursement de masse, par
+  // exemple — et un événement perdu, ce sont des droits jamais accordés.
+  @SkipThrottle()
   async webhook(
     @Req() requete: RawBodyRequest<Request>,
     @Headers("stripe-signature") signature: string

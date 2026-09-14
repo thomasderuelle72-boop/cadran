@@ -109,6 +109,13 @@ Si PostgreSQL tourne déjà en local sur un autre port, adaptez `DATABASE_URL` d
 
 Les variables à renseigner le jour de l'ouverture sont documentées dans `apps/api/.env.example`.
 
+### Comptes et sécurité
+
+- **Réinitialisation de mot de passe** — le jeton n'est jamais stocké : la base garde son empreinte SHA-256, comme pour un mot de passe, de sorte qu'une fuite de cette table ne permette de reprendre aucun compte. Il est à usage unique et vaut une heure ; demander un nouveau lien clôt les précédents, car plusieurs liens valables en parallèle multiplient les occasions d'en voir un intercepté. Le changement de mot de passe et la clôture du jeton sont dans la même transaction.
+- **Aucune énumération possible** — la demande répond 204 que l'adresse existe ou non, et le temps de réponse est égalisé : une réponse différenciée, ou simplement plus rapide, ferait de ce point d'entrée un annuaire de clients. Le motif exact d'un refus de jeton reste dans les journaux, jamais dans la réponse.
+- **Limitation de débit** — deux fenêtres plutôt qu'une : la courte arrête une rafale, la longue arrête le grignotage patient qui passerait sous la courte en espaçant ses essais. La connexion est ramenée à 5 tentatives par minute, la demande de réinitialisation à 3 — c'est un point d'entrée qui envoie des courriels à des adresses arbitraires, donc un relais de spam s'il reste ouvert. Le webhook Stripe en est exclu : le limiter ferait perdre des événements de paiement.
+- **Envoi de courriels dégradable** — sans configuration SMTP, les messages sont écrits dans les journaux plutôt qu'envoyés, ce qui permet de dérouler la réinitialisation sans serveur de courrier. Un envoi raté ne fait jamais échouer l'action qui l'a déclenché : un utilisateur qui demande un lien et reçoit une erreur 500 conclut que son compte est cassé, alors que seul le serveur de courrier l'est.
+
 ## Essayer l'import FEC
 
 ```bash

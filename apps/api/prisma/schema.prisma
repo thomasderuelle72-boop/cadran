@@ -147,6 +147,27 @@ model StripeEvent {
 // écriture seule — aucun code applicatif ne met à jour ni ne supprime une
 // entrée — et l'e-mail de l'auteur y est recopié pour que la trace reste
 // lisible même si le compte est supprimé plus tard.
+// Jeton de réinitialisation de mot de passe.
+//
+// Le jeton lui-même n'est jamais stocké : la base garde son empreinte
+// SHA-256, comme pour un mot de passe. Une fuite de cette table ne permet
+// donc de reprendre aucun compte.
+//
+// `utiliseLe` rend le jeton à usage unique : sans lui, un lien intercepté
+// resterait valable après le changement de mot de passe légitime.
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  empreinte String   @unique
+  expireLe  DateTime
+  utiliseLe DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expireLe])
+}
+
 model AuditLog {
   id             String       @id @default(cuid())
   organizationId String
@@ -174,6 +195,7 @@ model User {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
   createdAt      DateTime     @default(now())
+  passwordResets PasswordResetToken[]
 }
 
 // Filiale / société du groupe. Le pilotage mono-entité du MVP devient un cas
