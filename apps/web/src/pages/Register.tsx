@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useRegister } from "../api/hooks";
 import { useAuth } from "../context/AuthContext";
-import { ApiError } from "../api/client";
+import { ApiError, cookiesRefuses } from "../api/client";
 import { CadreAuth } from "../components/CadreAuth";
 
 export function Register() {
@@ -19,6 +19,21 @@ export function Register() {
     setError(null);
     try {
       await registerMutation.mutateAsync(form);
+      /*
+       * La requête a abouti, mais le cookie a-t-il été accepté ? Sans ce
+       * contrôle, un navigateur qui les refuse renvoie l'utilisateur sur cet
+       * écran sans un mot d'explication — il conclut que son mot de passe est
+       * faux.
+       */
+      if (cookiesRefuses()) {
+        setError(
+          "Votre navigateur a refusé le cookie de session. Safari et les navigateurs "
+            + "en navigation privée bloquent les cookies dits tiers ; Cadran servant "
+            + "son interface et son API depuis deux domaines, le nôtre en est un. "
+            + "Autorisez les cookies pour ce site, ou utilisez Chrome ou Firefox."
+        );
+        return;
+      }
       login();
       navigate("/import");
     } catch (err) {

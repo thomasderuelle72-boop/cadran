@@ -22,10 +22,18 @@ import { randomBytes, timingSafeEqual } from "node:crypto";
  * peut pas lire le cookie — la politique de même origine l'en empêche — donc
  * il ne peut pas produire l'en-tête. C'est le motif du « double envoi ».
  *
- * Le jour où l'API vivra sous le même domaine que le site (api.cadran.fr et
- * cadran.fr), `SameSite=Lax` redeviendra possible et cette mécanique passera
- * de nécessaire à redondante — on la gardera quand même, deux verrous valant
- * mieux qu'un.
+ * Limite connue, et elle compte : sur deux domaines distincts, ce cookie est
+ * un cookie *tiers* au sens du navigateur. Safari les bloque par défaut, et
+ * Chrome les restreint progressivement. La connexion échoue alors — le
+ * frontend le détecte (aucun cookie lisible après une réponse 200) et
+ * l'explique à l'utilisateur au lieu de le renvoyer muettement sur l'écran
+ * de connexion.
+ *
+ * Le remède est le même que pour l'envoi des courriels : un domaine à soi.
+ * Une API servie depuis api.cadran.fr pour un site sur cadran.fr rend le
+ * cookie premier, et `SameSite=Lax` redevient possible — cette mécanique
+ * passera alors de nécessaire à redondante, et on la gardera quand même,
+ * deux verrous valant mieux qu'un.
  */
 
 export const COOKIE_SESSION = "cadran_session";

@@ -138,6 +138,11 @@ Le jeu de démonstration contient déjà une entité alimentée de cette façon,
   défense anti-CSRF par double envoi — voir les commentaires de
   `apps/api/src/auth/session.ts`. En ligne, `NODE_ENV` doit valoir
   `production`, sinon la connexion échoue silencieusement.
+- **Limite connue** : sur deux domaines distincts, ce cookie est *tiers* au
+  sens du navigateur — Safari le bloque par défaut. Le frontend détecte le
+  refus et l'explique, mais le vrai remède est un domaine à soi (API sur
+  `api.cadran.fr`, site sur `cadran.fr`), qui règle du même coup l'envoi des
+  courriels.
 
 ## Vérifications automatiques
 

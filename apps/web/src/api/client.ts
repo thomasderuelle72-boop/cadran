@@ -15,11 +15,23 @@ const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api";
 const COOKIE_CSRF = "cadran_csrf";
 const ENTETE_CSRF = "x-jeton-csrf";
 
-function lireCookie(nom: string): string | null {
-  /* Le préfixe `; ` évite qu'un cookie dont le nom se termine par le nôtre
-   * ne soit pris pour lui. */
-  const trouve = `; ${document.cookie}`.split(`; ${nom}=`);
+/**
+ * Extrait la valeur d'un cookie d'une chaîne au format `document.cookie`.
+ *
+ * Séparée de la lecture du document pour être vérifiable sans navigateur :
+ * c'est cette fonction qui décide si une session semble ouverte et si les
+ * cookies ont été refusés, deux jugements qu'on ne veut pas croire sur parole.
+ *
+ * Le préfixe `; ` est ce qui empêche un cookie dont le nom *se termine* par
+ * le nôtre (`faux_cadran_csrf`) d'être pris pour lui.
+ */
+export function valeurCookie(chaine: string, nom: string): string | null {
+  const trouve = `; ${chaine}`.split(`; ${nom}=`);
   return trouve.length === 2 ? (trouve.pop()?.split(";").shift() ?? null) : null;
+}
+
+function lireCookie(nom: string): string | null {
+  return valeurCookie(document.cookie, nom);
 }
 
 /**
@@ -34,6 +46,24 @@ function lireCookie(nom: string): string | null {
  */
 export function sessionProbable(): boolean {
   return lireCookie(COOKIE_CSRF) !== null;
+}
+
+/**
+ * Les cookies tiers ont-ils été refusés par le navigateur ?
+ *
+ * À n'appeler qu'après une connexion réussie. L'API pose deux cookies, dont
+ * un lisible ; si celui-là n'est pas là alors que la requête a abouti, le
+ * navigateur les a écartés tous les deux. C'est le cas de Safari, qui bloque
+ * les cookies tiers par défaut — et le frontend et l'API étant hébergés sur
+ * deux domaines distincts, les nôtres en sont.
+ *
+ * Sans ce contrôle, l'utilisateur voit l'écran de connexion réapparaître sans
+ * message : impossible pour lui de deviner que la cause est le navigateur, et
+ * non son mot de passe. Le remède est de servir l'API depuis un
+ * sous-domaine du site (api.cadran.fr), ce qui rend le cookie premier.
+ */
+export function cookiesRefuses(): boolean {
+  return !sessionProbable();
 }
 
 export class ApiError extends Error {
