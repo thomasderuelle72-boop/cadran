@@ -5,6 +5,7 @@ import "dotenv/config";
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
+import cookieParser from "cookie-parser";
 import { AppModule } from "./app.module";
 
 async function bootstrap() {
@@ -28,6 +29,30 @@ async function bootstrap() {
     .map((o) => o.trim())
     .filter(Boolean);
   app.enableCors({ origin: origines, credentials: true });
+  /*
+   * Doit précéder les gardes : sans cet intergiciel, `requete.cookies` reste
+   * indéfini et le garde anti-CSRF conclurait qu'aucune session n'accompagne
+   * la requête — il laisserait donc tout passer. L'ordre est ici la sécurité.
+   */
+  app.use(cookieParser());
+  /*
+   * Garde-fou de configuration.
+   *
+   * Le cookie de session ne franchit une frontière de site qu'en
+   * `SameSite=None`, que l'API n'émet qu'en production (voir session.ts). Si
+   * des origines en HTTPS sont déclarées alors que NODE_ENV ne vaut pas
+   * « production », le cookie sortira en `Lax` : le navigateur ne l'enverra
+   * jamais, et la connexion échouera sans message — le pire des symptômes,
+   * parce qu'il ressemble à un mot de passe refusé.
+   */
+  const distant = origines.some((o) => o.startsWith("https://"));
+  if (distant && process.env.NODE_ENV !== "production") {
+    console.warn(
+      "ATTENTION : des origines HTTPS sont declarees mais NODE_ENV ne vaut pas " +
+        "\"production\". Le cookie de session sortira en SameSite=Lax et ne sera " +
+        "jamais envoye depuis le frontend. Posez NODE_ENV=production."
+    );
+  }
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true })
   );

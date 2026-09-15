@@ -1,41 +1,53 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
-import { getToken, setToken as persistToken } from "../api/client";
-import { useMe } from "../api/hooks";
+import { useQueryClient } from "@tanstack/react-query";
+import { sessionProbable } from "../api/client";
+import { useDeconnexion, useMe } from "../api/hooks";
 import type { AuthUser } from "../api/types";
 
 interface AuthContextValue {
   user: AuthUser | undefined;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (token: string, user: AuthUser) => void;
+  /** Plus de jeton en paramètre : il est arrivé en cookie, hors de portée. */
+  login: () => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [hasToken, setHasToken] = useState(() => !!getToken());
-  const { data: user, isLoading } = useMe(hasToken);
+  /*
+   * L'autorité, c'est le serveur : le cookie de session est `httpOnly`, donc
+   * invisible ici. On n'a plus qu'un indice de présence (le cookie anti-CSRF,
+   * posé et retiré avec lui) pour éviter d'appeler /auth/me au nom d'un
+   * visiteur anonyme. Que l'utilisateur soit réellement connecté, seule la
+   * réponse de /auth/me le dit.
+   */
+  const [sessionOuverte, setSessionOuverte] = useState(sessionProbable);
+  const { data: user, isLoading } = useMe(sessionOuverte);
+  const deconnexion = useDeconnexion();
+  const queryClient = useQueryClient();
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
-      isLoading: hasToken && isLoading,
-      isAuthenticated: hasToken && !!user,
-      login: (token, loggedInUser) => {
-        persistToken(token);
-        setHasToken(true);
-        // useMe se rechargera au prochain rendu grâce à `enabled`; on force un accès
-        // immédiat en renseignant la donnée en cache serait plus élégant mais un
-        // simple re-fetch suffit pour le MVP.
-        void loggedInUser;
-      },
+      isLoading: sessionOuverte && isLoading,
+      isAuthenticated: sessionOuverte && !!user,
+      login: () => setSessionOuverte(true),
       logout: () => {
-        persistToken(null);
-        setHasToken(false);
+        /*
+         * Un cookie `httpOnly` ne s'efface pas depuis le JavaScript : il faut
+         * que le serveur demande sa suppression. L'état local est remis à
+         * zéro sans attendre la réponse — une déconnexion doit paraître
+         * immédiate — et le cache est vidé pour qu'aucune donnée du compte
+         * quitté ne subsiste à l'écran.
+         */
+        setSessionOuverte(false);
+        queryClient.clear();
+        deconnexion.mutate();
       },
     }),
-    [user, isLoading, hasToken]
+    [user, isLoading, sessionOuverte, deconnexion, queryClient]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

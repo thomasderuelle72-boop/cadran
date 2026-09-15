@@ -9,8 +9,14 @@ export interface AuthUser {
   organizationName: string;
 }
 
+/*
+ * Plus de `accessToken` : la connexion répond désormais avec l'utilisateur
+ * seul, la session arrivant dans un cookie `httpOnly`. Retirer ce champ du
+ * type est la moitié utile du changement — un jeton renvoyé dans le corps
+ * finirait tôt ou tard recopié dans une variable JavaScript, et l'on
+ * n'aurait rien gagné.
+ */
 export interface AuthResponse {
-  accessToken: string;
   user: AuthUser;
 }
 

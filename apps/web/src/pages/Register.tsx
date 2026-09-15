@@ -18,8 +18,8 @@ export function Register() {
     e.preventDefault();
     setError(null);
     try {
-      const result = await registerMutation.mutateAsync(form);
-      login(result.accessToken, result.user);
+      await registerMutation.mutateAsync(form);
+      login();
       navigate("/import");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Inscription impossible.");

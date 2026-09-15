@@ -26,8 +26,8 @@ export function Login() {
     e.preventDefault();
     setError(null);
     try {
-      const result = await loginMutation.mutateAsync({ email, password });
-      login(result.accessToken, result.user);
+      await loginMutation.mutateAsync({ email, password });
+      login();
       navigate("/tableau-de-bord");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Connexion impossible.");

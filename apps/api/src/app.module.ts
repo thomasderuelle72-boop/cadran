@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_GUARD } from "@nestjs/core";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
+import { CsrfGuard } from "./auth/csrf.guard";
 import { PrismaModule } from "./prisma/prisma.module";
 import { AuthModule } from "./auth/auth.module";
 import { UsersModule } from "./users/users.module";
@@ -59,6 +60,15 @@ import { EmailModule } from "./email/email.module";
     AuditModule,
     BillingModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+  /*
+   * Deux gardes globaux. Le limiteur de débit d'abord : il est inutile de
+   * valider un jeton anti-CSRF sur une requête qu'on va rejeter de toute
+   * façon. Le garde CSRF ensuite, qui ne mord que sur les requêtes
+   * modifiantes accompagnées d'un cookie de session (voir csrf.guard.ts).
+   */
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: CsrfGuard },
+  ],
 })
 export class AppModule {}

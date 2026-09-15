@@ -46,6 +46,12 @@ export function useLogin() {
   });
 }
 
+/** La déconnexion est devenue un appel serveur : seul lui peut retirer un
+ *  cookie `httpOnly`. */
+export function useDeconnexion() {
+  return useMutation({ mutationFn: () => api.post<void>("/auth/logout") });
+}
+
 export function useRegister() {
   return useMutation({
     mutationFn: (input: { organizationName: string; name: string; email: string; password: string }) =>

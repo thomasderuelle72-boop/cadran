@@ -11,6 +11,7 @@ import * as bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { EmailService } from "../email/email.service";
+import { gabarit } from "../email/gabarit";
 import { RegisterDto } from "./dto/register.dto";
 import { LoginDto } from "./dto/login.dto";
 import { emettreJeton, empreinteDe, verifierJeton } from "./reinitialisation";
@@ -127,12 +128,15 @@ export class AuthService {
     await this.email.envoyer({
       destinataire: user.email,
       sujet: "Réinitialiser votre mot de passe Cadran",
-      texte:
-        `Bonjour ${user.name},\n\n` +
-        `Vous avez demandé à réinitialiser votre mot de passe. Ce lien est valable une heure :\n\n` +
-        `${lien}\n\n` +
-        `Si vous n'êtes pas à l'origine de cette demande, ignorez ce message : ` +
-        `votre mot de passe actuel reste valable.\n`,
+      ...gabarit("Réinitialiser votre mot de passe", {
+        paragraphes: [
+          `Bonjour ${user.name},`,
+          "Vous avez demandé à réinitialiser votre mot de passe. Le lien ci-dessous est valable une heure, et ne sert qu'une fois.",
+          "Si vous n'êtes pas à l'origine de cette demande, ignorez ce message : votre mot de passe actuel reste valable.",
+        ],
+        action: { lien, libelle: "Choisir un nouveau mot de passe" },
+        rappelLien: true,
+      }),
     });
   }
 
@@ -176,11 +180,13 @@ export class AuthService {
     await this.email.envoyer({
       destinataire: enBase.user.email,
       sujet: "Votre mot de passe Cadran a été modifié",
-      texte:
-        `Bonjour ${enBase.user.name},\n\n` +
-        `Votre mot de passe vient d'être modifié.\n\n` +
-        `Si vous n'êtes pas à l'origine de ce changement, votre compte est compromis : ` +
-        `demandez immédiatement une nouvelle réinitialisation.\n`,
+      ...gabarit("Votre mot de passe a été modifié", {
+        paragraphes: [
+          `Bonjour ${enBase.user.name},`,
+          "Votre mot de passe vient d'être modifié.",
+          "Si vous n'êtes pas à l'origine de ce changement, votre compte est compromis : demandez immédiatement une nouvelle réinitialisation depuis la page de connexion.",
+        ],
+      }),
     });
   }
 }

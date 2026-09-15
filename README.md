@@ -126,6 +126,19 @@ Le fichier produit est un exercice complet et équilibré de 1 055 écritures, d
 
 Le jeu de démonstration contient déjà une entité alimentée de cette façon, « Atelier Nova Industrie », à côté des deux entités dont les périodes sont des balances trimestrielles saisies.
 
+## Courriels et session
+
+- **Courriels** : sans `SMTP_HOST`, l'API journalise les messages au lieu de
+  les envoyer — pratique en local, défaut en production. La configuration, et
+  surtout la contrainte de domaine (on ne peut pas expédier depuis une adresse
+  Gmail), sont dans [docs/courriel.md](docs/courriel.md).
+- **Session** : le jeton vit dans un cookie `httpOnly`, invisible au
+  JavaScript de la page. Le frontend et l'API étant sur deux sites distincts
+  en production, ce cookie est émis en `SameSite=None`, ce qui impose une
+  défense anti-CSRF par double envoi — voir les commentaires de
+  `apps/api/src/auth/session.ts`. En ligne, `NODE_ENV` doit valoir
+  `production`, sinon la connexion échoue silencieusement.
+
 ## Vérifications automatiques
 
 La CI (`.github/workflows/ci.yml`) lance sur chaque PR : ESLint sur les deux applications, les tests unitaires des moteurs de calcul, puis les builds API et web (ce dernier incluant le typage TypeScript).
