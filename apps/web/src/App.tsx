@@ -5,6 +5,8 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Accueil } from "./pages/Accueil";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
+import { MotDePasseOubli } from "./pages/MotDePasseOubli";
+import { MotDePasseNouveau } from "./pages/MotDePasseNouveau";
 import { Dashboard } from "./pages/Dashboard";
 import { RatiosPage } from "./pages/Ratios";
 import { AnalysisPage } from "./pages/Analysis";
@@ -39,6 +41,8 @@ export default function App() {
       <Route path="/" element={<Racine />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/mot-de-passe/oubli" element={<MotDePasseOubli />} />
+      <Route path="/mot-de-passe/nouveau" element={<MotDePasseNouveau />} />
       <Route
         element={
           <ProtectedRoute>

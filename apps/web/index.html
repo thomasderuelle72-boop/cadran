@@ -3,6 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Le jeton de réinitialisation voyage dans l'URL. La valeur ci-dessous
+         est déjà celle par défaut des navigateurs récents, mais l'écrire
+         garantit qu'aucune requête sortante — les polices en premier lieu —
+         n'emporte le chemin ni la requête dans son en-tête Referer. -->
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+
+    <link rel="icon" type="image/svg+xml" href="/cadran.svg" />
+    <meta
+      name="description"
+      content="Cadran lit votre FEC et vous dit où vous en êtes, si c'est normal, et quoi faire. Diagnostic, trésorerie et plan d'action chiffré pour les TPE, PME et cabinets."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Cadran" />
+    <meta property="og:title" content="Cadran — le pilotage financier qui conseille" />
+    <meta
+      property="og:description"
+      content="Votre comptable vous dit où vous en êtes. Cadran vous dit si c'est normal, et quoi faire."
+    />
+    <meta name="twitter:card" content="summary" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
       href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Cadran">
+  <!-- Le cadran de la marque : un disque dont le premier quart est relevé.
+       Les couleurs sont écrites en dur — une favicon n'a pas accès aux
+       variables CSS du thème. Ce sont celles de la palette claire. -->
+  <circle cx="16" cy="16" r="15" fill="#f9faf4" />
+  <path d="M16 16 L16 1 A15 15 0 0 1 31 16 Z" fill="#9c5f26" />
+  <circle cx="16" cy="16" r="15" fill="none" stroke="#9c5f26" stroke-width="2" />
+</svg>

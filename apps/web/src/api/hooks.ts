@@ -53,6 +53,24 @@ export function useRegister() {
   });
 }
 
+/*
+ * Les deux temps de la réinitialisation. Aucun des deux ne renvoie de corps :
+ * l'API répond 204 — y compris pour une adresse inconnue, afin de ne pas
+ * révéler qui possède un compte.
+ */
+export function useDemanderReinitialisation() {
+  return useMutation({
+    mutationFn: (input: { email: string }) => api.post<void>("/auth/mot-de-passe/oubli", input),
+  });
+}
+
+export function useReinitialiserMotDePasse() {
+  return useMutation({
+    mutationFn: (input: { jeton: string; motDePasse: string }) =>
+      api.post<void>("/auth/mot-de-passe/nouveau", input),
+  });
+}
+
 export function usePeriods(entityId?: string) {
   return useQuery<Period[]>({
     queryKey: ["periods", entityId ?? "all"],
