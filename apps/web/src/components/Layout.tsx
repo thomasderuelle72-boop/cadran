@@ -51,6 +51,7 @@ const FAMILLES: Array<{ titre: string; entrees: Entree[] }> = [
       { to: "/import", label: "Import" },
       { to: "/reports", label: "Rapports" },
       { to: "/settings", label: "Paramètres", roles: ["ADMIN", "DAF"] },
+      { to: "/abonnement", label: "Abonnement" },
     ],
   },
 ];

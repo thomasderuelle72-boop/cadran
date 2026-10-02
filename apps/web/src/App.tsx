@@ -19,6 +19,7 @@ import { ActionsPage } from "./pages/Actions";
 import { ImportPage } from "./pages/Import";
 import { ReportsPage } from "./pages/Reports";
 import { SettingsPage } from "./pages/Settings";
+import { AbonnementPage } from "./pages/Abonnement";
 import { BudgetPage } from "./pages/Budget";
 import { AlertsPage } from "./pages/Alerts";
 import { CashPage } from "./pages/Cash";
@@ -70,6 +71,7 @@ export default function App() {
         <Route path="/import" element={<ImportPage />} />
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/abonnement" element={<AbonnementPage />} />
       </Route>
     </Routes>
   );

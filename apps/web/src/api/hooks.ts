@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, uploadFile } from "./client";
+import type { EtatAbonnement, PlanId } from "../lib/abonnement";
 import type {
   ActionPlan,
   ActionStatus,
@@ -75,6 +76,29 @@ export function useReinitialiserMotDePasse() {
     mutationFn: (input: { jeton: string; motDePasse: string }) =>
       api.post<void>("/auth/mot-de-passe/nouveau", input),
   });
+}
+
+/*
+ * Abonnement. L'état est la seule source de vérité affichable : le plan
+ * réellement en vigueur est celui que le serveur connaît, posé par le
+ * webhook Stripe, et non celui que l'utilisateur vient de choisir.
+ */
+export function useEtatAbonnement() {
+  return useQuery<EtatAbonnement>({
+    queryKey: ["abonnement"],
+    queryFn: () => api.get("/billing/etat"),
+  });
+}
+
+/** Les deux redirigent vers Stripe : la réponse ne contient qu'une adresse. */
+export function useDemarrerCheckout() {
+  return useMutation({
+    mutationFn: (plan: PlanId) => api.post<{ url: string }>("/billing/checkout", { plan }),
+  });
+}
+
+export function useOuvrirPortail() {
+  return useMutation({ mutationFn: () => api.post<{ url: string }>("/billing/portail") });
 }
 
 export function usePeriods(entityId?: string) {
