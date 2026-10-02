@@ -101,6 +101,50 @@ export function useOuvrirPortail() {
   return useMutation({ mutationFn: () => api.post<{ url: string }>("/billing/portail") });
 }
 
+/*
+ * Conseiller. L'état dit si la fonctionnalité est disponible sur cette
+ * instance et combien de questions restent : l'écran doit pouvoir le dire
+ * avant d'offrir un champ de saisie qui échouerait.
+ */
+export interface EtatConseil {
+  disponible: boolean;
+  posees: number;
+  incluses: number;
+  restantes: number;
+  formule: string;
+}
+
+export interface SourceConseil {
+  outil: string;
+  arguments: Record<string, unknown>;
+  erreur: boolean;
+}
+
+export interface ReponseConseil {
+  texte: string;
+  sources: SourceConseil[];
+  tronquee: boolean;
+  restantes: number;
+}
+
+export function useEtatConseil() {
+  return useQuery<EtatConseil>({
+    queryKey: ["conseil", "etat"],
+    queryFn: () => api.get("/conseil/etat"),
+  });
+}
+
+export function usePoserQuestion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (question: string) =>
+      api.post<ReponseConseil>("/conseil/question", { question }),
+    // Le compteur affiché doit suivre, sinon l'utilisateur découvre son
+    // quota épuisé au refus plutôt qu'en le voyant décroître.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["conseil", "etat"] }),
+  });
+}
+
 export function usePeriods(entityId?: string) {
   return useQuery<Period[]>({
     queryKey: ["periods", entityId ?? "all"],

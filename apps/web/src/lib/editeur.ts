@@ -68,9 +68,19 @@ export interface Hebergeur {
   nom: string;
   adresse: string;
   pays: string;
+  /** Vrai quand le prestataire ne traite les données que si la
+   *  fonctionnalité correspondante est activée sur l'instance. */
+  conditionnel?: boolean;
 }
 
 export const HEBERGEURS: Hebergeur[] = [
+  {
+    role: "Conseiller (si activé)",
+    nom: "Anthropic PBC",
+    adresse: "548 Market St, PMB 90375, San Francisco, CA 94104",
+    pays: "États-Unis",
+    conditionnel: true,
+  },
   {
     role: "Site et interface",
     nom: "Vercel Inc.",

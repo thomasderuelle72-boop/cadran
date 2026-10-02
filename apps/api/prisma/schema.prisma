@@ -65,6 +65,31 @@ model Organization {
   auditLogs  AuditLog[]
   actionPlans ActionPlan[]
   subscription Subscription?
+  conseilUsages ConseilUsage[]
+}
+
+/// Consommation mensuelle du conseiller, par organisation.
+///
+/// Un compteur, pas un historique : le texte des questions n'est pas
+/// conservé. Elles portent des informations sur l'entreprise du client, et
+/// les garder demanderait de les déclarer, de les protéger et de pouvoir les
+/// effacer — pour un bénéfice que la version actuelle n'a pas. Le compteur
+/// suffit à tenir le quota ; les jetons servent à mesurer le coût réel avant
+/// d'ajuster les formules.
+model ConseilUsage {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  /// Mois au format AAAA-MM. Le quota se remet à zéro en changeant de mois,
+  /// sans tâche planifiée : une ligne par mois, et la précédente n'est plus
+  /// lue.
+  mois           String
+  questions      Int          @default(0)
+  jetonsEntree   Int          @default(0)
+  jetonsSortie   Int          @default(0)
+  majLe          DateTime     @updatedAt
+
+  @@unique([organizationId, mois])
 }
 
 enum PlanId {

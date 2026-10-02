@@ -175,10 +175,40 @@ export function Confidentialite() {
           {HEBERGEURS.map((h) => (
             <li key={h.nom} className="card">
               <p className="font-medium">{h.nom}</p>
-              <p className="text-sm text-ink/60">{h.role} — {h.pays}</p>
+              <p className="text-sm text-ink/60">
+                {h.role} — {h.pays}
+              </p>
             </li>
           ))}
         </ul>
+        <div className="card border-rule/30 mt-4">
+          <p className="font-medium text-sm">Le conseiller, quand il est activé</p>
+          <p className="text-sm text-ink/75 mt-1">
+            Lorsque vous posez une question au conseiller, votre question et les résultats des
+            calculs nécessaires pour y répondre — qui peuvent comporter des noms de clients ou de
+            fournisseurs — sont transmis à <strong>Anthropic PBC</strong>, qui exploite le modèle
+            d&apos;analyse de langage.
+          </p>
+          <ul className="list-disc pl-5 space-y-1 text-sm text-ink/75 mt-2">
+            <li>
+              Rien n&apos;est transmis tant que vous ne posez pas de question : aucune analyse
+              automatique n&apos;est envoyée en arrière-plan.
+            </li>
+            <li>
+              Vos données ne servent pas à entraîner de modèle. C&apos;est une obligation
+              contractuelle du prestataire, pas une simple intention.
+            </li>
+            <li>
+              Nous ne conservons ni vos questions ni les réponses : seul un compteur mensuel,
+              destiné au suivi de votre formule, est enregistré.
+            </li>
+            <li>
+              Les traitements ont lieu aux États-Unis, encadrés par les clauses contractuelles
+              types de la Commission européenne.
+            </li>
+          </ul>
+        </div>
+
         <p className="text-sm text-ink/55 mt-3">
           Cette liste est tenue à jour. Tout nouveau sous-traitant y est ajouté avant sa mise en
           service, et les clients professionnels en sont informés conformément au contrat de

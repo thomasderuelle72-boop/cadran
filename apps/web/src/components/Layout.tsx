@@ -33,6 +33,7 @@ const FAMILLES: Array<{ titre: string; entrees: Entree[] }> = [
   {
     titre: "Comprendre",
     entrees: [
+      { to: "/conseil", label: "Conseiller" },
       { to: "/analysis", label: "Analyse" },
       { to: "/receivables", label: "Encours" },
       { to: "/diagnostic", label: "Diagnostic" },

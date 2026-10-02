@@ -20,6 +20,7 @@ import { AlertsModule } from "./alerts/alerts.module";
 import { CashForecastModule } from "./cash-forecast/cash-forecast.module";
 import { AuditModule } from "./audit/audit.module";
 import { BillingModule } from "./billing/billing.module";
+import { ConseilModule } from "./conseil/conseil.module";
 import { EmailModule } from "./email/email.module";
 
 @Module({
@@ -59,6 +60,7 @@ import { EmailModule } from "./email/email.module";
     CashForecastModule,
     AuditModule,
     BillingModule,
+    ConseilModule,
   ],
   /*
    * Deux gardes globaux. Le limiteur de débit d'abord : il est inutile de

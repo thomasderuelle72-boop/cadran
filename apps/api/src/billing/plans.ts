@@ -26,6 +26,16 @@ export interface Quotas {
   consolidation: boolean;
   /** Import d'un fichier des écritures comptables. */
   fec: boolean;
+  /**
+   * Questions au conseiller, par mois. null = sans limite.
+   *
+   * Aucune formule n'est illimitée ici, contrairement aux entités : chaque
+   * question appelle un modèle facturé au jeton, et une limite absente est
+   * une dépense non bornée. Les valeurs sont un premier calibrage — environ
+   * un sixième à un quart du prix de la formule au coût observé — à ajuster
+   * sur la consommation réelle, que `ConseilUsage` enregistre pour cela.
+   */
+  questionsConseil: number;
 }
 
 export interface Plan {
@@ -46,28 +56,28 @@ export const PLANS: Record<PlanId, Plan> = {
     id: "essai",
     label: "Essai",
     promesse: "Quatorze jours pour importer un exercice et juger sur pièces.",
-    quotas: { entites: 1, utilisateurs: 1, periodes: 12, consolidation: false, fec: true },
+    quotas: { entites: 1, utilisateurs: 1, periodes: 12, consolidation: false, fec: true, questionsConseil: 10 },
     variableTarif: null,
   },
   solo: {
     id: "solo",
     label: "Indépendant",
     promesse: "Une entreprise, un pilote, tout l'outil d'analyse.",
-    quotas: { entites: 1, utilisateurs: 2, periodes: null, consolidation: false, fec: true },
+    quotas: { entites: 1, utilisateurs: 2, periodes: null, consolidation: false, fec: true, questionsConseil: 60 },
     variableTarif: "STRIPE_PRICE_SOLO",
   },
   cabinet: {
     id: "cabinet",
     label: "Cabinet",
     promesse: "Plusieurs dossiers clients, plusieurs intervenants, la consolidation.",
-    quotas: { entites: 15, utilisateurs: 10, periodes: null, consolidation: true, fec: true },
+    quotas: { entites: 15, utilisateurs: 10, periodes: null, consolidation: true, fec: true, questionsConseil: 250 },
     variableTarif: "STRIPE_PRICE_CABINET",
   },
   groupe: {
     id: "groupe",
     label: "Groupe",
     promesse: "Sans limite de périmètre, pour les structures à filiales multiples.",
-    quotas: { entites: null, utilisateurs: null, periodes: null, consolidation: true, fec: true },
+    quotas: { entites: null, utilisateurs: null, periodes: null, consolidation: true, fec: true, questionsConseil: 800 },
     variableTarif: "STRIPE_PRICE_GROUPE",
   },
 };
@@ -125,6 +135,18 @@ export interface Depassement {
  * d'erreur se résume à « formule insuffisante », ce qui n'aide ni à décider
  * ni à acheter.
  */
+/**
+ * Le quota de questions est-il épuisé ?
+ *
+ * Séparé de `verifierQuota` parce qu'il ne compte pas la même chose : les
+ * autres quotas bornent un stock (combien d'entités existent), celui-ci un
+ * flux (combien de questions ce mois-ci). Les confondre donnerait un message
+ * d'erreur qui parle de création alors qu'il s'agit d'un usage.
+ */
+export function questionsRestantes(plan: Plan, posees: number): number {
+  return Math.max(plan.quotas.questionsConseil - posees, 0);
+}
+
 export function verifierQuota(
   plan: Plan,
   quota: "entites" | "utilisateurs" | "periodes",
