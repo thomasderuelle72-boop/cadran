@@ -7,6 +7,8 @@
     "apps/web"
   ],
   "scripts": {
+    "build": "npm run prisma:generate && npm run build:api",
+    "start": "npm run start:prod --workspace=apps/api",
     "dev:api": "npm run start:dev --workspace=apps/api",
     "dev:web": "npm run dev --workspace=apps/web",
     "build:api": "npm run build --workspace=apps/api",
@@ -28,6 +30,6 @@
     "typescript-eslint": "^8.19.0"
   },
   "engines": {
-    "node": ">=20"
+    "node": "20.x"
   }
 }
