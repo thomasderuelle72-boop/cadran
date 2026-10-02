@@ -45,8 +45,15 @@ export default {
         },
       },
       fontFamily: {
-        display: ["'Source Serif 4'", "Georgia", "serif"],
-        sans: ["'IBM Plex Sans'", "system-ui", "sans-serif"],
+        /*
+         * `display` et `sans` pointent la même famille : un instrument ne
+         * change pas de caractère entre son titre et son relevé. La
+         * distinction se fait à la graisse et à la chasse, pas à la police.
+         * Les deux noms restent séparés pour que la palette Cadran puisse
+         * remettre un romain sur `display` sans toucher aux composants.
+         */
+        display: ["var(--police-titre)", "'Inter Tight'", "system-ui", "sans-serif"],
+        sans: ["'Inter Tight'", "system-ui", "sans-serif"],
         mono: ["'IBM Plex Mono'", "monospace"],
       },
     },

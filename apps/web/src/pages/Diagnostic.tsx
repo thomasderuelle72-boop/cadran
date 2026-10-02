@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDiagnostic, useEntities, usePeriods } from "../api/hooks";
+import { CadranScore } from "../components/CadranScore";
 import { EntitySelector } from "../components/EntitySelector";
 import { EntetePage, EtatVide, SqueletteCarte, SqueletteTuiles, Zone } from "../components/etats";
 import { formatCurrency } from "../lib/format";
@@ -32,48 +33,6 @@ function formatPart(part: number | null): string {
   return part === null ? "—" : `${(part * 100).toFixed(1)} %`;
 }
 
-/**
- * Un score se lit sur une échelle, pas dans l'absolu. La règle place la
- * valeur entre les deux seuils publiés, avec une marge de part et d'autre
- * pour que les cas extrêmes restent visibles aux bords.
- */
-function Regle({ score }: { score: ScoreRisque }) {
-  if (score.valeur === null) return null;
-
-  const etendue = score.seuilSain - score.seuilDanger;
-  const min = score.seuilDanger - etendue;
-  const max = score.seuilSain + etendue;
-  const position = Math.min(100, Math.max(0, ((score.valeur - min) / (max - min)) * 100));
-  const bornerDanger = ((score.seuilDanger - min) / (max - min)) * 100;
-  const bornerSain = ((score.seuilSain - min) / (max - min)) * 100;
-
-  return (
-    <div className="mt-3">
-      <div className="relative h-2 rounded-full overflow-hidden bg-success/25">
-        <div
-          className="absolute inset-y-0 left-0 bg-critical/25"
-          style={{ width: `${bornerDanger}%` }}
-        />
-        <div
-          className="absolute inset-y-0 bg-warning/25"
-          style={{ left: `${bornerDanger}%`, width: `${bornerSain - bornerDanger}%` }}
-        />
-      </div>
-      <div className="relative h-4">
-        <div
-          className="absolute -top-3 w-0.5 h-4 bg-ink"
-          style={{ left: `calc(${position}% - 1px)` }}
-          aria-hidden="true"
-        />
-      </div>
-      <div className="flex justify-between text-xs text-ink/40 font-mono">
-        <span>danger &lt; {score.seuilDanger}</span>
-        <span>{score.seuilSain} &lt; sain</span>
-      </div>
-    </div>
-  );
-}
-
 function CarteScore({ score }: { score: ScoreRisque }) {
   const [detail, setDetail] = useState(false);
 
@@ -91,11 +50,11 @@ function CarteScore({ score }: { score: ScoreRisque }) {
         </span>
       </div>
 
-      <div className="mt-3 font-mono text-3xl font-semibold">
-        {score.valeur === null ? <span className="text-ink/30 text-xl">n/d</span> : score.valeur}
-      </div>
-
-      <Regle score={score} />
+      {score.valeur === null ? (
+        <div className="mt-3 font-mono text-xl text-ink/30">n/d</div>
+      ) : (
+        <CadranScore score={score} />
+      )}
 
       {score.motifIndisponibilite && (
         <p className="mt-3 text-sm text-ink/60">{score.motifIndisponibilite}</p>

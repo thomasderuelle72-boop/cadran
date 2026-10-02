@@ -16,36 +16,50 @@
  */
 @layer base {
   :root {
-    --paper: 242 243 236;
+    /*
+     * Instrument, en clair. L'identité de cette palette est son état
+     * sombre : c'est l'écran qu'on lit à sept heures du matin pour savoir
+     * si la journée est normale. Le clair existe quand même, parce qu'un
+     * outil ouvert toute la journée fatigue en sombre et que les rapports
+     * s'impriment sur du blanc — il garde la nuance verte et l'ambre, pour
+     * qu'on reconnaisse le même appareil.
+     */
+    --paper: 240 243 241;
     --surface: 255 255 255;
-    --surface-2: 249 250 244;
-    --ink: 23 31 25;
-    --rule: 23 31 25;
+    --surface-2: 232 238 235;
+    --ink: 14 20 18;
+    --rule: 14 20 18;
 
-    --primary: 31 92 78;
-    --primary-soft: 220 233 227;
-    --accent: 156 95 38;
-    --accent-soft: 240 223 194;
+    --primary: 20 105 86;
+    --primary-soft: 214 234 227;
+    --accent: 150 101 18;
+    --accent-soft: 246 232 203;
 
-    --success: 47 125 79;
-    --success-soft: 221 238 225;
-    --warning: 156 122 22;
-    --warning-soft: 243 236 210;
-    --critical: 174 59 50;
-    --critical-soft: 245 223 219;
+    --success: 23 112 80;
+    --success-soft: 215 236 227;
+    --warning: 150 101 18;
+    --warning-soft: 246 232 203;
+    --critical: 173 61 46;
+    --critical-soft: 248 224 219;
 
-    /* Séries de graphique : valeurs validées, cf. components/Graphique.tsx. */
-    --serie-1: 0 121 92;
-    --serie-2: 162 94 34;
+    /* Couple validé par scripts/validate_palette.js sur fond #F0F3F1. Le
+     * vert d'interface, plus sourd, échouait au plancher de chroma : sur un
+     * aplat de graphique il se lisait comme un gris. Les séries ont donc
+     * leurs propres valeurs. */
+    --serie-1: 10 122 94;
+    --serie-2: 150 101 18;
 
     /*
      * Géométrie. Elle fait autant que la couleur pour l'identité d'un thème :
      * un rayon et une ombre identiques d'une palette à l'autre les feraient
      * toutes se ressembler, quelles que soient les teintes.
      */
-    --rayon-carte: 0.75rem;
-    --rayon-controle: 0.5rem;
-    --force-filet: 0.1;
+    /* Instrument titre dans la même famille que son texte. */
+    --police-titre: "Inter Tight";
+
+    --rayon-carte: 0.3rem;
+    --rayon-controle: 0.25rem;
+    --force-filet: 0.17;
     --ombre-carte: none;
 
     color-scheme: light;
@@ -65,6 +79,130 @@
    */
   @media (prefers-color-scheme: dark) {
     :root:not([data-palette]):not([data-theme="light"]) {
+      --paper: 14 20 18;
+      --surface: 21 29 26;
+      --surface-2: 28 38 34;
+      --ink: 230 236 233;
+      --rule: 230 236 233;
+
+      --primary: 70 192 143;
+      --primary-soft: 20 48 39;
+      --accent: 224 163 60;
+      --accent-soft: 56 42 18;
+
+      --success: 70 192 143;
+      --success-soft: 20 48 39;
+      --warning: 224 163 60;
+      --warning-soft: 56 42 18;
+      --critical: 226 112 95;
+      --critical-soft: 60 29 25;
+
+      /* Couple validé par scripts/validate_palette.js sur fond #151D1A :
+       * bande de clarté respectée, ΔE 8,4 en vision protanope, 17,6 en
+       * vision normale. Plus sourd que les couleurs d'interface, à dessein :
+       * un aplat de graphique n'est pas un voyant. */
+      --serie-1: 46 156 116;
+      --serie-2: 191 132 40;
+
+      color-scheme: dark;
+    }
+  }
+
+  :root:not([data-palette])[data-theme="dark"] {
+    --paper: 14 20 18;
+    --surface: 21 29 26;
+    --surface-2: 28 38 34;
+    --ink: 230 236 233;
+    --rule: 230 236 233;
+
+    --primary: 70 192 143;
+    --primary-soft: 20 48 39;
+    --accent: 224 163 60;
+    --accent-soft: 56 42 18;
+
+    --success: 70 192 143;
+    --success-soft: 20 48 39;
+    --warning: 224 163 60;
+    --warning-soft: 56 42 18;
+    --critical: 226 112 95;
+    --critical-soft: 60 29 25;
+
+    /* Couple validé par scripts/validate_palette.js sur fond #151D1A :
+     * bande de clarté respectée, ΔE 8,4 en vision protanope, 17,6 en
+     * vision normale. Plus sourd que les couleurs d'interface, à dessein :
+     * un aplat de graphique n'est pas un voyant. */
+    --serie-1: 46 156 116;
+    --serie-2: 191 132 40;
+
+    color-scheme: dark;
+  }
+
+  /* ======================================================================
+   * Palettes
+   *
+   * Le thème a deux axes indépendants : la *palette* (data-palette) dit
+   * quelle famille de couleurs, le *mode* (data-theme) dit clair ou sombre.
+   * Les croiser dans un seul attribut aurait produit six valeurs à tenir en
+   * correspondance ; séparés, chacun se choisit sans toucher à l'autre.
+   *
+   * Instrument est la palette par défaut et ne pose aucun attribut,
+   * exactement comme « système » n'en pose aucun pour le mode : les règles
+   * ci-dessus, sur :root nu, sont donc le socle, et une page chargée sans
+   * JavaScript reste habillée.
+   *
+   * Conséquence à connaître : les blocs sombres d'Instrument portent
+   * :not([data-palette]). Si la bascule posait data-palette="instrument" au
+   * lieu de le retirer, ils cesseraient de s'appliquer et le sombre
+   * reviendrait au clair. La bascule retire donc l'attribut —
+   * cf. BasculeTheme.tsx.
+   *
+   * Chaque palette change aussi la géométrie, pas seulement la teinte : un
+   * thème qui ne fait que recolorer se reconnaît tout de suite pour ce qu'il
+   * est, une variante. Registre pince les angles et marque les filets, à la
+   * façon d'un livre-journal ; Ardoise arrondit et adoucit.
+   * ====================================================================== */
+
+  /* --- Cadran : vert profond et cuivre, sur papier crème ---------------
+   *
+   * L'identité d'origine. Elle a cédé la racine nue à Instrument, mais
+   * reste disponible : plus chaude, plus ronde, elle convient mieux aux
+   * documents destinés à être imprimés.
+   * -------------------------------------------------------------------- */
+  :root[data-palette="cadran"] {
+    /* Cadran garde son romain : c'est ce qui en fait un document. */
+    --police-titre: "Source Serif 4";
+
+    --paper: 242 243 236;
+    --surface: 255 255 255;
+    --surface-2: 249 250 244;
+    --ink: 23 31 25;
+    --rule: 23 31 25;
+
+    --primary: 31 92 78;
+    --primary-soft: 220 233 227;
+    --accent: 156 95 38;
+    --accent-soft: 240 223 194;
+
+    --success: 47 125 79;
+    --success-soft: 221 238 225;
+    --warning: 156 122 22;
+    --warning-soft: 243 236 210;
+    --critical: 174 59 50;
+    --critical-soft: 245 223 219;
+
+    --serie-1: 0 121 92;
+    --serie-2: 162 94 34;
+
+    --rayon-carte: 0.75rem;
+    --rayon-controle: 0.5rem;
+    --force-filet: 0.1;
+    --ombre-carte: none;
+
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root[data-palette="cadran"]:not([data-theme="light"]) {
       --paper: 18 22 18;
       --surface: 26 30 25;
       --surface-2: 34 39 32;
@@ -90,7 +228,7 @@
     }
   }
 
-  :root:not([data-palette])[data-theme="dark"] {
+  :root[data-palette="cadran"][data-theme="dark"] {
     --paper: 18 22 18;
     --surface: 26 30 25;
     --surface-2: 34 39 32;
@@ -115,32 +253,9 @@
     color-scheme: dark;
   }
 
-  /* ======================================================================
-   * Palettes
-   *
-   * Le thème a deux axes indépendants : la *palette* (data-palette) dit
-   * quelle famille de couleurs, le *mode* (data-theme) dit clair ou sombre.
-   * Les croiser dans un seul attribut aurait produit six valeurs à tenir en
-   * correspondance ; séparés, chacun se choisit sans toucher à l'autre.
-   *
-   * Cadran est la palette par défaut et ne pose aucun attribut, exactement
-   * comme « système » n'en pose aucun pour le mode : les règles ci-dessus,
-   * sur :root nu, sont donc le socle, et une page chargée sans JavaScript
-   * reste habillée.
-   *
-   * Conséquence à connaître : les blocs sombres de Cadran portent
-   * :not([data-palette]). Si la bascule posait data-palette="cadran" au lieu
-   * de le retirer, ils cesseraient de s'appliquer et le sombre reviendrait
-   * au clair. La bascule retire donc l'attribut — cf. BasculeTheme.tsx.
-   *
-   * Chaque palette change aussi la géométrie, pas seulement la teinte : un
-   * thème qui ne fait que recolorer se reconnaît tout de suite pour ce qu'il
-   * est, une variante. Registre pince les angles et marque les filets, à la
-   * façon d'un livre-journal ; Ardoise arrondit et adoucit.
-   * ====================================================================== */
-
   /* --- Registre : papier, encre bleue, oxblood ------------------------- */
   :root[data-palette="registre"] {
+    --police-titre: "Source Serif 4";
     --paper: 245 241 233;
     --surface: 251 248 241;
     --surface-2: 240 235 224;
@@ -226,6 +341,7 @@
 
   /* --- Ardoise : gris froid, indigo, ambre ----------------------------- */
   :root[data-palette="ardoise"] {
+    --police-titre: "Source Serif 4";
     --paper: 244 245 247;
     --surface: 255 255 255;
     --surface-2: 247 248 250;

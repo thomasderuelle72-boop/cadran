@@ -18,7 +18,7 @@ import { useEffect, useState } from "react";
  */
 
 type Mode = "systeme" | "clair" | "sombre";
-type Palette = "cadran" | "registre" | "ardoise";
+type Palette = "instrument" | "cadran" | "registre" | "ardoise";
 
 const CLE_MODE = "cadran.theme";
 const CLE_PALETTE = "cadran.palette";
@@ -30,6 +30,11 @@ const MODES: Record<Mode, string> = {
 };
 
 const PALETTES: Array<{ id: Palette; label: string; description: string }> = [
+  {
+    id: "instrument",
+    label: "Instrument",
+    description: "Vert de nuit et ambre : un appareil qu'on lit d'un regard.",
+  },
   { id: "cadran", label: "Cadran", description: "Vert profond et cuivre, sur papier crème." },
   { id: "registre", label: "Registre", description: "Encre bleue et oxblood, angles vifs." },
   { id: "ardoise", label: "Ardoise", description: "Gris froid et indigo, formes adoucies." },
@@ -48,11 +53,12 @@ function lireMode(): Mode {
 function lirePalette(): Palette {
   try {
     const stocke = localStorage.getItem(CLE_PALETTE);
-    if (stocke === "cadran" || stocke === "registre" || stocke === "ardoise") return stocke;
+    if (stocke === "instrument" || stocke === "cadran" || stocke === "registre" || stocke === "ardoise")
+      return stocke;
   } catch {
     // Idem : la palette par défaut habille la page sans stockage.
   }
-  return "cadran";
+  return "instrument";
 }
 
 function appliquer(mode: Mode, palette: Palette) {
@@ -65,9 +71,9 @@ function appliquer(mode: Mode, palette: Palette) {
 
   // Aucun attribut non plus pour la palette par défaut. Ce n'est pas un
   // détail : les règles sombres de Cadran portent :not([data-palette]), et
-  // poser data-palette="cadran" les désactiverait — le sombre reviendrait
+  // poser data-palette="instrument" les désactiverait — le sombre reviendrait
   // silencieusement au clair.
-  if (palette === "cadran") racine.removeAttribute("data-palette");
+  if (palette === "instrument") racine.removeAttribute("data-palette");
   else racine.setAttribute("data-palette", palette);
 }
 
