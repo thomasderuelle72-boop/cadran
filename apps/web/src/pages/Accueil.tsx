@@ -369,6 +369,17 @@ export function Accueil() {
               Tarifs
             </a>
           </div>
+          <nav className="flex flex-col gap-2 text-sm">
+            <Link to="/mentions-legales" className="text-ink/60 hover:text-ink transition">
+              Mentions légales
+            </Link>
+            <Link to="/confidentialite" className="text-ink/60 hover:text-ink transition">
+              Confidentialité
+            </Link>
+            <Link to="/cgv" className="text-ink/60 hover:text-ink transition">
+              CGV
+            </Link>
+          </nav>
           <div className="w-44">
             <BasculeTheme />
           </div>

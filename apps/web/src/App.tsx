@@ -7,6 +7,9 @@ import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
 import { MotDePasseOubli } from "./pages/MotDePasseOubli";
 import { MotDePasseNouveau } from "./pages/MotDePasseNouveau";
+import { MentionsLegales } from "./pages/MentionsLegales";
+import { Confidentialite } from "./pages/Confidentialite";
+import { CGV } from "./pages/CGV";
 import { Dashboard } from "./pages/Dashboard";
 import { RatiosPage } from "./pages/Ratios";
 import { AnalysisPage } from "./pages/Analysis";
@@ -43,6 +46,11 @@ export default function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/mot-de-passe/oubli" element={<MotDePasseOubli />} />
       <Route path="/mot-de-passe/nouveau" element={<MotDePasseNouveau />} />
+      {/* Publiques et accessibles sans compte : leur raison d'être est
+          d'informer un visiteur avant qu'il ne s'engage. */}
+      <Route path="/mentions-legales" element={<MentionsLegales />} />
+      <Route path="/confidentialite" element={<Confidentialite />} />
+      <Route path="/cgv" element={<CGV />} />
       <Route
         element={
           <ProtectedRoute>
