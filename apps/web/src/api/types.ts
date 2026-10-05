@@ -570,3 +570,31 @@ export interface EcrituresCompte {
   solde: number;
   ecritures: EcritureLigne[];
 }
+
+/**
+ * Identité de marque appliquée aux documents produits par l'organisation.
+ *
+ * Les images n'y figurent que par leurs dimensions : l'API ne sert jamais le
+ * fichier, seulement le PDF ou le classeur qui l'intègre. L'aperçu à l'écran
+ * est donc reconstitué à partir du fichier que l'utilisateur vient de
+ * choisir, pas rechargé depuis le serveur.
+ */
+export interface ImageMarque {
+  format: string;
+  largeur: number;
+  hauteur: number;
+}
+
+export interface Marque {
+  nomAffiche: string | null;
+  mentionsPied: string | null;
+  couleurAccent: string | null;
+  signataireNom: string | null;
+  signataireFonction: string | null;
+  logo: ImageMarque | null;
+  signature: ImageMarque | null;
+  /** Faux quand la formule souscrite n'inclut pas la personnalisation. */
+  autorisee: boolean;
+}
+
+export type EmplacementMarque = "logo" | "signature";

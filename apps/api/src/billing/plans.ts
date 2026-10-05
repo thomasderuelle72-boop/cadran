@@ -36,6 +36,14 @@ export interface Quotas {
    * sur la consommation réelle, que `ConseilUsage` enregistre pour cela.
    */
   questionsConseil: number;
+  /**
+   * Documents exportés à la marque du client : logo, couleur, signature.
+   *
+   * La page de tarifs l'annonce à partir de Cabinet — c'est un argument de
+   * vente destiné aux cabinets, qui remettent les rapports à leurs propres
+   * clients sous leur nom. L'inclure plus bas viderait cet argument.
+   */
+  marqueDocuments: boolean;
 }
 
 export interface Plan {
@@ -56,28 +64,28 @@ export const PLANS: Record<PlanId, Plan> = {
     id: "essai",
     label: "Essai",
     promesse: "Quatorze jours pour importer un exercice et juger sur pièces.",
-    quotas: { entites: 1, utilisateurs: 1, periodes: 12, consolidation: false, fec: true, questionsConseil: 10 },
+    quotas: { entites: 1, utilisateurs: 1, periodes: 12, consolidation: false, fec: true, questionsConseil: 10, marqueDocuments: false },
     variableTarif: null,
   },
   solo: {
     id: "solo",
     label: "Indépendant",
     promesse: "Une entreprise, un pilote, tout l'outil d'analyse.",
-    quotas: { entites: 1, utilisateurs: 2, periodes: null, consolidation: false, fec: true, questionsConseil: 60 },
+    quotas: { entites: 1, utilisateurs: 2, periodes: null, consolidation: false, fec: true, questionsConseil: 60, marqueDocuments: false },
     variableTarif: "STRIPE_PRICE_SOLO",
   },
   cabinet: {
     id: "cabinet",
     label: "Cabinet",
     promesse: "Plusieurs dossiers clients, plusieurs intervenants, la consolidation.",
-    quotas: { entites: 15, utilisateurs: 10, periodes: null, consolidation: true, fec: true, questionsConseil: 250 },
+    quotas: { entites: 15, utilisateurs: 10, periodes: null, consolidation: true, fec: true, questionsConseil: 250, marqueDocuments: true },
     variableTarif: "STRIPE_PRICE_CABINET",
   },
   groupe: {
     id: "groupe",
     label: "Groupe",
     promesse: "Sans limite de périmètre, pour les structures à filiales multiples.",
-    quotas: { entites: null, utilisateurs: null, periodes: null, consolidation: true, fec: true, questionsConseil: 800 },
+    quotas: { entites: null, utilisateurs: null, periodes: null, consolidation: true, fec: true, questionsConseil: 800, marqueDocuments: true },
     variableTarif: "STRIPE_PRICE_GROUPE",
   },
 };

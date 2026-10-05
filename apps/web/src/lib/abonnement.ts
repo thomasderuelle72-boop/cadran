@@ -19,6 +19,8 @@ export interface Quotas {
   periodes: number | null;
   consolidation: boolean;
   fec: boolean;
+  /** Documents exportés à la marque du client : logo, couleur, signature. */
+  marqueDocuments: boolean;
 }
 
 export interface EtatAbonnement {

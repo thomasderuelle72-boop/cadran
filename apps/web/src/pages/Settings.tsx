@@ -4,6 +4,7 @@ import { ApiError } from "../api/client";
 import type { Role } from "../api/types";
 import { useAuth } from "../context/AuthContext";
 import { EntetePage } from "../components/etats";
+import { MarqueDocuments } from "../components/MarqueDocuments";
 
 const ROLE_LABELS: Record<Role, string> = {
   ADMIN: "Administrateur",
@@ -68,7 +69,7 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-4xl">
       <EntetePage titre="Paramètres" sousTitre={`Organisation : ${user?.organizationName ?? ""}`} />
 
       <div className="card">
@@ -170,6 +171,11 @@ export function SettingsPage() {
           </form>
         ) : null}
       </div>
+
+      <MarqueDocuments
+        nomOrganisation={user?.organizationName ?? ""}
+        estAdmin={user?.role === "ADMIN"}
+      />
 
       <div className="card">
         <h2 className="font-display text-lg font-semibold mb-3">Utilisateurs</h2>

@@ -4,6 +4,8 @@ import ExcelJS from "exceljs";
 import { PrismaService } from "../prisma/prisma.service";
 import { RatiosService } from "../ratios/ratios.service";
 import { RatioCategory, RatioValue } from "../ratios/engine";
+import { MarqueService } from "../marque/marque.service";
+import { ajuster } from "../marque/image";
 
 const CATEGORY_LABELS: Record<RatioCategory, string> = {
   RENTABILITE: "Rentabilité",
@@ -19,8 +21,19 @@ const STATUS_LABELS: Record<RatioValue["status"], string> = {
   neutre: "—",
 };
 
+/**
+ * Montant en toutes lettres françaises, séparateurs compris.
+ *
+ * `toLocaleString` sépare les milliers par une espace fine insécable
+ * (U+202F). Les polices standard du PDF sont encodées en WinAnsi, qui ne
+ * connaît pas ce caractère : « 1 250 000 € » s'imprimait « 1/250/000 € ».
+ * On la ramène à l'espace insécable ordinaire, que WinAnsi code, et qui
+ * joue le même rôle typographique.
+ */
 function formatMoney(value: number, currency: string): string {
-  return value.toLocaleString("fr-FR", { style: "currency", currency, maximumFractionDigits: 0 });
+  return value
+    .toLocaleString("fr-FR", { style: "currency", currency, maximumFractionDigits: 0 })
+    .replace(/[\u202f\u2009]/g, "\u00a0");
 }
 
 function formatValue(ratio: RatioValue, currency: string): string {
@@ -43,6 +56,7 @@ function formatValue(ratio: RatioValue, currency: string): string {
 export class ReportsService {
   constructor(
     private prisma: PrismaService,
+    private marque: MarqueService,
     private ratiosService: RatiosService
   ) {}
 
@@ -68,7 +82,9 @@ export class ReportsService {
     );
     const currency = period.entity.currency;
 
-    const doc = new PDFDocument({ size: "A4", margin: 48 });
+    /* bufferPages : indispensable pour écrire « page 2 sur 5 », puisqu'on
+     * ignore le total tant que le contenu n'est pas composé. */
+    const doc = new PDFDocument({ size: "A4", margin: 48, bufferPages: true });
     const chunks: Buffer[] = [];
     doc.on("data", (chunk) => chunks.push(chunk));
 
@@ -76,12 +92,37 @@ export class ReportsService {
       doc.on("end", () => resolve(Buffer.concat(chunks)));
     });
 
-    doc.fontSize(20).text("Cadran — Rapport financier", { align: "left" });
-    doc.moveDown(0.2);
+    /*
+     * En-tête à la marque du client quand sa formule l'inclut, à celle de
+     * Cadran sinon. Un cabinet remet ces rapports à ses propres clients :
+     * voir « Cadran » en haut d'un document qu'il facture le dessert.
+     */
+    const marque = await this.marque.pourDocument(organizationId);
+    const accent = marque?.couleurAccent ?? "#1F4F43";
+    const enTete = marque?.nomAffiche ?? period.entity.organization.name;
+
+    if (marque?.logo && marque.logoLargeur && marque.logoHauteur) {
+      /* Taille calculée, jamais imposée : donner largeur et hauteur à la
+       * fois étire le logo. */
+      const taille = ajuster(
+        { largeur: marque.logoLargeur, hauteur: marque.logoHauteur },
+        { largeur: 150, hauteur: 46 }
+      );
+      doc.image(Buffer.from(marque.logo), doc.page.margins.left, doc.y, {
+        width: taille.largeur,
+        height: taille.hauteur,
+      });
+      doc.y += taille.hauteur + 12;
+    }
+
+    doc.fillColor("#111").fontSize(18).text(enTete, { align: "left" });
+    doc.moveDown(0.15);
+    doc.fontSize(13).fillColor(accent).text("Rapport financier");
+    doc.moveDown(0.3);
     doc
-      .fontSize(12)
+      .fontSize(11)
       .fillColor("#555")
-      .text(`${period.entity.organization.name} — ${period.entity.name} · ${period.label}`);
+      .text(`${period.entity.name} · ${period.label}`);
     doc
       .fontSize(9)
       .fillColor("#888")
@@ -90,9 +131,15 @@ export class ReportsService {
           "fr-FR"
         )} · Calculé le ${computedAt.toLocaleDateString("fr-FR")}`
       );
+
+    /* Un filet à la couleur d'accent : c'est ce qui fait qu'un document se
+     * reconnaît d'un coup d'œil avant même d'être lu. */
+    doc.moveDown(0.6);
+    const largeurUtile = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+    doc.save().rect(doc.page.margins.left, doc.y, largeurUtile, 1.5).fill(accent).restore();
     doc.moveDown(1);
 
-    doc.fillColor("#111").fontSize(13).text("Synthèse");
+    doc.fillColor(accent).fontSize(13).text("Synthèse");
     doc.moveDown(0.4);
     const kpis: Array<[string, string]> = [
       ["Chiffre d'affaires", formatMoney(aggregates.chiffreAffaires, currency)],
@@ -107,7 +154,7 @@ export class ReportsService {
 
     const categories: RatioCategory[] = ["RENTABILITE", "LIQUIDITE", "SOLVABILITE", "ACTIVITE"];
     for (const category of categories) {
-      doc.fontSize(13).fillColor("#111").text(CATEGORY_LABELS[category]);
+      doc.fontSize(13).fillColor(accent).text(CATEGORY_LABELS[category]);
       doc.moveDown(0.3);
       const rows = ratios.filter((r) => r.category === category);
       rows.forEach((ratio) => {
@@ -117,6 +164,74 @@ export class ReportsService {
           .text(`${ratio.label} — ${formatValue(ratio, currency)} (${STATUS_LABELS[ratio.status]})`);
       });
       doc.moveDown(0.8);
+    }
+
+    /*
+     * Bloc de signature : c'est lui qui transforme une sortie de logiciel
+     * en document qui engage quelqu'un. Il n'apparaît que si un signataire
+     * est renseigné — une signature sans nom ne vaut rien.
+     */
+    if (marque?.signataireNom) {
+      if (doc.y > doc.page.height - doc.page.margins.bottom - 130) doc.addPage();
+      doc.moveDown(1);
+      doc.save().rect(doc.page.margins.left, doc.y, 180, 0.75).fill("#CCC").restore();
+      doc.moveDown(0.8);
+
+      if (marque.signature && marque.signatureLargeur && marque.signatureHauteur) {
+        const taille = ajuster(
+          { largeur: marque.signatureLargeur, hauteur: marque.signatureHauteur },
+          { largeur: 140, hauteur: 48 }
+        );
+        doc.image(Buffer.from(marque.signature), doc.page.margins.left, doc.y, {
+          width: taille.largeur,
+          height: taille.hauteur,
+        });
+        doc.y += taille.hauteur + 6;
+      }
+
+      doc.fontSize(10).fillColor("#111").text(marque.signataireNom);
+      if (marque.signataireFonction) {
+        doc.fontSize(9).fillColor("#666").text(marque.signataireFonction);
+      }
+    }
+
+    /*
+     * Pied de page sur chaque page, numérotation comprise. Écrit après coup
+     * en parcourant les pages : au moment où l'on compose le contenu, on ne
+     * sait pas encore combien il y en aura, et « page 1 sur ? » n'est pas un
+     * document professionnel.
+     */
+    /* À défaut de marque — formule qui ne l'inclut pas, ou cabinet qui n'a
+     * rien réglé — le pied de page porte la mention de l'outil. C'est ce qui
+     * donne sa valeur à la personnalisation : la formule Cabinet ne vend pas
+     * un logo, elle vend un document qui ne parle que du cabinet. */
+    const mentions = marque?.mentionsPied ?? (marque ? null : "Document produit avec Cadran");
+    const pages = doc.bufferedPageRange();
+    for (let index = 0; index < pages.count; index += 1) {
+      doc.switchToPage(pages.start + index);
+
+      /* pdfkit pagine dès qu'un texte dépasse la marge basse, même écrit à
+       * une position imposée : sans neutraliser la marge, chaque pied de
+       * page ajouterait une page vide, qu'il faudrait ensuite remplir. */
+      const marge = doc.page.margins.bottom;
+      doc.page.margins.bottom = 0;
+      const basDePage = doc.page.height - marge + 14;
+
+      doc.fontSize(7.5).fillColor("#999");
+      if (mentions) {
+        doc.text(mentions, doc.page.margins.left, basDePage, {
+          width: largeurUtile - 60,
+          lineBreak: false,
+          ellipsis: true,
+        });
+      }
+      doc.text(`${index + 1} / ${pages.count}`, doc.page.margins.left, basDePage, {
+        width: largeurUtile,
+        align: "right",
+        lineBreak: false,
+      });
+
+      doc.page.margins.bottom = marge;
     }
 
     doc.end();
@@ -130,8 +245,13 @@ export class ReportsService {
     );
     const currency = period.entity.currency;
 
+    const marque = await this.marque.pourDocument(organizationId);
+    const accent = marque?.couleurAccent ?? "#1F4F43";
+
     const workbook = new ExcelJS.Workbook();
-    workbook.creator = "Cadran";
+    /* L'auteur du classeur apparaît dans les propriétés du fichier : c'est
+     * le cabinet qui remet le document, pas l'outil qui l'a produit. */
+    workbook.creator = marque?.nomAffiche ?? "Cadran";
     workbook.created = computedAt;
 
     const summarySheet = workbook.addWorksheet("Synthèse");
@@ -149,7 +269,7 @@ export class ReportsService {
       { label: "Résultat net", value: formatMoney(derived.resultatNet, currency) },
       { label: "Trésorerie nette", value: formatMoney(derived.tresorerieNette, currency) },
     ]);
-    summarySheet.getRow(1).font = { bold: true };
+    habillerEntete(summarySheet.getRow(1), accent);
 
     const ratiosSheet = workbook.addWorksheet("Ratios");
     ratiosSheet.columns = [
@@ -159,7 +279,7 @@ export class ReportsService {
       { header: "Valeur", key: "value", width: 14 },
       { header: "Statut", key: "status", width: 12 },
     ];
-    ratiosSheet.getRow(1).font = { bold: true };
+    habillerEntete(ratiosSheet.getRow(1), accent);
     ratios.forEach((ratio) => {
       ratiosSheet.addRow({
         category: CATEGORY_LABELS[ratio.category],
@@ -170,7 +290,41 @@ export class ReportsService {
       });
     });
 
+    if (marque?.logo && marque.logoLargeur && marque.logoHauteur && marque.logoFormat) {
+      const taille = ajuster(
+        { largeur: marque.logoLargeur, hauteur: marque.logoHauteur },
+        { largeur: 180, hauteur: 60 }
+      );
+      /* Transmis en base64 plutôt qu'en octets : les déclarations de type
+       * d'ExcelJS redéfinissent Buffer pour leur propre compte, et lui
+       * passer un Buffer de Node ne compile pas. */
+      const identifiant = workbook.addImage({
+        base64: `data:${marque.logoFormat};base64,${Buffer.from(marque.logo).toString("base64")}`,
+        extension: marque.logoFormat === "image/png" ? "png" : "jpeg",
+      });
+      /* Flottant au-dessus des colonnes libres : les colonnes A et B portent
+       * le tableau, qu'un décalage rendrait illisible à la réimportation. */
+      summarySheet.addImage(identifiant, {
+        tl: { col: 3, row: 0 },
+        ext: { width: taille.largeur, height: taille.hauteur },
+      });
+    }
+
     const buffer = await workbook.xlsx.writeBuffer();
     return Buffer.from(buffer);
   }
+}
+
+/**
+ * En-tête de feuille à la couleur du cabinet.
+ *
+ * ExcelJS attend une couleur en ARGB sans dièse : passer le code hexadécimal
+ * du web tel quel donne une cellule noire, sans erreur pour le signaler.
+ */
+function habillerEntete(ligne: ExcelJS.Row, accent: string): void {
+  const argb = `FF${accent.replace("#", "").toUpperCase()}`;
+  ligne.font = { bold: true, color: { argb: "FFFFFFFF" } };
+  ligne.eachCell((cellule) => {
+    cellule.fill = { type: "pattern", pattern: "solid", fgColor: { argb } };
+  });
 }

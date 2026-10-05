@@ -66,6 +66,44 @@ model Organization {
   actionPlans ActionPlan[]
   subscription Subscription?
   conseilUsages ConseilUsage[]
+  marque        Marque?
+}
+
+/// Identité de marque apposée sur les documents exportés.
+///
+/// Les images sont stockées en base plutôt que sur disque : le système de
+/// fichiers de l'hébergeur est éphémère — un redéploiement l'efface — et
+/// aucun stockage d'objets n'est configuré. Un logo pèse quelques dizaines
+/// de kilo-octets ; la base est le bon endroit tant que c'est vrai.
+model Marque {
+  id             String       @id @default(cuid())
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  /// Raison sociale telle qu'elle doit apparaître en tête de document. Peut
+  /// différer du nom du compte : un cabinet signe sous sa dénomination.
+  nomAffiche     String?
+  /// Mentions de pied de page : adresse, numéro d'ordre, SIREN. Libres,
+  /// parce que les obligations diffèrent d'une profession à l'autre.
+  mentionsPied   String?
+  /// Couleur d'accent, en hexadécimal. Appliquée aux filets et aux titres.
+  couleurAccent  String?
+
+  logo           Bytes?
+  logoFormat     String?
+  logoLargeur    Int?
+  logoHauteur    Int?
+
+  /// Bloc de signature : qui engage le document.
+  signataireNom      String?
+  signataireFonction String?
+  signature          Bytes?
+  signatureFormat    String?
+  signatureLargeur   Int?
+  signatureHauteur   Int?
+
+  creeLe DateTime @default(now())
+  majLe  DateTime @updatedAt
 }
 
 /// Consommation mensuelle du conseiller, par organisation.

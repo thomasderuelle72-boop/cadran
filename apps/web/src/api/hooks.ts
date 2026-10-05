@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, uploadFile } from "./client";
 import type { EtatAbonnement, PlanId } from "../lib/abonnement";
 import type {
+  EmplacementMarque,
+  Marque,
   ActionPlan,
   ActionStatus,
   AlertEvent,
@@ -398,6 +400,43 @@ export function useCreateOrgUser() {
     mutationFn: (input: { name: string; email: string; password: string; role: string }) =>
       api.post<OrgUser>("/users", input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["users"] }),
+  });
+}
+
+// --- Marque des documents --------------------------------------------------
+
+/*
+ * Toutes les mutations invalident la même clé et renvoient l'état complet :
+ * téléverser un logo change aussi le verdict d'autorisation si la formule
+ * vient de changer, et rien ne gagnerait à reconstituer l'état à la main.
+ */
+export function useMarque() {
+  return useQuery<Marque>({ queryKey: ["marque"], queryFn: () => api.get("/marque") });
+}
+
+export function useEnregistrerMarque() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (champs: Partial<Omit<Marque, "logo" | "signature" | "autorisee">>) =>
+      api.put<Marque>("/marque", champs),
+    onSuccess: (marque) => queryClient.setQueryData(["marque"], marque),
+  });
+}
+
+export function useTeleverserMarque() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ emplacement, fichier }: { emplacement: EmplacementMarque; fichier: File }) =>
+      uploadFile<Marque>(`/marque/${emplacement}`, fichier, "fichier"),
+    onSuccess: (marque) => queryClient.setQueryData(["marque"], marque),
+  });
+}
+
+export function useRetirerMarque() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (emplacement: EmplacementMarque) => api.delete<Marque>(`/marque/${emplacement}`),
+    onSuccess: (marque) => queryClient.setQueryData(["marque"], marque),
   });
 }
 

@@ -127,6 +127,8 @@ export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: "POST", body: body ? JSON.stringify(body) : undefined }),
+  put: <T>(path: string, body?: unknown) =>
+    request<T>(path, { method: "PUT", body: body ? JSON.stringify(body) : undefined }),
   patch: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: "PATCH", body: body ? JSON.stringify(body) : undefined }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
@@ -164,4 +166,19 @@ export async function downloadFile(path: string, filename: string) {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+/**
+ * Adresse locale d'une image servie par l'API.
+ *
+ * Un `<img src>` pointant directement sur l'API n'emporterait les cookies
+ * qu'avec `crossorigin="use-credentials"`, dont le contrat CORS est plus
+ * strict que celui de nos autres appels. On récupère donc les octets par la
+ * même voie que le reste et on les expose au document par une URL d'objet,
+ * que l'appelant révoque quand il n'en a plus besoin.
+ */
+export async function urlImage(path: string): Promise<string> {
+  const response = await fetch(`${API_URL}${path}`, { credentials: "include" });
+  if (!response.ok) throw new ApiError(response.status, await messageErreur(response));
+  return URL.createObjectURL(await response.blob());
 }

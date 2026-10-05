@@ -297,6 +297,12 @@ export function AbonnementPage() {
               {etat.plan.quotas.consolidation ? "incluse" : "non incluse"}
             </span>
           </span>
+          <span>
+            Documents à votre marque :{" "}
+            <span className="text-ink">
+              {etat.plan.quotas.marqueDocuments ? "inclus" : "non inclus"}
+            </span>
+          </span>
         </div>
       </section>
 
