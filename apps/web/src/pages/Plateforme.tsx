@@ -1,5 +1,5 @@
 import { Fragment, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { ApiError } from "../api/client";
 import {
   useChangerFormulePlateforme,
@@ -48,10 +48,22 @@ function nombre(valeur: number): string {
 export function PlateformePage() {
   const { user, refresh } = useAuth();
   const navigate = useNavigate();
+  /*
+   * `bascule` coupe les requêtes de la console dès le clic sur « Entrer »,
+   * sans attendre que l'identité soit rechargée.
+   *
+   * Le cookie de session change avant que `user` ne le sache : entre les
+   * deux, les deux requêtes de cette page repartaient avec une session
+   * d'accès support, que le garde refuse — deux 403 dans la console du
+   * navigateur à chaque prise en charge, et deux lignes sans objet dans une
+   * piste d'audit qu'on consulte justement pour y voir clair.
+   */
+  const [bascule, setBascule] = useState(false);
   const autorise = user?.administrateurPlateforme === true && user.support === false;
+  const interroge = autorise && !bascule;
 
-  const { data: sante } = useSantePlateforme(autorise);
-  const { data: organisations, isLoading } = useOrganisationsPlateforme(autorise);
+  const { data: sante } = useSantePlateforme(interroge);
+  const { data: organisations, isLoading } = useOrganisationsPlateforme(interroge);
   const [ouverte, setOuverte] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -72,6 +84,7 @@ export function PlateformePage() {
 
   async function entrer(organisation: OrganisationPlateforme) {
     setErreur(null);
+    setBascule(true);
     try {
       await acces.mutateAsync(organisation.id);
       /* La session vient de changer d'organisation : recharger l'identité
@@ -80,6 +93,8 @@ export function PlateformePage() {
       await refresh();
       navigate("/tableau-de-bord");
     } catch (err) {
+      // L'accès a échoué : la session n'a pas changé, la console reprend.
+      setBascule(false);
       setErreur(err instanceof ApiError ? err.message : "Accès impossible.");
     }
   }

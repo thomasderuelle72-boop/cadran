@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router";
 import { useLogin } from "../api/hooks";
 import { useAuth } from "../context/AuthContext";
 import { ApiError, cookiesRefuses } from "../api/client";

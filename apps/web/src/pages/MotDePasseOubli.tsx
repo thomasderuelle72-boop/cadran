@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { useDemanderReinitialisation } from "../api/hooks";
 import { ApiError } from "../api/client";
 import { CadreAuth } from "../components/CadreAuth";

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { BasculeTheme } from "./BasculeTheme";
 import { BandeauSupport } from "./BandeauSupport";

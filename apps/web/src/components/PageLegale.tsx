@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { BasculeTheme } from "./BasculeTheme";
 import { DERNIERE_MISE_A_JOUR, champsManquants, identiteComplete } from "../lib/editeur";
 

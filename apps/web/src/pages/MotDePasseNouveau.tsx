@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
 import { useReinitialiserMotDePasse } from "../api/hooks";
 import { ApiError } from "../api/client";
 import { CadreAuth } from "../components/CadreAuth";
