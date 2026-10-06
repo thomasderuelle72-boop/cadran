@@ -132,6 +132,14 @@ export const api = {
   patch: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: "PATCH", body: body ? JSON.stringify(body) : undefined }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+  /*
+   * Une suppression avec corps : réservée aux destructions qui exigent une
+   * confirmation saisie. Mettre le nom à confirmer dans l'adresse l'écrirait
+   * dans les journaux d'accès du serveur et dans l'historique du navigateur,
+   * là où il n'a rien à faire.
+   */
+  deleteAvecCorps: <T>(path: string, body: unknown) =>
+    request<T>(path, { method: "DELETE", body: JSON.stringify(body) }),
 };
 
 /**

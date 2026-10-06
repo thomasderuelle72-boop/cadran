@@ -6,6 +6,7 @@ import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";
 import { AppModule } from "./app.module";
 
 async function bootstrap() {
@@ -13,6 +14,29 @@ async function bootstrap() {
   // Le webhook Stripe en a besoin : sa signature porte sur les octets
   // reçus, et un JSON re-sérialisé ne la vérifie plus.
   const app = await NestFactory.create(AppModule, { rawBody: true });
+
+  /*
+   * En-têtes de sécurité.
+   *
+   * Deux comptent vraiment pour une API qui sert aussi des images déposées
+   * par ses clients (les logos de marque). `X-Content-Type-Options: nosniff`
+   * empêche le navigateur de deviner un type différent de celui annoncé : un
+   * fichier accepté comme image mais interprété comme HTML s'exécuterait sur
+   * notre origine. `Strict-Transport-Security` interdit la première requête
+   * en clair, celle où un cookie de session se fait lire sur le réseau.
+   *
+   * La politique de contenu par défaut de helmet est désactivée : elle
+   * s'adresse à des pages HTML, que cette API ne sert pas, et son
+   * `default-src 'self'` casserait l'affichage direct d'une image depuis le
+   * frontend sans rien protéger.
+   */
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginResourcePolicy: { policy: "cross-origin" },
+      hsts: { maxAge: 31_536_000, includeSubDomains: true },
+    })
+  );
   /*
    * CORS restreint aux origines déclarées.
    *

@@ -15,7 +15,22 @@ export interface AuditEntryInput {
   metadata: Prisma.InputJsonValue | undefined;
 }
 
-const SECRET_KEY_PATTERN = /password|secret|token|hash/i;
+/**
+ * Noms de champs dont la valeur ne doit jamais atteindre la piste d'audit.
+ *
+ * Le motif ne couvrait que l'anglais, alors que les routes écrites en
+ * français nomment leurs champs `motDePasse` et `jeton` : le corps de
+ * `POST /auth/mot-de-passe/nouveau` serait parti en clair dans la table, mot
+ * de passe et jeton de réinitialisation compris. Ces deux routes échappaient
+ * au journal pour une autre raison — elles ne portent pas d'organisation, et
+ * `buildEntry` abandonne sans elle —, de sorte que rien n'a fuité. Mais
+ * compter sur cette coïncidence, c'est attendre la route suivante.
+ *
+ * Le motif est volontairement large : consigner un champ anodin de trop ne
+ * coûte rien, en laisser passer un sensible ne se rattrape pas.
+ */
+const SECRET_KEY_PATTERN =
+  /password|secret|token|hash|motdepasse|mot_de_passe|jeton|empreinte|signature|authorization|cookie|iban|bic/i;
 const MAX_DEPTH = 2;
 
 /**

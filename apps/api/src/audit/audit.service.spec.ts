@@ -15,6 +15,20 @@ describe("résumé des corps de requête pour la piste d'audit", () => {
     expect(summary).not.toHaveProperty("accessToken");
   });
 
+  it("écarte aussi les secrets nommés en français", () => {
+    // Les routes de réinitialisation nomment leurs champs `motDePasse` et
+    // `jeton` : un filtre qui ne connaît que l'anglais les écrit en clair.
+    const summary = summarizePayload({
+      jeton: "a1b2c3d4e5",
+      motDePasse: "SuperSecret123!",
+      empreinte: "sha256:…",
+      iban: "FR7630006000011234567890189",
+      nom: "Cabinet Berthier",
+    }) as Record<string, unknown>;
+
+    expect(summary).toEqual({ nom: "Cabinet Berthier" });
+  });
+
   it("remplace un import volumineux par son volume", () => {
     const items = Array.from({ length: 4200 }, (_, i) => ({ accountCode: String(i), amount: i }));
     expect(summarizePayload({ items })).toEqual({ items: { nombre: 4200 } });

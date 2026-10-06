@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { BasculeTheme } from "./BasculeTheme";
+import { BandeauSupport } from "./BandeauSupport";
 import type { Role } from "../api/types";
 
 interface Entree {
@@ -9,6 +10,8 @@ interface Entree {
   label: string;
   end?: boolean;
   roles?: Role[];
+  /** Réservé aux administrateurs de la plateforme. */
+  plateforme?: boolean;
 }
 
 /**
@@ -55,6 +58,13 @@ const FAMILLES: Array<{ titre: string; entrees: Entree[] }> = [
       { to: "/abonnement", label: "Abonnement" },
     ],
   },
+  {
+    /* Une famille à part, et non une entrée glissée dans « Données » :
+     * administrer la plateforme n'est pas administrer son organisation, et
+     * les confondre dans la même liste finit par les confondre tout court. */
+    titre: "Exploitation",
+    entrees: [{ to: "/plateforme", label: "Plateforme", plateforme: true }],
+  },
 ];
 
 const ROLE_LABELS: Record<Role, string> = {
@@ -99,12 +109,22 @@ function IconeMenu({ ouvert }: { ouvert: boolean }) {
   );
 }
 
-function Navigation({ role, onNavigate }: { role: Role | undefined; onNavigate?: () => void }) {
+function Navigation({
+  role,
+  plateforme,
+  onNavigate,
+}: {
+  role: Role | undefined;
+  plateforme: boolean;
+  onNavigate?: () => void;
+}) {
   return (
     <nav className="flex-1 overflow-y-auto py-2 px-2" aria-label="Navigation principale">
       {FAMILLES.map((famille) => {
         const visibles = famille.entrees.filter(
-          (entree) => !entree.roles || (role && entree.roles.includes(role))
+          (entree) =>
+            (!entree.roles || (role && entree.roles.includes(role))) &&
+            (!entree.plateforme || plateforme)
         );
         if (visibles.length === 0) return null;
 
@@ -142,6 +162,10 @@ function Navigation({ role, onNavigate }: { role: Role | undefined; onNavigate?:
 export function Layout() {
   const { user, logout } = useAuth();
   const [tiroirOuvert, setTiroirOuvert] = useState(false);
+  /* Pendant un accès support, l'entrée disparaît : on n'administre pas la
+   * plateforme depuis le dossier d'un client, et le garde du serveur refuse
+   * d'ailleurs ces requêtes. */
+  const estExploitant = user?.administrateurPlateforme === true && user.support === false;
   const { pathname } = useLocation();
 
   // Un changement de page referme le tiroir : sur téléphone, il recouvre le
@@ -193,7 +217,7 @@ export function Layout() {
           <Marque />
           <div className="text-xs text-ink/50 mt-1.5">{user?.organizationName}</div>
         </div>
-        <Navigation role={user?.role} />
+        <Navigation role={user?.role} plateforme={estExploitant} />
         {pied}
       </aside>
 
@@ -220,7 +244,11 @@ export function Layout() {
                 <IconeMenu ouvert />
               </button>
             </div>
-            <Navigation role={user?.role} onNavigate={() => setTiroirOuvert(false)} />
+            <Navigation
+              role={user?.role}
+              plateforme={estExploitant}
+              onNavigate={() => setTiroirOuvert(false)}
+            />
             {pied}
           </div>
         </div>
@@ -231,11 +259,16 @@ export function Layout() {
         au conteneur flex et fait déborder la page entière au lieu de défiler
         dans son propre cadre.
       */}
-      <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
-        <div className="max-w-[1400px]">
-          <Outlet />
-        </div>
-      </main>
+      <div className="flex-1 min-w-0 flex flex-col">
+        {/* Hors du <main> et collant en haut : il doit rester visible quand on
+            fait défiler un tableau de deux cents lignes. */}
+        <BandeauSupport />
+        <main className="px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+          <div className="max-w-[1400px]">
+            <Outlet />
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

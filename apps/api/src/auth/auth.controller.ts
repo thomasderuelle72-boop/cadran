@@ -1,4 +1,13 @@
-import { Body, Controller, Get, HttpCode, Post, Res, UseGuards } from "@nestjs/common";
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Post,
+  Res,
+  UseGuards,
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { Response } from "express";
 import { AuthService } from "./auth.service";
@@ -87,6 +96,30 @@ export class AuthController {
   }
 
   /**
+   * Quitte un accès support et revient sur sa propre organisation.
+   *
+   * Vit ici et non dans le contrôleur de plateforme, dont le garde refuse
+   * justement les sessions support : s'en remettre à l'expiration du jeton
+   * pour en sortir laisserait l'administrateur une heure dans le dossier d'un
+   * client qu'il a fini de dépanner.
+   *
+   * Aucun mot de passe n'est redemandé : la session support prouve déjà qui
+   * appelle, et la session rendue est celle du même compte, moins les droits.
+   */
+  @Post("support/quitter")
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard)
+  async quitterSupport(
+    @CurrentUser() user: AuthUser,
+    @Res({ passthrough: true }) reponse: Response
+  ) {
+    if (!user.support) {
+      throw new BadRequestException("Cette session n'est pas un accès support.");
+    }
+    return this.ouvrirSession(reponse, await this.authService.sessionOrdinaire(user.userId));
+  }
+
+  /**
    * Demande d'un lien de réinitialisation.
    *
    * 204 quoi qu'il arrive, adresse connue ou non : une réponse différenciée
@@ -110,20 +143,34 @@ export class AuthController {
     await this.authService.reinitialiser(dto.jeton, dto.motDePasse);
   }
 
+  /**
+   * Qui suis-je, et sur quoi porte ma session ?
+   *
+   * L'organisation renvoyée est celle de la session, pas celle du compte :
+   * en accès support ce sont deux choses différentes, et afficher le nom du
+   * cabinet au-dessus des chiffres d'un client serait exactement le genre de
+   * confusion qui fait écrire une recommandation dans le mauvais dossier.
+   */
   @Get("me")
   @UseGuards(JwtAuthGuard)
   async me(@CurrentUser() user: AuthUser) {
     const record = await this.prisma.user.findUniqueOrThrow({
       where: { id: user.userId },
-      include: { organization: true },
+      select: { id: true, email: true, name: true },
+    });
+    const organisation = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: user.organizationId },
+      select: { name: true },
     });
     return {
       id: record.id,
       email: record.email,
       name: record.name,
-      role: record.role,
-      organizationId: record.organizationId,
-      organizationName: record.organization.name,
+      role: user.role,
+      organizationId: user.organizationId,
+      organizationName: organisation.name,
+      administrateurPlateforme: user.administrateurPlateforme,
+      support: user.support,
     };
   }
 }

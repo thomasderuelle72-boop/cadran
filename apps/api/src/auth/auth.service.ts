@@ -27,14 +27,19 @@ export class AuthService {
     private config: ConfigService
   ) {}
 
-  private issueToken(user: { id: string; organizationId: string; role: Role; email: string }) {
-    const accessToken = this.jwt.sign({
-      sub: user.id,
-      organizationId: user.organizationId,
-      role: user.role,
-      email: user.email,
-    });
-    return accessToken;
+  /**
+   * Le jeton ne porte plus que l'identité.
+   *
+   * Le rôle et l'adresse en ont été retirés : ils y étaient recopiés à la
+   * connexion et crus pendant toute la durée de vie du jeton. Ils sont
+   * désormais relus en base à chaque requête (voir jwt.strategy.ts). `org`
+   * reste, parce que l'accès support est le seul cas où l'organisation visée
+   * n'est pas celle du compte — et la stratégie ne l'honore qu'accompagné de
+   * `support`, et seulement si le compte est encore administrateur de la
+   * plateforme à cet instant.
+   */
+  private issueToken(user: { id: string; organizationId: string }) {
+    return this.jwt.sign({ sub: user.id, org: user.organizationId });
   }
 
   async register(dto: RegisterDto) {
@@ -72,6 +77,32 @@ export class AuthService {
     const passwordMatches = await bcrypt.compare(dto.password, user.passwordHash);
     if (!passwordMatches) throw new UnauthorizedException("Identifiants invalides.");
 
+    /* Horodatage de la dernière connexion réussie : c'est ce qui permet à
+     * l'exploitant de voir un compte dormant, et à l'utilisateur de
+     * reconnaître — ou non — sa dernière venue. Détaché de la réponse : une
+     * écriture de confort ne doit pas faire échouer une connexion valide. */
+    void this.prisma.user
+      .update({ where: { id: user.id }, data: { derniereConnexion: new Date() } })
+      .catch((erreur) => this.logger.warn(`Date de connexion non enregistrée : ${erreur}`));
+
+    return {
+      accessToken: this.issueToken(user),
+      user: this.toPublicUser(user, user.organization.name),
+    };
+  }
+
+  /**
+   * Rend une session ordinaire à un compte déjà authentifié.
+   *
+   * Sert à sortir d'un accès support. Ne vérifie aucun mot de passe, et n'a
+   * pas à le faire : l'appelant est déjà identifié par sa session, et ce
+   * qu'on lui rend est strictement moins que ce qu'il avait.
+   */
+  async sessionOrdinaire(userId: string) {
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      include: { organization: true },
+    });
     return {
       accessToken: this.issueToken(user),
       user: this.toPublicUser(user, user.organization.name),
@@ -79,7 +110,14 @@ export class AuthService {
   }
 
   private toPublicUser(
-    user: { id: string; email: string; name: string; role: Role; organizationId: string },
+    user: {
+      id: string;
+      email: string;
+      name: string;
+      role: Role;
+      organizationId: string;
+      administrateurPlateforme: boolean;
+    },
     organizationName: string
   ) {
     return {
@@ -89,6 +127,10 @@ export class AuthService {
       role: user.role,
       organizationId: user.organizationId,
       organizationName,
+      administrateurPlateforme: user.administrateurPlateforme,
+      // Une connexion ordinaire n'est jamais un accès support : celui-ci
+      // s'ouvre depuis la console, sur une session déjà établie.
+      support: false,
     };
   }
 
@@ -169,7 +211,13 @@ export class AuthService {
     await this.prisma.$transaction([
       this.prisma.user.update({
         where: { id: enBase.userId },
-        data: { passwordHash },
+        /*
+         * Les sessions ouvertes tombent avec l'ancien mot de passe. C'est le
+         * cas d'usage même de la réinitialisation : quelqu'un d'autre a mon
+         * compte. Changer le mot de passe en laissant sa session ouverte
+         * pendant douze heures ne lui reprend rien.
+         */
+        data: { passwordHash, sessionsValablesApres: new Date() },
       }),
       this.prisma.passwordResetToken.update({
         where: { id: enBase.id },

@@ -2,6 +2,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, uploadFile } from "./client";
 import type { EtatAbonnement, PlanId } from "../lib/abonnement";
 import type {
+  OrganisationPlateforme,
+  SantePlateforme,
+  UtilisateurPlateforme,
+  StatutAbonnement,
   EmplacementMarque,
   Marque,
   ActionPlan,
@@ -438,6 +442,92 @@ export function useRetirerMarque() {
     mutationFn: (emplacement: EmplacementMarque) => api.delete<Marque>(`/marque/${emplacement}`),
     onSuccess: (marque) => queryClient.setQueryData(["marque"], marque),
   });
+}
+
+// --- Administration de la plateforme ---------------------------------------
+
+/*
+ * Ces requêtes ne sont émises que pour un administrateur de la plateforme :
+ * les appeler en LECTEUR ne renverrait qu'une suite de 403, visibles dans la
+ * console du navigateur et dans la piste d'audit — du bruit, pas une barrière
+ * de plus. La barrière est côté serveur ; ici on évite seulement le bruit.
+ */
+export function useSantePlateforme(actif: boolean) {
+  return useQuery<SantePlateforme>({
+    queryKey: ["plateforme", "sante"],
+    queryFn: () => api.get("/plateforme/sante"),
+    enabled: actif,
+  });
+}
+
+export function useOrganisationsPlateforme(actif: boolean) {
+  return useQuery<OrganisationPlateforme[]>({
+    queryKey: ["plateforme", "organisations"],
+    queryFn: () => api.get("/plateforme/organisations"),
+    enabled: actif,
+  });
+}
+
+export function useUtilisateursPlateforme(organizationId: string | null) {
+  return useQuery<UtilisateurPlateforme[]>({
+    queryKey: ["plateforme", "utilisateurs", organizationId],
+    queryFn: () => api.get(`/plateforme/organisations/${organizationId}/utilisateurs`),
+    enabled: Boolean(organizationId),
+  });
+}
+
+export function useChangerFormulePlateforme() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      organizationId,
+      ...corps
+    }: {
+      organizationId: string;
+      plan?: PlanId;
+      statut?: StatutAbonnement;
+    }) => api.patch<void>(`/plateforme/organisations/${organizationId}/formule`, corps),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["plateforme"] }),
+  });
+}
+
+export function useMotDePasseProvisoire() {
+  return useMutation({
+    mutationFn: (userId: string) =>
+      api.post<{ email: string; motDePasse: string }>(`/plateforme/utilisateurs/${userId}/mot-de-passe`),
+  });
+}
+
+export function useDroitPlateforme() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, accorde }: { userId: string; accorde: boolean }) =>
+      api.patch<void>(`/plateforme/utilisateurs/${userId}/droit-plateforme`, { accorde }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["plateforme"] }),
+  });
+}
+
+export function useSupprimerOrganisation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ organizationId, nom }: { organizationId: string; nom: string }) =>
+      api.deleteAvecCorps<{ supprimee: string }>(`/plateforme/organisations/${organizationId}`, { nom }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["plateforme"] }),
+  });
+}
+
+/** Ouvre un accès support : la session en cours bascule sur le client. */
+export function useOuvrirAccesSupport() {
+  return useMutation({
+    mutationFn: (organizationId: string) =>
+      api.post<{ organisation: { id: string; nom: string } }>(
+        `/plateforme/organisations/${organizationId}/acces`
+      ),
+  });
+}
+
+export function useQuitterAccesSupport() {
+  return useMutation({ mutationFn: () => api.post<AuthResponse>("/auth/support/quitter") });
 }
 
 // --- Analyse ---------------------------------------------------------------

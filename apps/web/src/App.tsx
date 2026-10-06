@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import { Layout } from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { PlateformePage } from "./pages/Plateforme";
 import { Accueil } from "./pages/Accueil";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
@@ -74,6 +75,7 @@ export default function App() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/conseil" element={<ConseilPage />} />
         <Route path="/abonnement" element={<AbonnementPage />} />
+        <Route path="/plateforme" element={<PlateformePage />} />
       </Route>
     </Routes>
   );

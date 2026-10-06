@@ -1,3 +1,5 @@
+import type { PlanId } from "../lib/abonnement";
+
 export type Role = "ADMIN" | "DAF" | "CONTROLEUR" | "LECTEUR";
 
 export interface AuthUser {
@@ -5,8 +7,13 @@ export interface AuthUser {
   email: string;
   name: string;
   role: Role;
+  /** Organisation de la session : celle du client en cours d'accès support. */
   organizationId: string;
   organizationName: string;
+  /** Donne accès à la console d'exploitation. */
+  administrateurPlateforme: boolean;
+  /** La session porte sur l'organisation d'un client, pas la sienne. */
+  support: boolean;
 }
 
 /*
@@ -598,3 +605,41 @@ export interface Marque {
 }
 
 export type EmplacementMarque = "logo" | "signature";
+
+// --- Administration de la plateforme ---------------------------------------
+
+
+export type StatutAbonnement = "essai" | "actif" | "impaye" | "resilie" | "incomplet";
+
+export interface OrganisationPlateforme {
+  id: string;
+  nom: string;
+  plan: PlanId;
+  statut: StatutAbonnement;
+  finPeriode: string | null;
+  resiliationDemandee: boolean;
+  creeeLe: string;
+  utilisateurs: number;
+  entites: number;
+  periodes: number;
+  ecritures: number;
+  derniereActivite: string | null;
+}
+
+export interface UtilisateurPlateforme {
+  id: string;
+  email: string;
+  name: string;
+  role: Role;
+  createdAt: string;
+  derniereConnexion: string | null;
+  administrateurPlateforme: boolean;
+}
+
+export interface SantePlateforme {
+  organisations: number;
+  utilisateurs: number;
+  utilisateursActifs7j: number;
+  ecritsEnEchec7j: number;
+  abonnements: Partial<Record<StatutAbonnement, number>>;
+}

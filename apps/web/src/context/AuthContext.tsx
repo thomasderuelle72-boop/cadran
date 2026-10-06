@@ -11,6 +11,15 @@ interface AuthContextValue {
   /** Plus de jeton en paramètre : il est arrivé en cookie, hors de portée. */
   login: () => void;
   logout: () => void;
+  /**
+   * Relit l'identité depuis le serveur, et vide le reste du cache.
+   *
+   * Appelé quand la session change d'organisation sans passer par une
+   * connexion — l'entrée et la sortie d'un accès support. Sans le vidage, les
+   * écrans continueraient d'afficher les chiffres de l'organisation quittée,
+   * ce qui est la confusion exacte que l'accès support doit éviter.
+   */
+  refresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -24,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * réponse de /auth/me le dit.
    */
   const [sessionOuverte, setSessionOuverte] = useState(sessionProbable);
-  const { data: user, isLoading } = useMe(sessionOuverte);
+  const { data: user, isLoading, refetch } = useMe(sessionOuverte);
   const deconnexion = useDeconnexion();
   const queryClient = useQueryClient();
 
@@ -46,8 +55,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         queryClient.clear();
         deconnexion.mutate();
       },
+      refresh: async () => {
+        /* L'identité est retirée du vidage puis relue : la vider avec le
+         * reste ferait repasser l'application par l'écran de connexion le
+         * temps d'un aller-retour. */
+        queryClient.removeQueries({ predicate: (requete) => requete.queryKey[0] !== "me" });
+        await refetch();
+      },
     }),
-    [user, isLoading, sessionOuverte, deconnexion, queryClient]
+    [user, isLoading, sessionOuverte, deconnexion, queryClient, refetch]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

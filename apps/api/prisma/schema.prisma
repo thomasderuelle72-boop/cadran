@@ -234,7 +234,7 @@ model PasswordResetToken {
 model AuditLog {
   id             String       @id @default(cuid())
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   userId         String?
   userEmail      String
   userRole       Role?
@@ -256,9 +256,29 @@ model User {
   name           String
   role           Role         @default(LECTEUR)
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdAt      DateTime     @default(now())
   passwordResets PasswordResetToken[]
+
+  /// Administration de la plateforme elle-même, et non d'une organisation.
+  ///
+  /// Délibérément un drapeau séparé du rôle, et non une cinquième valeur de
+  /// Role : tout le code existant teste `role === ADMIN`, et ajouter une
+  /// valeur au-dessus aurait élargi silencieusement des autorisations
+  /// écrites pour un client. Il n'est jamais porté par le jeton de session —
+  /// il est relu en base à chaque requête d'administration.
+  administrateurPlateforme Boolean @default(false)
+
+  /// Les jetons émis avant cet instant ne valent plus rien.
+  ///
+  /// Sans elle, changer un mot de passe ou rétrograder un rôle laissait les
+  /// sessions déjà ouvertes intactes jusqu'à l'expiration du jeton : le
+  /// compte était « sécurisé » et restait utilisable par qui le détenait.
+  sessionsValablesApres DateTime?
+
+  /// Dernière connexion réussie. Sert à repérer un compte dormant, et à
+  /// montrer à l'utilisateur ce qu'il devrait reconnaître.
+  derniereConnexion DateTime?
 }
 
 // Filiale / société du groupe. Le pilotage mono-entité du MVP devient un cas
@@ -268,7 +288,7 @@ model User {
 model Entity {
   id                    String   @id @default(cuid())
   organizationId        String
-  organization          Organization @relation(fields: [organizationId], references: [id])
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   name                  String
   country               String?
   currency              String   @default("EUR")
@@ -390,7 +410,7 @@ model LedgerEntry {
 model AccountingPeriod {
   id        String       @id @default(cuid())
   entityId  String
-  entity    Entity       @relation(fields: [entityId], references: [id])
+  entity    Entity       @relation(fields: [entityId], references: [id], onDelete: Cascade)
   label     String
   startDate DateTime
   endDate   DateTime
@@ -454,7 +474,7 @@ model BudgetLine {
 model AlertRule {
   id             String        @id @default(cuid())
   organizationId String
-  organization   Organization  @relation(fields: [organizationId], references: [id])
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   label          String
   ratioId        String
   operator       AlertOperator
@@ -499,9 +519,9 @@ model AlertEvent {
 model ActionPlan {
   id             String       @id @default(cuid())
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   entityId       String?
-  entity         Entity?      @relation(fields: [entityId], references: [id])
+  entity         Entity?      @relation(fields: [entityId], references: [id], onDelete: SetNull)
   constat        String
   action         String
   /// Identifiant du ratio suivi, au sens du moteur (ratios/engine.ts).

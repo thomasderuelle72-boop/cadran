@@ -22,6 +22,7 @@ import { AuditModule } from "./audit/audit.module";
 import { BillingModule } from "./billing/billing.module";
 import { ConseilModule } from "./conseil/conseil.module";
 import { MarqueModule } from "./marque/marque.module";
+import { PlateformeModule } from "./plateforme/plateforme.module";
 import { EmailModule } from "./email/email.module";
 
 @Module({
@@ -63,6 +64,7 @@ import { EmailModule } from "./email/email.module";
     BillingModule,
     ConseilModule,
     MarqueModule,
+    PlateformeModule,
   ],
   /*
    * Deux gardes globaux. Le limiteur de débit d'abord : il est inutile de

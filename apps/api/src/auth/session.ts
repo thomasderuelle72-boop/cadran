@@ -61,15 +61,19 @@ export interface OptionsCookie {
  * développement, tout est sur localhost — même site malgré les ports
  * différents — donc `Lax` suffit et `Secure` empêcherait le cookie en HTTP.
  */
-export function optionsSession(production: boolean): OptionsCookie {
+export function optionsSession(production: boolean, dureeMs = DUREE_SESSION_MS): OptionsCookie {
   return {
     httpOnly: true,
     secure: production,
     sameSite: production ? "none" : "lax",
     path: "/",
-    maxAge: DUREE_SESSION_MS,
+    maxAge: dureeMs,
   };
 }
+
+/** Durée d'un accès support, côté cookie. Doit valoir DUREE_ACCES_SUPPORT :
+ *  un cookie qui survit au jeton ne produit qu'un 401 incompréhensible. */
+export const DUREE_ACCES_SUPPORT_MS = 60 * 60 * 1000;
 
 /** Mêmes attributs, sauf `httpOnly` : c'est tout l'objet de ce cookie que le
  *  JavaScript de l'application puisse le lire pour le recopier en en-tête. */
