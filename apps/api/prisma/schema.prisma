@@ -106,6 +106,29 @@ model Marque {
   majLe  DateTime @updatedAt
 }
 
+/// Tableau de bord pluriannuel d'une entité, et ses hypothèses de prévisionnel.
+///
+/// Un seul par entité : un tableau de bord est une façon de regarder un
+/// dossier, pas un document qu'on décline. Les blocs et les hypothèses sont
+/// stockés en JSON parce que leur forme appartient au code qui les valide
+/// (voir blocs.ts et previsionnel.ts) et non au schéma — les figer en
+/// colonnes imposerait une migration à chaque type de bloc ajouté.
+model TableauDeBord {
+  id       String @id @default(cuid())
+  entityId String @unique
+  entity   Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  /// Liste de blocs, validée à l'écriture. Jamais lue sans revalidation :
+  /// le code qui les interprète peut avoir changé depuis l'enregistrement.
+  blocs Json
+
+  /// Hypothèses du prévisionnel. Absentes tant qu'il n'a pas été ouvert.
+  hypotheses Json?
+
+  creeLe DateTime @default(now())
+  majLe  DateTime @updatedAt
+}
+
 /// Consommation mensuelle du conseiller, par organisation.
 ///
 /// Un compteur, pas un historique : le texte des questions n'est pas
@@ -308,6 +331,7 @@ model Entity {
   cashForecastLines CashForecastLine[]
   ledgerEntries     LedgerEntry[]
   actionPlans       ActionPlan[]
+  tableauDeBord     TableauDeBord?
 
   @@unique([organizationId, name])
 }

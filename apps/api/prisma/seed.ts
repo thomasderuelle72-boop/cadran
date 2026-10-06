@@ -39,6 +39,87 @@ const DEMO_ENTITIES: DemoEntity[] = [
     nafCode: "2599B",
     headcount: 24,
     periods: [
+      /*
+       * Trois exercices antérieurs, puis l'année en cours au trimestre.
+       *
+       * Sans historique, l'écran pluriannuel n'a rien à montrer et le
+       * prévisionnel n'a pas de point de départ : la démonstration donnerait
+       * à croire que le module ne fait rien. Les bilans sont équilibrés à
+       * l'euro — la trésorerie y est la variable d'ajustement, comme dans un
+       * vrai dossier.
+       */
+      {
+        label: "Exercice 2023",
+        start: "2023-01-01",
+        end: "2023-12-31",
+        lines: [
+          [LinePoste.CHIFFRE_AFFAIRES, 1320000],
+          [LinePoste.ACHATS_CONSOMMES, 521400],
+          [LinePoste.CHARGES_EXTERNES, 184800],
+          [LinePoste.CHARGES_PERSONNEL, 349800],
+          [LinePoste.IMPOTS_TAXES, 8976],
+          [LinePoste.DOTATIONS_AMORTISSEMENTS, 52000],
+          [LinePoste.CHARGES_FINANCIERES, 15500],
+          [LinePoste.IMPOT_SOCIETES, 46881],
+          [LinePoste.STOCKS, 57354],
+          [LinePoste.CREANCES_CLIENTS, 151800],
+          [LinePoste.AUTRES_CREANCES, 34320],
+          [LinePoste.DISPONIBILITES, 69139],
+          [LinePoste.DETTES_FOURNISSEURS, 49533],
+          [LinePoste.AUTRES_DETTES, 25080],
+          [LinePoste.CAPITAUX_PROPRES, 610000],
+          [LinePoste.DETTES_FINANCIERES, 188000],
+          [LinePoste.IMMOBILISATIONS, 560000],
+        ],
+      },
+      {
+        label: "Exercice 2024",
+        start: "2024-01-01",
+        end: "2024-12-31",
+        lines: [
+          [LinePoste.CHIFFRE_AFFAIRES, 1452000],
+          [LinePoste.ACHATS_CONSOMMES, 583704],
+          [LinePoste.CHARGES_EXTERNES, 207636],
+          [LinePoste.CHARGES_PERSONNEL, 389136],
+          [LinePoste.IMPOTS_TAXES, 10164],
+          [LinePoste.DOTATIONS_AMORTISSEMENTS, 56000],
+          [LinePoste.CHARGES_FINANCIERES, 14000],
+          [LinePoste.IMPOT_SOCIETES, 47840],
+          [LinePoste.STOCKS, 64207],
+          [LinePoste.CREANCES_CLIENTS, 166980],
+          [LinePoste.AUTRES_CREANCES, 37752],
+          [LinePoste.DISPONIBILITES, 85100],
+          [LinePoste.DETTES_FOURNISSEURS, 55452],
+          [LinePoste.AUTRES_DETTES, 27588],
+          [LinePoste.CAPITAUX_PROPRES, 672000],
+          [LinePoste.DETTES_FINANCIERES, 174000],
+          [LinePoste.IMMOBILISATIONS, 575000],
+        ],
+      },
+      {
+        label: "Exercice 2025",
+        start: "2025-01-01",
+        end: "2025-12-31",
+        lines: [
+          [LinePoste.CHIFFRE_AFFAIRES, 1585000],
+          [LinePoste.ACHATS_CONSOMMES, 630830],
+          [LinePoste.CHARGES_EXTERNES, 229825],
+          [LinePoste.CHARGES_PERSONNEL, 429535],
+          [LinePoste.IMPOTS_TAXES, 11254],
+          [LinePoste.DOTATIONS_AMORTISSEMENTS, 60000],
+          [LinePoste.CHARGES_FINANCIERES, 12500],
+          [LinePoste.IMPOT_SOCIETES, 52764],
+          [LinePoste.STOCKS, 69391],
+          [LinePoste.CREANCES_CLIENTS, 182275],
+          [LinePoste.AUTRES_CREANCES, 41210],
+          [LinePoste.DISPONIBILITES, 109168],
+          [LinePoste.DETTES_FOURNISSEURS, 59929],
+          [LinePoste.AUTRES_DETTES, 30115],
+          [LinePoste.CAPITAUX_PROPRES, 742000],
+          [LinePoste.DETTES_FINANCIERES, 160000],
+          [LinePoste.IMMOBILISATIONS, 590000],
+        ],
+      },
       {
         label: "T1 2026",
         start: "2026-01-01",

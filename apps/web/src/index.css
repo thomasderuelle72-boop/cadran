@@ -42,12 +42,33 @@
     --critical: 173 61 46;
     --critical-soft: 248 224 219;
 
-    /* Couple validé par scripts/validate_palette.js sur fond #F0F3F1. Le
-     * vert d'interface, plus sourd, échouait au plancher de chroma : sur un
-     * aplat de graphique il se lisait comme un gris. Les séries ont donc
-     * leurs propres valeurs. */
-    --serie-1: 10 122 94;
+    /*
+     * Couleurs de série, validées et non choisies — et volontairement les
+     * mêmes dans les quatre palettes.
+     *
+     * Une couleur de série encode une donnée, pas une marque : sa seule
+     * obligation est qu'un lecteur distingue deux séries, y compris en vision
+     * déficiente. Décliner quatre jeux de quatre teintes par thème aurait
+     * demandé huit validations, et la première oubliée aurait produit un
+     * graphique illisible sans que rien ne le signale. Un jeu par thème,
+     * vérifié, vaut mieux.
+     *
+     * `node scripts/validate_palette.js "#009E73,#966512,#0072B2,#CC79A7"
+     *  --mode light --surface "#ffffff" --pairs all` : bande de clarté et
+     * plancher de chroma respectés, ΔE 18,7 en vision normale sur la pire
+     * paire, 7,6 en vision deutéranope — dans la bande plancher, ce qui
+     * n'est admis qu'avec un second encodage. D'où la légende systématique
+     * et les étiquettes directes imposées par le composant.
+     */
+    --serie-1: 0 158 115;
     --serie-2: 150 101 18;
+    --serie-3: 0 114 178;
+    --serie-4: 204 121 167;
+
+    /* Dégradé d'une seule teinte pour les compositions empilées : une part
+     * d'un tout se lit sur une progression de clarté, pas sur des teintes
+     * catégorielles, qui laisseraient croire à des grandeurs sans rapport. */
+    --serie-rampe: 168 220 203, 125 199 174, 82 174 143, 47 148 114, 26 119 88, 12 90 65;
 
     /*
      * Géométrie. Elle fait autant que la couleur pour l'identité d'un thème :
@@ -97,12 +118,20 @@
       --critical: 226 112 95;
       --critical-soft: 60 29 25;
 
-      /* Couple validé par scripts/validate_palette.js sur fond #151D1A :
-       * bande de clarté respectée, ΔE 8,4 en vision protanope, 17,6 en
-       * vision normale. Plus sourd que les couleurs d'interface, à dessein :
-       * un aplat de graphique n'est pas un voyant. */
+      /*
+       * Mêmes règles, validées contre le fond sombre : une palette claire
+       * retournée ne passe pas la bande de clarté, qui est plus étroite ici
+       * (0,48–0,67 contre 0,43–0,77).
+       *
+       * `--mode dark --surface "#151D1A" --pairs all` : ΔE 15,0 en vision
+       * normale sur la pire paire, 6,0 en deutéranope — second encodage
+       * exigé, et fourni.
+       */
       --serie-1: 46 156 116;
       --serie-2: 191 132 40;
+      --serie-3: 46 140 200;
+      --serie-4: 201 116 159;
+      --serie-rampe: 20 69 58, 26 99 80, 36 128 102, 46 156 116, 85 179 146, 127 201 175;
 
       color-scheme: dark;
     }
@@ -127,12 +156,20 @@
     --critical: 226 112 95;
     --critical-soft: 60 29 25;
 
-    /* Couple validé par scripts/validate_palette.js sur fond #151D1A :
-     * bande de clarté respectée, ΔE 8,4 en vision protanope, 17,6 en
-     * vision normale. Plus sourd que les couleurs d'interface, à dessein :
-     * un aplat de graphique n'est pas un voyant. */
-    --serie-1: 46 156 116;
-    --serie-2: 191 132 40;
+      /*
+       * Mêmes règles, validées contre le fond sombre : une palette claire
+       * retournée ne passe pas la bande de clarté, qui est plus étroite ici
+       * (0,48–0,67 contre 0,43–0,77).
+       *
+       * `--mode dark --surface "#151D1A" --pairs all` : ΔE 15,0 en vision
+       * normale sur la pire paire, 6,0 en deutéranope — second encodage
+       * exigé, et fourni.
+       */
+      --serie-1: 46 156 116;
+      --serie-2: 191 132 40;
+      --serie-3: 46 140 200;
+      --serie-4: 201 116 159;
+      --serie-rampe: 20 69 58, 26 99 80, 36 128 102, 46 156 116, 85 179 146, 127 201 175;
 
     color-scheme: dark;
   }
@@ -190,8 +227,6 @@
     --critical: 174 59 50;
     --critical-soft: 245 223 219;
 
-    --serie-1: 0 121 92;
-    --serie-2: 162 94 34;
 
     --rayon-carte: 0.75rem;
     --rayon-controle: 0.5rem;
@@ -221,8 +256,6 @@
       --critical: 224 136 120;
       --critical-soft: 62 33 29;
 
-      --serie-1: 30 155 120;
-      --serie-2: 196 132 47;
 
       color-scheme: dark;
     }
@@ -247,8 +280,6 @@
     --critical: 224 136 120;
     --critical-soft: 62 33 29;
 
-    --serie-1: 30 155 120;
-    --serie-2: 196 132 47;
 
     color-scheme: dark;
   }
@@ -273,10 +304,6 @@
     --warning-soft: 243 231 205;
     --critical: 163 57 47;
     --critical-soft: 244 220 215;
-
-    /* Couple validé : ΔE 18,9 en vision protanope sur fond #FBF8F1. */
-    --serie-1: 17 113 166;
-    --serie-2: 168 57 47;
 
     --rayon-carte: 0.25rem;
     --rayon-controle: 0.2rem;
@@ -306,10 +333,6 @@
       --critical: 224 130 116;
       --critical-soft: 60 31 28;
 
-      /* Couple validé : ΔE 16,9 en vision protanope sur fond #171C24. */
-      --serie-1: 52 146 198;
-      --serie-2: 208 106 82;
-
       color-scheme: dark;
     }
   }
@@ -333,8 +356,6 @@
     --critical: 224 130 116;
     --critical-soft: 60 31 28;
 
-    --serie-1: 52 146 198;
-    --serie-2: 208 106 82;
 
     color-scheme: dark;
   }
@@ -359,10 +380,6 @@
     --warning-soft: 246 236 208;
     --critical: 187 52 52;
     --critical-soft: 250 223 223;
-
-    /* Couple validé : ΔE 29,5 en vision protanope sur fond blanc. */
-    --serie-1: 79 70 199;
-    --serie-2: 176 106 16;
 
     --rayon-carte: 1rem;
     --rayon-controle: 0.6rem;
@@ -392,10 +409,6 @@
       --critical: 230 126 126;
       --critical-soft: 63 30 30;
 
-      /* Couple validé : ΔE 28,1 en vision protanope sur fond #1A1D24. */
-      --serie-1: 128 120 232;
-      --serie-2: 188 134 41;
-
       color-scheme: dark;
     }
   }
@@ -419,8 +432,6 @@
     --critical: 230 126 126;
     --critical-soft: 63 30 30;
 
-    --serie-1: 128 120 232;
-    --serie-2: 188 134 41;
 
     color-scheme: dark;
   }

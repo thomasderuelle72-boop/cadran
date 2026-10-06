@@ -2,6 +2,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, memoriserCsrf, uploadFile } from "./client";
 import type { EtatAbonnement, PlanId } from "../lib/abonnement";
 import type {
+  Bloc,
+  Hypotheses,
+  Mesure,
+  Previsionnel,
+  SerieExercice,
+  TableauEnregistre,
   OrganisationPlateforme,
   SantePlateforme,
   UtilisateurPlateforme,
@@ -443,6 +449,75 @@ export function useRetirerMarque() {
   return useMutation({
     mutationFn: (emplacement: EmplacementMarque) => api.delete<Marque>(`/marque/${emplacement}`),
     onSuccess: (marque) => queryClient.setQueryData(["marque"], marque),
+  });
+}
+
+// --- Tableau de bord pluriannuel -------------------------------------------
+
+/* Le catalogue ne dépend ni de l'entité ni des données : il est mis en cache
+ * sans péremption plutôt que rechargé à chaque changement d'entité. */
+export function useMesures(entityId: string | null) {
+  return useQuery<Mesure[]>({
+    queryKey: ["mesures"],
+    queryFn: () => api.get(`/entities/${entityId}/pluriannuel/mesures`),
+    enabled: Boolean(entityId),
+    staleTime: Infinity,
+  });
+}
+
+export function useSeriesPluriannuelles(entityId: string | null) {
+  return useQuery<SerieExercice[]>({
+    queryKey: ["pluriannuel", "series", entityId],
+    queryFn: () => api.get(`/entities/${entityId}/pluriannuel/series`),
+    enabled: Boolean(entityId),
+  });
+}
+
+export function useTableauPluriannuel(entityId: string | null) {
+  return useQuery<TableauEnregistre>({
+    queryKey: ["pluriannuel", "tableau", entityId],
+    queryFn: () => api.get(`/entities/${entityId}/pluriannuel/tableau`),
+    enabled: Boolean(entityId),
+  });
+}
+
+export function useEnregistrerTableau(entityId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (blocs: Bloc[]) =>
+      api.put<{ blocs: Bloc[] }>(`/entities/${entityId}/pluriannuel/tableau`, { blocs }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["pluriannuel", "tableau", entityId] }),
+  });
+}
+
+/**
+ * Le prévisionnel, simulé sans être enregistré.
+ *
+ * Les hypothèses passent en paramètres d'URL : on doit pouvoir essayer un
+ * scénario sans l'adopter, et revenir à celui qui est enregistré en
+ * rechargeant la page.
+ */
+export function usePrevisionnel(entityId: string | null, hypotheses: Hypotheses | null) {
+  const parametres = hypotheses
+    ? new URLSearchParams(
+        Object.entries(hypotheses).map(([cle, valeur]) => [cle, String(valeur)])
+      ).toString()
+    : "";
+  return useQuery<Previsionnel>({
+    queryKey: ["pluriannuel", "previsionnel", entityId, parametres],
+    queryFn: () =>
+      api.get(`/entities/${entityId}/pluriannuel/previsionnel${parametres ? `?${parametres}` : ""}`),
+    enabled: Boolean(entityId),
+  });
+}
+
+export function useEnregistrerHypotheses(entityId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (hypotheses: Hypotheses) =>
+      api.put<Hypotheses>(`/entities/${entityId}/pluriannuel/previsionnel`, hypotheses),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["pluriannuel"] }),
   });
 }
 

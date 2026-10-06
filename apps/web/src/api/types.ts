@@ -646,3 +646,69 @@ export interface SantePlateforme {
   ecritsEnEchec7j: number;
   abonnements: Partial<Record<StatutAbonnement, number>>;
 }
+
+// --- Tableau de bord pluriannuel et prévisionnel -----------------------------
+
+export type FamilleMesure = "resultat" | "bilan" | "intermediaire" | "ratio";
+
+export interface Mesure {
+  id: string;
+  label: string;
+  unite: RatioUnit;
+  famille: FamilleMesure;
+  /** Un ratio ne s'additionne pas : l'écran ne propose pas de l'empiler. */
+  cumulable: boolean;
+}
+
+export type TypeBloc = "courbe" | "barres" | "empile" | "tableau" | "tuile";
+
+export interface Bloc {
+  id: string;
+  type: TypeBloc;
+  titre: string;
+  mesures: string[];
+  largeur: "demi" | "pleine";
+}
+
+export interface SerieExercice {
+  annee: number;
+  label: string;
+  /** Faux pour un exercice projeté. */
+  reel: boolean;
+  /** Faux quand l'exercice ne couvre pas douze mois. */
+  complet: boolean;
+  valeurs: Record<string, number | null>;
+  besoinFinancement?: number;
+}
+
+export interface Hypotheses {
+  horizon: number;
+  croissanceCa: number;
+  partAchats: number;
+  partImpotsTaxes: number;
+  croissanceChargesExternes: number;
+  croissanceChargesPersonnel: number;
+  dso: number;
+  dpo: number;
+  dio: number;
+  investissements: number;
+  dureeAmortissement: number;
+  nouveauxEmprunts: number;
+  remboursements: number;
+  tauxInteret: number;
+  tauxIS: number;
+  dividendes: number;
+}
+
+export interface TableauEnregistre {
+  blocs: Bloc[];
+  hypotheses: Hypotheses;
+  enregistre: boolean;
+}
+
+export interface Previsionnel {
+  hypotheses: Hypotheses;
+  exercices: SerieExercice[];
+  /** Millésime du dernier exercice complet, point de départ de la projection. */
+  depart: number | null;
+}
