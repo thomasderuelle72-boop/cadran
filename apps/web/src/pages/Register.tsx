@@ -25,7 +25,7 @@ export function Register() {
        * écran sans un mot d'explication — il conclut que son mot de passe est
        * faux.
        */
-      if (cookiesRefuses()) {
+      if (await cookiesRefuses()) {
         setError(
           "Votre navigateur a refusé le cookie de session. Safari et les navigateurs "
             + "en navigation privée bloquent les cookies dits tiers ; Cadran servant "

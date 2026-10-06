@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, uploadFile } from "./client";
+import { api, memoriserCsrf, uploadFile } from "./client";
 import type { EtatAbonnement, PlanId } from "../lib/abonnement";
 import type {
   OrganisationPlateforme,
@@ -50,6 +50,7 @@ export function useMe(enabled: boolean) {
 export function useLogin() {
   return useMutation({
     mutationFn: (input: { email: string; password: string }) => api.post<AuthResponse>("/auth/login", input),
+    onSuccess: (reponse) => memoriserCsrf(reponse.jetonCsrf),
   });
 }
 
@@ -63,6 +64,7 @@ export function useRegister() {
   return useMutation({
     mutationFn: (input: { organizationName: string; name: string; email: string; password: string }) =>
       api.post<AuthResponse>("/auth/register", input),
+    onSuccess: (reponse) => memoriserCsrf(reponse.jetonCsrf),
   });
 }
 
@@ -520,14 +522,21 @@ export function useSupprimerOrganisation() {
 export function useOuvrirAccesSupport() {
   return useMutation({
     mutationFn: (organizationId: string) =>
-      api.post<{ organisation: { id: string; nom: string } }>(
+      api.post<{ organisation: { id: string; nom: string }; jetonCsrf: string }>(
         `/plateforme/organisations/${organizationId}/acces`
       ),
+    /* La session a changé : le jeton de l'ancienne ne vaut plus rien. Sans
+     * cette ligne, la première modification faite depuis l'accès support
+     * repartait avec le jeton du cabinet et se faisait refuser. */
+    onSuccess: (reponse) => memoriserCsrf(reponse.jetonCsrf),
   });
 }
 
 export function useQuitterAccesSupport() {
-  return useMutation({ mutationFn: () => api.post<AuthResponse>("/auth/support/quitter") });
+  return useMutation({
+    mutationFn: () => api.post<AuthResponse>("/auth/support/quitter"),
+    onSuccess: (reponse) => memoriserCsrf(reponse.jetonCsrf),
+  });
 }
 
 // --- Analyse ---------------------------------------------------------------

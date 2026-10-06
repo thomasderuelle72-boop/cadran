@@ -1,69 +1,88 @@
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api";
 
 /*
- * Le jeton de session n'est plus accessible d'ici, et c'est voulu : il vit
+ * Le jeton de session n'est pas accessible d'ici, et c'est voulu : il vit
  * dans un cookie `httpOnly` que le navigateur attache seul. Ce fichier ne
- * sait donc plus lire la session — il sait seulement demander qu'elle soit
+ * sait donc pas lire la session — il sait seulement demander qu'elle soit
  * envoyée (`credentials: "include"`).
  *
- * Ne subsiste que le jeton anti-CSRF, volontairement lisible. L'API le pose
- * dans un cookie ordinaire à l'ouverture de session ; on le recopie dans un
- * en-tête sur chaque requête modifiante. Un site tiers peut faire émettre la
- * requête par le navigateur de la victime, mais la politique de même origine
- * l'empêche de lire le cookie : il ne peut pas fabriquer l'en-tête.
+ * Reste le jeton anti-CSRF, qu'on recopie en en-tête sur chaque requête
+ * modifiante. Un site tiers peut faire émettre la requête par le navigateur
+ * de la victime, mais il ne peut ni lire cette valeur ni poser un en-tête
+ * personnalisé sans un préalable que CORS lui refuse.
+ *
+ * **Il ne vient plus d'un cookie.** L'API le pose bien dans un cookie
+ * lisible, mais ce cookie appartient au domaine de l'API — et l'interface est
+ * servie depuis un autre. `document.cookie` d'un domaine ne montre rien de
+ * l'autre : le frontend n'y lisait donc rien, n'envoyait aucun en-tête, et
+ * toute requête modifiante suivant une connexion partait en 403. En
+ * développement, interface et API partageant `localhost`, le défaut restait
+ * invisible — c'est ce qui l'a laissé passer.
+ *
+ * Le jeton arrive désormais dans le corps des réponses qui ouvrent une
+ * session, et `GET /auth/csrf` le redonne au rechargement d'une page.
  */
-const COOKIE_CSRF = "cadran_csrf";
 const ENTETE_CSRF = "x-jeton-csrf";
 
-/**
- * Extrait la valeur d'un cookie d'une chaîne au format `document.cookie`.
- *
- * Séparée de la lecture du document pour être vérifiable sans navigateur :
- * c'est cette fonction qui décide si une session semble ouverte et si les
- * cookies ont été refusés, deux jugements qu'on ne veut pas croire sur parole.
- *
- * Le préfixe `; ` est ce qui empêche un cookie dont le nom *se termine* par
- * le nôtre (`faux_cadran_csrf`) d'être pris pour lui.
- */
-export function valeurCookie(chaine: string, nom: string): string | null {
-  const trouve = `; ${chaine}`.split(`; ${nom}=`);
-  return trouve.length === 2 ? (trouve.pop()?.split(";").shift() ?? null) : null;
+/** Clé de session du navigateur : propre à l'origine, et effacée à la
+ *  fermeture de l'onglet. Le jeton n'a pas à vivre plus longtemps. */
+const CLE_CSRF = "cadran_csrf";
+
+/** Marque qu'une session a été ouverte depuis ce navigateur. Simple indice,
+ *  pour ne pas interroger l'API au nom d'un visiteur anonyme — jamais une
+ *  preuve : seul le serveur tranche. */
+const CLE_SESSION = "cadran_session_ouverte";
+
+let jetonCsrf: string | null = null;
+
+/** Le stockage peut lever : navigation privée, stockage désactivé. Aucune de
+ *  ces situations ne doit empêcher l'application de fonctionner. */
+function lireStockage(cle: string, source: Storage): string | null {
+  try {
+    return source.getItem(cle);
+  } catch {
+    return null;
+  }
 }
 
-function lireCookie(nom: string): string | null {
-  return valeurCookie(document.cookie, nom);
+function ecrireStockage(cle: string, valeur: string | null, source: Storage): void {
+  try {
+    if (valeur === null) source.removeItem(cle);
+    else source.setItem(cle, valeur);
+  } catch {
+    // Sans stockage, le jeton vit en mémoire : il faudra le redemander au
+    // rechargement, ce qui coûte un appel et rien d'autre.
+  }
+}
+
+/** Mémorise le jeton rendu par une réponse d'ouverture de session. */
+export function memoriserCsrf(jeton: string | undefined | null): void {
+  if (!jeton) return;
+  jetonCsrf = jeton;
+  ecrireStockage(CLE_CSRF, jeton, sessionStorage);
+}
+
+export function oublierSession(): void {
+  jetonCsrf = null;
+  ecrireStockage(CLE_CSRF, null, sessionStorage);
+  ecrireStockage(CLE_SESSION, null, localStorage);
+}
+
+export function marquerSessionOuverte(): void {
+  ecrireStockage(CLE_SESSION, "1", localStorage);
 }
 
 /**
  * Une session est-elle vraisemblablement ouverte ?
  *
- * On ne peut plus le savoir avec certitude côté navigateur, puisque le cookie
- * de session est invisible — seul le serveur tranche. Mais le cookie
- * anti-CSRF est posé et retiré en même temps que lui : sa présence est un
- * indice fiable, et il ne prouve rien à lui seul, donc s'en servir ici
- * n'affaiblit rien. Sans cet indice, chaque visiteur anonyme de la page
- * d'accueil déclencherait un appel authentifié voué au 401.
+ * On ne peut pas le savoir de façon certaine ici : le cookie de session est
+ * invisible au JavaScript, et celui de l'API n'est de toute façon pas lisible
+ * depuis ce domaine. On s'appuie donc sur une marque posée à la connexion et
+ * retirée à la déconnexion. Elle peut mentir — un cookie expiré la laisse en
+ * place — et c'est sans gravité : la réponse de `/auth/me` tranche.
  */
 export function sessionProbable(): boolean {
-  return lireCookie(COOKIE_CSRF) !== null;
-}
-
-/**
- * Les cookies tiers ont-ils été refusés par le navigateur ?
- *
- * À n'appeler qu'après une connexion réussie. L'API pose deux cookies, dont
- * un lisible ; si celui-là n'est pas là alors que la requête a abouti, le
- * navigateur les a écartés tous les deux. C'est le cas de Safari, qui bloque
- * les cookies tiers par défaut — et le frontend et l'API étant hébergés sur
- * deux domaines distincts, les nôtres en sont.
- *
- * Sans ce contrôle, l'utilisateur voit l'écran de connexion réapparaître sans
- * message : impossible pour lui de deviner que la cause est le navigateur, et
- * non son mot de passe. Le remède est de servir l'API depuis un
- * sous-domaine du site (api.cadran.fr), ce qui rend le cookie premier.
- */
-export function cookiesRefuses(): boolean {
-  return !sessionProbable();
+  return lireStockage(CLE_SESSION, localStorage) !== null;
 }
 
 export class ApiError extends Error {
@@ -78,12 +97,41 @@ export class ApiError extends Error {
 /** Ces méthodes ne modifient rien : l'en-tête anti-CSRF n'y a pas d'objet. */
 const METHODES_SANS_EFFET = new Set(["GET", "HEAD", "OPTIONS"]);
 
-function entetesAvecCsrf(base: Headers, methode: string): Headers {
-  if (!METHODES_SANS_EFFET.has(methode)) {
-    const jeton = lireCookie(COOKIE_CSRF);
-    if (jeton) base.set(ENTETE_CSRF, jeton);
+/**
+ * Le jeton anti-CSRF du moment, obtenu si on ne l'a pas.
+ *
+ * Trois sources, dans l'ordre : la mémoire, le stockage de session — qui
+ * survit au rechargement de la page, pas à la fermeture de l'onglet — puis
+ * l'API. Sans ce dernier recours, recharger la page suffisait à ne plus rien
+ * pouvoir modifier jusqu'à la reconnexion.
+ */
+export async function obtenirCsrf(): Promise<string | null> {
+  if (jetonCsrf) return jetonCsrf;
+
+  const range = lireStockage(CLE_CSRF, sessionStorage);
+  if (range) {
+    jetonCsrf = range;
+    return range;
   }
-  return base;
+
+  try {
+    const reponse = await fetch(`${API_URL}/auth/csrf`, { credentials: "include" });
+    if (!reponse.ok) return null;
+    const corps = (await reponse.json()) as { jetonCsrf?: string };
+    memoriserCsrf(corps.jetonCsrf);
+    return jetonCsrf;
+  } catch {
+    /* Réseau indisponible : la requête qui suit échouera de toute façon, et
+     * son message sera plus parlant que celui qu'on produirait ici. */
+    return null;
+  }
+}
+
+/** Le `Content-Type` est volontairement absent : voir uploadFile. */
+function enteteCsrf(jeton: string | null): Headers {
+  const entetes = new Headers();
+  if (jeton) entetes.set(ENTETE_CSRF, jeton);
+  return entetes;
 }
 
 async function messageErreur(response: Response): Promise<string> {
@@ -99,8 +147,13 @@ async function messageErreur(response: Response): Promise<string> {
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const methode = options.method ?? "GET";
-  const headers = entetesAvecCsrf(new Headers(options.headers), methode);
+  const headers = new Headers(options.headers);
   headers.set("Content-Type", "application/json");
+
+  if (!METHODES_SANS_EFFET.has(methode)) {
+    const jeton = await obtenirCsrf();
+    if (jeton) headers.set(ENTETE_CSRF, jeton);
+  }
 
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
@@ -153,7 +206,7 @@ export async function uploadFile<T>(path: string, file: File, field = "file"): P
 
   const response = await fetch(`${API_URL}${path}`, {
     method: "POST",
-    headers: entetesAvecCsrf(new Headers(), "POST"),
+    headers: enteteCsrf(await obtenirCsrf()),
     body,
     credentials: "include",
   });
@@ -189,4 +242,30 @@ export async function urlImage(path: string): Promise<string> {
   const response = await fetch(`${API_URL}${path}`, { credentials: "include" });
   if (!response.ok) throw new ApiError(response.status, await messageErreur(response));
   return URL.createObjectURL(await response.blob());
+}
+
+/**
+ * Le navigateur a-t-il accepté le cookie de session ?
+ *
+ * On ne peut pas le lire — il est `httpOnly`, et posé sur le domaine de
+ * l'API. On ne peut donc que lui demander de servir : si `/auth/me` répond
+ * 401 juste après une connexion réussie, c'est que le cookie n'est pas
+ * reparti. C'est le cas de Safari et de la navigation privée, qui écartent
+ * les cookies dits tiers — et les nôtres en sont, l'interface et l'API étant
+ * sur deux domaines.
+ *
+ * La version précédente déduisait la réponse de la présence d'un cookie
+ * lisible. Elle ne pouvait que se tromper : ce cookie n'est jamais visible
+ * d'ici, et tout le monde paraissait donc refusé. Celle-ci éprouve ce qu'elle
+ * affirme.
+ */
+export async function cookiesRefuses(): Promise<boolean> {
+  try {
+    const reponse = await fetch(`${API_URL}/auth/me`, { credentials: "include" });
+    return reponse.status === 401;
+  } catch {
+    // Panne réseau : ce n'est pas un refus de cookie, et le dire serait
+    // envoyer l'utilisateur chercher dans la mauvaise direction.
+    return false;
+  }
 }

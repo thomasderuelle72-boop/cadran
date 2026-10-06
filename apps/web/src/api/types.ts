@@ -25,6 +25,9 @@ export interface AuthUser {
  */
 export interface AuthResponse {
   user: AuthUser;
+  /** Jeton anti-CSRF, que le frontend ne peut pas lire dans un cookie posé
+   *  sur le domaine de l'API — voir api/client.ts. */
+  jetonCsrf: string;
 }
 
 export interface Entity {

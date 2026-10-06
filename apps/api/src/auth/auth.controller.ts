@@ -5,10 +5,11 @@ import {
   Get,
   HttpCode,
   Post,
+  Req,
   Res,
   UseGuards,
 } from "@nestjs/common";
-import type { Response } from "express";
+import type { Request, Response } from "express";
 import { AuthService } from "./auth.service";
 import { RegisterDto } from "./dto/register.dto";
 import { LoginDto } from "./dto/login.dto";
@@ -39,20 +40,63 @@ export class AuthController {
   }
 
   /**
-   * Installe la session dans deux cookies et retire le jeton du corps.
+   * Installe la session dans deux cookies, et rend le jeton anti-CSRF dans le
+   * corps.
    *
-   * Le retirer est le but de l'opération : un jeton renvoyé dans le corps
-   * finit dans une variable JavaScript, puis dans le stockage du navigateur,
-   * et l'on n'a rien gagné. Le client apprend qui il est par l'utilisateur
-   * renvoyé, et la session voyage désormais hors de sa portée.
+   * Le jeton **de session** reste hors du corps : c'est tout l'objet du
+   * cookie `httpOnly`, et le rendre reviendrait à le laisser atterrir dans le
+   * stockage du navigateur, à portée de n'importe quel script de la page.
+   *
+   * Le jeton **anti-CSRF**, lui, doit être lisible par le client — c'est sa
+   * définition même : il prouve que la requête vient d'un code capable de
+   * lire une valeur qu'un site tiers ne peut pas lire. Il transitait jusqu'ici
+   * par un cookie non `httpOnly`, ce qui ne marche que si l'interface et
+   * l'API partagent un domaine. Elles n'en partagent pas : le frontend est
+   * sur Vercel, l'API sur Railway, et `document.cookie` de l'un ne voit rien
+   * de l'autre. Le frontend ne pouvait donc produire aucun en-tête, et toute
+   * requête modifiante suivant une connexion était refusée.
+   *
+   * Le cookie reste posé : c'est lui que le garde compare à l'en-tête. Ce qui
+   * change est seulement la façon dont le client apprend la valeur. La
+   * protection est intacte — un site tiers ne peut ni lire cette réponse
+   * (CORS la réserve à nos origines) ni poser un en-tête personnalisé sans
+   * préalable accepté.
    */
   private ouvrirSession(
     reponse: Response,
     resultat: { accessToken: string; user: unknown }
-  ): { user: unknown } {
+  ): { user: unknown; jetonCsrf: string } {
+    const jetonCsrf = emettreCsrf();
     reponse.cookie(COOKIE_SESSION, resultat.accessToken, optionsSession(this.production));
-    reponse.cookie(COOKIE_CSRF, emettreCsrf(), optionsCsrf(this.production));
-    return { user: resultat.user };
+    reponse.cookie(COOKIE_CSRF, jetonCsrf, optionsCsrf(this.production));
+    return { user: resultat.user, jetonCsrf };
+  }
+
+  /**
+   * Donne au client un jeton anti-CSRF utilisable.
+   *
+   * Nécessaire au rechargement d'une page : le jeton vit en mémoire côté
+   * client, et un nouvel onglet n'en a pas. Sans ce point d'entrée, il
+   * faudrait se reconnecter pour pouvoir modifier quoi que ce soit.
+   *
+   * Rend la valeur du cookie existant plutôt que d'en forger une à chaque
+   * appel : deux onglets de la même session partagent le cookie, et en battre
+   * un neuf invaliderait le jeton que l'autre détient.
+   *
+   * Non authentifié, parce que la connexion elle-même en a besoin. Cela ne
+   * l'affaiblit pas : un attaquant peut obtenir *un* jeton pour son propre
+   * navigateur, jamais celui de sa victime, et c'est à celui de la victime
+   * que le garde compare.
+   */
+  @Get("csrf")
+  csrf(@Req() requete: Request, @Res({ passthrough: true }) reponse: Response) {
+    const cookies = (requete.cookies ?? {}) as Record<string, string | undefined>;
+    const existant = cookies[COOKIE_CSRF];
+    if (existant) return { jetonCsrf: existant };
+
+    const jetonCsrf = emettreCsrf();
+    reponse.cookie(COOKIE_CSRF, jetonCsrf, optionsCsrf(this.production));
+    return { jetonCsrf };
   }
 
   @Post("register")

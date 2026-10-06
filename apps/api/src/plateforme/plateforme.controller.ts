@@ -100,8 +100,13 @@ export class PlateformeController {
     @Res({ passthrough: true }) reponse: Response
   ) {
     const { jeton, organisation } = await this.plateforme.ouvrirAcces(user.userId, id);
+    /* Le jeton anti-CSRF est rendu dans le corps pour la même raison qu'à la
+     * connexion : le frontend ne peut pas lire un cookie posé sur le domaine
+     * de l'API (voir auth.controller.ts). Sans lui, la session support serait
+     * ouverte mais incapable de modifier quoi que ce soit. */
+    const jetonCsrf = emettreCsrf();
     reponse.cookie(COOKIE_SESSION, jeton, optionsSession(this.production, DUREE_ACCES_SUPPORT_MS));
-    reponse.cookie(COOKIE_CSRF, emettreCsrf(), optionsCsrf(this.production));
-    return { organisation };
+    reponse.cookie(COOKIE_CSRF, jetonCsrf, optionsCsrf(this.production));
+    return { organisation, jetonCsrf };
   }
 }

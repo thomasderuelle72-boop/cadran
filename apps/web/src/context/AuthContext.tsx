@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { sessionProbable } from "../api/client";
+import { marquerSessionOuverte, oublierSession, sessionProbable } from "../api/client";
 import { useDeconnexion, useMe } from "../api/hooks";
 import type { AuthUser } from "../api/types";
 
@@ -42,7 +42,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       isLoading: sessionOuverte && isLoading,
       isAuthenticated: sessionOuverte && !!user,
-      login: () => setSessionOuverte(true),
+      login: () => {
+        /* La marque remplace l'ancien indice tiré d'un cookie lisible, que
+         * ce domaine ne voyait jamais : tout le monde paraissait déconnecté
+         * au rechargement, et l'application repartait sur l'écran de
+         * connexion alors que la session était bien ouverte. */
+        marquerSessionOuverte();
+        setSessionOuverte(true);
+      },
       logout: () => {
         /*
          * Un cookie `httpOnly` ne s'efface pas depuis le JavaScript : il faut
@@ -52,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
          * quitté ne subsiste à l'écran.
          */
         setSessionOuverte(false);
+        oublierSession();
         queryClient.clear();
         deconnexion.mutate();
       },
