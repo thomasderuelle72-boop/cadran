@@ -12,6 +12,7 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import { Role } from "@prisma/client";
 import { FecService } from "./fec.service";
+import { BillingService } from "../billing/billing.service";
 import { JwtAuthGuard } from "../common/jwt-auth.guard";
 import { RolesGuard } from "../common/roles.guard";
 import { Roles } from "../common/roles.decorator";
@@ -45,7 +46,10 @@ function decoder(buffer: Buffer): string {
 @Controller("fec")
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class FecController {
-  constructor(private fecService: FecService) {}
+  constructor(
+    private fecService: FecService,
+    private billing: BillingService
+  ) {}
 
   @Get("exercices")
   listerExercices(@CurrentUser() user: AuthUser, @Query("entityId") entityId: string) {
@@ -62,6 +66,14 @@ export class FecController {
     @UploadedFile() file?: FichierTeleverse
   ) {
     if (!file) throw new BadRequestException("Aucun fichier reçu.");
+
+    /*
+     * Le garde porte sur l'import, pas sur la lecture des exercices déjà
+     * importés. Couper la lecture retiendrait en otage des données que le
+     * client a lui-même versées quand sa formule les acceptait — ce qui n'est
+     * pas vendre une fonction, c'est confisquer un travail.
+     */
+    await this.billing.exigerFonction(user.organizationId, "fec", user.administrateurPlateforme);
     return this.fecService.importer(user.organizationId, entityId, decoder(file.buffer));
   }
 }

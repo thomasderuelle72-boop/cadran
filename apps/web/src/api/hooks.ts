@@ -50,12 +50,18 @@ import type {
 } from "./types";
 
 export function useMe(enabled: boolean) {
-  return useQuery<AuthUser>({ queryKey: ["me"], queryFn: () => api.get("/auth/me"), enabled, retry: false });
+  return useQuery<AuthUser>({
+    queryKey: ["me"],
+    queryFn: () => api.get("/auth/me"),
+    enabled,
+    retry: false,
+  });
 }
 
 export function useLogin() {
   return useMutation({
-    mutationFn: (input: { email: string; password: string }) => api.post<AuthResponse>("/auth/login", input),
+    mutationFn: (input: { email: string; password: string }) =>
+      api.post<AuthResponse>("/auth/login", input),
     onSuccess: (reponse) => memoriserCsrf(reponse.jetonCsrf),
   });
 }
@@ -68,8 +74,12 @@ export function useDeconnexion() {
 
 export function useRegister() {
   return useMutation({
-    mutationFn: (input: { organizationName: string; name: string; email: string; password: string }) =>
-      api.post<AuthResponse>("/auth/register", input),
+    mutationFn: (input: {
+      organizationName: string;
+      name: string;
+      email: string;
+      password: string;
+    }) => api.post<AuthResponse>("/auth/register", input),
     onSuccess: (reponse) => memoriserCsrf(reponse.jetonCsrf),
   });
 }
@@ -81,7 +91,8 @@ export function useRegister() {
  */
 export function useDemanderReinitialisation() {
   return useMutation({
-    mutationFn: (input: { email: string }) => api.post<void>("/auth/mot-de-passe/oubli", input),
+    mutationFn: (input: { email: string }) =>
+      api.post<void>("/auth/mot-de-passe/oubli", input),
   });
 }
 
@@ -107,12 +118,15 @@ export function useEtatAbonnement() {
 /** Les deux redirigent vers Stripe : la réponse ne contient qu'une adresse. */
 export function useDemarrerCheckout() {
   return useMutation({
-    mutationFn: (plan: PlanId) => api.post<{ url: string }>("/billing/checkout", { plan }),
+    mutationFn: (plan: PlanId) =>
+      api.post<{ url: string }>("/billing/checkout", { plan }),
   });
 }
 
 export function useOuvrirPortail() {
-  return useMutation({ mutationFn: () => api.post<{ url: string }>("/billing/portail") });
+  return useMutation({
+    mutationFn: () => api.post<{ url: string }>("/billing/portail"),
+  });
 }
 
 /*
@@ -155,22 +169,28 @@ export function usePoserQuestion() {
       api.post<ReponseConseil>("/conseil/question", { question }),
     // Le compteur affiché doit suivre, sinon l'utilisateur découvre son
     // quota épuisé au refus plutôt qu'en le voyant décroître.
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["conseil", "etat"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["conseil", "etat"] }),
   });
 }
 
 export function usePeriods(entityId?: string) {
   return useQuery<Period[]>({
     queryKey: ["periods", entityId ?? "all"],
-    queryFn: () => api.get(`/periods${entityId ? `?entityId=${entityId}` : ""}`),
+    queryFn: () =>
+      api.get(`/periods${entityId ? `?entityId=${entityId}` : ""}`),
   });
 }
 
 export function useCreatePeriod() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { entityId: string; label: string; startDate: string; endDate: string }) =>
-      api.post<Period>("/periods", input),
+    mutationFn: (input: {
+      entityId: string;
+      label: string;
+      startDate: string;
+      endDate: string;
+    }) => api.post<Period>("/periods", input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["periods"] }),
   });
 }
@@ -196,7 +216,10 @@ export function useDeletePeriod() {
 }
 
 export function useEntities() {
-  return useQuery<Entity[]>({ queryKey: ["entities"], queryFn: () => api.get("/entities") });
+  return useQuery<Entity[]>({
+    queryKey: ["entities"],
+    queryFn: () => api.get("/entities"),
+  });
 }
 
 export function useCreateEntity() {
@@ -215,7 +238,10 @@ export function useCreateEntity() {
 }
 
 export function useImportReference() {
-  return useQuery<ImportReference>({ queryKey: ["import-reference"], queryFn: () => api.get("/import/reference") });
+  return useQuery<ImportReference>({
+    queryKey: ["import-reference"],
+    queryFn: () => api.get("/import/reference"),
+  });
 }
 
 export function useLineItems(periodId: string | null) {
@@ -231,11 +257,23 @@ export function useSubmitLineItems() {
   return useMutation({
     mutationFn: (input: {
       periodId: string;
-      items: Array<{ accountCode: string; label: string; amount: number; poste: string }>;
-    }) => api.post(`/periods/${input.periodId}/line-items/bulk`, { items: input.items }),
+      items: Array<{
+        accountCode: string;
+        label: string;
+        amount: number;
+        poste: string;
+      }>;
+    }) =>
+      api.post(`/periods/${input.periodId}/line-items/bulk`, {
+        items: input.items,
+      }),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["line-items", variables.periodId] });
-      queryClient.invalidateQueries({ queryKey: ["ratios", variables.periodId] });
+      queryClient.invalidateQueries({
+        queryKey: ["line-items", variables.periodId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["ratios", variables.periodId],
+      });
       queryClient.invalidateQueries({ queryKey: ["periods"] });
       queryClient.invalidateQueries({ queryKey: ["trend"] });
     },
@@ -253,21 +291,37 @@ export function useRatios(periodId: string | null) {
 export function useTrend(entityId?: string) {
   return useQuery<TrendPoint[]>({
     queryKey: ["trend", entityId ?? "all"],
-    queryFn: () => api.get(`/ratios/trend${entityId ? `?entityId=${entityId}` : ""}`),
+    queryFn: () =>
+      api.get(`/ratios/trend${entityId ? `?entityId=${entityId}` : ""}`),
   });
 }
 
-export function useConsolidationGroups() {
+/**
+ * Les périodes consolidables.
+ *
+ * `actif` laisse l'appelant suspendre la requête quand la formule n'inclut
+ * pas la consolidation : le serveur répondrait 403, et l'écran afficherait
+ * une erreur technique là où il doit afficher une explication commerciale.
+ */
+export function useConsolidationGroups({
+  actif = true,
+}: { actif?: boolean } = {}) {
   return useQuery<ConsolidationGroup[]>({
     queryKey: ["consolidation-groups"],
     queryFn: () => api.get("/consolidation/groups"),
+    enabled: actif,
   });
 }
 
-export function useConsolidatedRatios(group: { startDate: string; endDate: string } | null) {
+export function useConsolidatedRatios(
+  group: { startDate: string; endDate: string } | null,
+) {
   return useQuery<ConsolidatedRatios>({
     queryKey: ["consolidated-ratios", group?.startDate, group?.endDate],
-    queryFn: () => api.get(`/consolidation/ratios?startDate=${group!.startDate}&endDate=${group!.endDate}`),
+    queryFn: () =>
+      api.get(
+        `/consolidation/ratios?startDate=${group!.startDate}&endDate=${group!.endDate}`,
+      ),
     enabled: !!group,
   });
 }
@@ -283,24 +337,39 @@ export function useBudgetVariance(periodId: string | null) {
 export function useSubmitBudget() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { periodId: string; items: Array<{ poste: LinePoste; amountBudgeted: number }> }) =>
-      api.post<BudgetVariance>(`/periods/${input.periodId}/budget`, { items: input.items }),
+    mutationFn: (input: {
+      periodId: string;
+      items: Array<{ poste: LinePoste; amountBudgeted: number }>;
+    }) =>
+      api.post<BudgetVariance>(`/periods/${input.periodId}/budget`, {
+        items: input.items,
+      }),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["budget-variance", variables.periodId] });
+      queryClient.invalidateQueries({
+        queryKey: ["budget-variance", variables.periodId],
+      });
     },
   });
 }
 
 export function useAlertRules() {
-  return useQuery<AlertRule[]>({ queryKey: ["alert-rules"], queryFn: () => api.get("/alert-rules") });
+  return useQuery<AlertRule[]>({
+    queryKey: ["alert-rules"],
+    queryFn: () => api.get("/alert-rules"),
+  });
 }
 
 export function useCreateAlertRule() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { label: string; ratioId: string; operator: AlertOperator; threshold: number }) =>
-      api.post<AlertRule>("/alert-rules", input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["alert-rules"] }),
+    mutationFn: (input: {
+      label: string;
+      ratioId: string;
+      operator: AlertOperator;
+      threshold: number;
+    }) => api.post<AlertRule>("/alert-rules", input),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["alert-rules"] }),
   });
 }
 
@@ -316,7 +385,10 @@ export function useDeleteAlertRule() {
 }
 
 export function useAlertEvents() {
-  return useQuery<AlertEvent[]>({ queryKey: ["alerts"], queryFn: () => api.get("/alerts") });
+  return useQuery<AlertEvent[]>({
+    queryKey: ["alerts"],
+    queryFn: () => api.get("/alerts"),
+  });
 }
 
 export function useAcknowledgeAlert() {
@@ -338,7 +410,8 @@ export function useAuditLogs(limit = 25, enabled = true) {
 export function useCashProjection(entityId: string | null, weeks = 13) {
   return useQuery<CashProjection>({
     queryKey: ["cash-projection", entityId, weeks],
-    queryFn: () => api.get(`/entities/${entityId}/cash-forecast?weeks=${weeks}`),
+    queryFn: () =>
+      api.get(`/entities/${entityId}/cash-forecast?weeks=${weeks}`),
     enabled: !!entityId,
   });
 }
@@ -360,7 +433,10 @@ export function useCashCategories(entityId: string | null) {
   });
 }
 
-function invalidateCash(queryClient: ReturnType<typeof useQueryClient>, entityId: string) {
+function invalidateCash(
+  queryClient: ReturnType<typeof useQueryClient>,
+  entityId: string,
+) {
   queryClient.invalidateQueries({ queryKey: ["cash-projection", entityId] });
   queryClient.invalidateQueries({ queryKey: ["cash-lines", entityId] });
 }
@@ -378,9 +454,13 @@ export function useCreateCashLine() {
       endDate?: string;
     }) => {
       const { entityId, ...body } = input;
-      return api.post<CashLine>(`/entities/${entityId}/cash-forecast/lines`, body);
+      return api.post<CashLine>(
+        `/entities/${entityId}/cash-forecast/lines`,
+        body,
+      );
     },
-    onSuccess: (_, variables) => invalidateCash(queryClient, variables.entityId),
+    onSuccess: (_, variables) =>
+      invalidateCash(queryClient, variables.entityId),
   });
 }
 
@@ -388,8 +468,11 @@ export function useDeleteCashLine() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: { entityId: string; lineId: string }) =>
-      api.delete(`/entities/${input.entityId}/cash-forecast/lines/${input.lineId}`),
-    onSuccess: (_, variables) => invalidateCash(queryClient, variables.entityId),
+      api.delete(
+        `/entities/${input.entityId}/cash-forecast/lines/${input.lineId}`,
+      ),
+    onSuccess: (_, variables) =>
+      invalidateCash(queryClient, variables.entityId),
   });
 }
 
@@ -397,20 +480,29 @@ export function usePrefillCash() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (entityId: string) =>
-      api.post<{ created: number; basedOn: { label: string } }>(`/entities/${entityId}/cash-forecast/prefill`),
+      api.post<{ created: number; basedOn: { label: string } }>(
+        `/entities/${entityId}/cash-forecast/prefill`,
+      ),
     onSuccess: (_, entityId) => invalidateCash(queryClient, entityId),
   });
 }
 
 export function useOrgUsers() {
-  return useQuery<OrgUser[]>({ queryKey: ["users"], queryFn: () => api.get("/users") });
+  return useQuery<OrgUser[]>({
+    queryKey: ["users"],
+    queryFn: () => api.get("/users"),
+  });
 }
 
 export function useCreateOrgUser() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { name: string; email: string; password: string; role: string }) =>
-      api.post<OrgUser>("/users", input),
+    mutationFn: (input: {
+      name: string;
+      email: string;
+      password: string;
+      role: string;
+    }) => api.post<OrgUser>("/users", input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["users"] }),
   });
 }
@@ -423,14 +515,18 @@ export function useCreateOrgUser() {
  * vient de changer, et rien ne gagnerait à reconstituer l'état à la main.
  */
 export function useMarque() {
-  return useQuery<Marque>({ queryKey: ["marque"], queryFn: () => api.get("/marque") });
+  return useQuery<Marque>({
+    queryKey: ["marque"],
+    queryFn: () => api.get("/marque"),
+  });
 }
 
 export function useEnregistrerMarque() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (champs: Partial<Omit<Marque, "logo" | "signature" | "autorisee">>) =>
-      api.put<Marque>("/marque", champs),
+    mutationFn: (
+      champs: Partial<Omit<Marque, "logo" | "signature" | "autorisee">>,
+    ) => api.put<Marque>("/marque", champs),
     onSuccess: (marque) => queryClient.setQueryData(["marque"], marque),
   });
 }
@@ -438,8 +534,13 @@ export function useEnregistrerMarque() {
 export function useTeleverserMarque() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ emplacement, fichier }: { emplacement: EmplacementMarque; fichier: File }) =>
-      uploadFile<Marque>(`/marque/${emplacement}`, fichier, "fichier"),
+    mutationFn: ({
+      emplacement,
+      fichier,
+    }: {
+      emplacement: EmplacementMarque;
+      fichier: File;
+    }) => uploadFile<Marque>(`/marque/${emplacement}`, fichier, "fichier"),
     onSuccess: (marque) => queryClient.setQueryData(["marque"], marque),
   });
 }
@@ -447,7 +548,8 @@ export function useTeleverserMarque() {
 export function useRetirerMarque() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (emplacement: EmplacementMarque) => api.delete<Marque>(`/marque/${emplacement}`),
+    mutationFn: (emplacement: EmplacementMarque) =>
+      api.delete<Marque>(`/marque/${emplacement}`),
     onSuccess: (marque) => queryClient.setQueryData(["marque"], marque),
   });
 }
@@ -485,9 +587,13 @@ export function useEnregistrerTableau(entityId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (blocs: Bloc[]) =>
-      api.put<{ blocs: Bloc[] }>(`/entities/${entityId}/pluriannuel/tableau`, { blocs }),
+      api.put<{ blocs: Bloc[] }>(`/entities/${entityId}/pluriannuel/tableau`, {
+        blocs,
+      }),
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["pluriannuel", "tableau", entityId] }),
+      queryClient.invalidateQueries({
+        queryKey: ["pluriannuel", "tableau", entityId],
+      }),
   });
 }
 
@@ -498,16 +604,24 @@ export function useEnregistrerTableau(entityId: string | null) {
  * scénario sans l'adopter, et revenir à celui qui est enregistré en
  * rechargeant la page.
  */
-export function usePrevisionnel(entityId: string | null, hypotheses: Hypotheses | null) {
+export function usePrevisionnel(
+  entityId: string | null,
+  hypotheses: Hypotheses | null,
+) {
   const parametres = hypotheses
     ? new URLSearchParams(
-        Object.entries(hypotheses).map(([cle, valeur]) => [cle, String(valeur)])
+        Object.entries(hypotheses).map(([cle, valeur]) => [
+          cle,
+          String(valeur),
+        ]),
       ).toString()
     : "";
   return useQuery<Previsionnel>({
     queryKey: ["pluriannuel", "previsionnel", entityId, parametres],
     queryFn: () =>
-      api.get(`/entities/${entityId}/pluriannuel/previsionnel${parametres ? `?${parametres}` : ""}`),
+      api.get(
+        `/entities/${entityId}/pluriannuel/previsionnel${parametres ? `?${parametres}` : ""}`,
+      ),
     enabled: Boolean(entityId),
   });
 }
@@ -516,8 +630,12 @@ export function useEnregistrerHypotheses(entityId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (hypotheses: Hypotheses) =>
-      api.put<Hypotheses>(`/entities/${entityId}/pluriannuel/previsionnel`, hypotheses),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["pluriannuel"] }),
+      api.put<Hypotheses>(
+        `/entities/${entityId}/pluriannuel/previsionnel`,
+        hypotheses,
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["pluriannuel"] }),
   });
 }
 
@@ -548,7 +666,8 @@ export function useOrganisationsPlateforme(actif: boolean) {
 export function useUtilisateursPlateforme(organizationId: string | null) {
   return useQuery<UtilisateurPlateforme[]>({
     queryKey: ["plateforme", "utilisateurs", organizationId],
-    queryFn: () => api.get(`/plateforme/organisations/${organizationId}/utilisateurs`),
+    queryFn: () =>
+      api.get(`/plateforme/organisations/${organizationId}/utilisateurs`),
     enabled: Boolean(organizationId),
   });
 }
@@ -563,15 +682,22 @@ export function useChangerFormulePlateforme() {
       organizationId: string;
       plan?: PlanId;
       statut?: StatutAbonnement;
-    }) => api.patch<void>(`/plateforme/organisations/${organizationId}/formule`, corps),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["plateforme"] }),
+    }) =>
+      api.patch<void>(
+        `/plateforme/organisations/${organizationId}/formule`,
+        corps,
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["plateforme"] }),
   });
 }
 
 export function useMotDePasseProvisoire() {
   return useMutation({
     mutationFn: (userId: string) =>
-      api.post<{ email: string; motDePasse: string }>(`/plateforme/utilisateurs/${userId}/mot-de-passe`),
+      api.post<{ email: string; motDePasse: string }>(
+        `/plateforme/utilisateurs/${userId}/mot-de-passe`,
+      ),
   });
 }
 
@@ -579,17 +705,30 @@ export function useDroitPlateforme() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ userId, accorde }: { userId: string; accorde: boolean }) =>
-      api.patch<void>(`/plateforme/utilisateurs/${userId}/droit-plateforme`, { accorde }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["plateforme"] }),
+      api.patch<void>(`/plateforme/utilisateurs/${userId}/droit-plateforme`, {
+        accorde,
+      }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["plateforme"] }),
   });
 }
 
 export function useSupprimerOrganisation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ organizationId, nom }: { organizationId: string; nom: string }) =>
-      api.deleteAvecCorps<{ supprimee: string }>(`/plateforme/organisations/${organizationId}`, { nom }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["plateforme"] }),
+    mutationFn: ({
+      organizationId,
+      nom,
+    }: {
+      organizationId: string;
+      nom: string;
+    }) =>
+      api.deleteAvecCorps<{ supprimee: string }>(
+        `/plateforme/organisations/${organizationId}`,
+        { nom },
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["plateforme"] }),
   });
 }
 
@@ -597,9 +736,10 @@ export function useSupprimerOrganisation() {
 export function useOuvrirAccesSupport() {
   return useMutation({
     mutationFn: (organizationId: string) =>
-      api.post<{ organisation: { id: string; nom: string }; jetonCsrf: string }>(
-        `/plateforme/organisations/${organizationId}/acces`
-      ),
+      api.post<{
+        organisation: { id: string; nom: string };
+        jetonCsrf: string;
+      }>(`/plateforme/organisations/${organizationId}/acces`),
     /* La session a changé : le jeton de l'ancienne ne vaut plus rien. Sans
      * cette ligne, la première modification faite depuis l'accès support
      * repartait avec le jeton du cabinet et se faisait refuser. */
@@ -635,10 +775,17 @@ export function useFlux(periodId: string | null) {
   });
 }
 
-export function useBalanceAgee(entityId: string | null, sens: SensTiers, delai: number) {
+export function useBalanceAgee(
+  entityId: string | null,
+  sens: SensTiers,
+  delai: number,
+) {
   return useQuery<BalanceAgee>({
     queryKey: ["encours", entityId, sens, delai],
-    queryFn: () => api.get(`/analysis/encours?entityId=${entityId}&sens=${sens}&delai=${delai}`),
+    queryFn: () =>
+      api.get(
+        `/analysis/encours?entityId=${entityId}&sens=${sens}&delai=${delai}`,
+      ),
     enabled: Boolean(entityId),
   });
 }
@@ -650,12 +797,22 @@ export function useBalanceAgee(entityId: string | null, sens: SensTiers, delai: 
  * s'ouvre qu'à la demande, et un compte de banque à plusieurs milliers de
  * lignes n'a aucune raison d'être chargé tant que personne ne l'a déplié.
  */
-export function useEcritures(entityId: string | null, compte: string | null, actif = true) {
+export function useEcritures(
+  entityId: string | null,
+  compte: string | null,
+  actif = true,
+) {
   return useQuery<EcrituresCompte>({
     queryKey: ["ecritures", entityId, compte],
     queryFn: () =>
-      api.get(`/analysis/ecritures?entityId=${entityId}&compte=${encodeURIComponent(compte ?? "")}`),
-    enabled: actif && Boolean(entityId) && Boolean(compte) && (compte ?? "").length >= 2,
+      api.get(
+        `/analysis/ecritures?entityId=${entityId}&compte=${encodeURIComponent(compte ?? "")}`,
+      ),
+    enabled:
+      actif &&
+      Boolean(entityId) &&
+      Boolean(compte) &&
+      (compte ?? "").length >= 2,
     // Le grand livre est immuable après import : inutile de le redemander à
     // chaque ouverture du panneau.
     staleTime: 5 * 60 * 1000,
@@ -665,7 +822,8 @@ export function useEcritures(entityId: string | null, compte: string | null, act
 export function useConcentration(entityId: string | null, sens: SensTiers) {
   return useQuery<Concentration>({
     queryKey: ["concentration", entityId, sens],
-    queryFn: () => api.get(`/analysis/concentration?entityId=${entityId}&sens=${sens}`),
+    queryFn: () =>
+      api.get(`/analysis/concentration?entityId=${entityId}&sens=${sens}`),
     enabled: Boolean(entityId),
   });
 }
@@ -758,7 +916,8 @@ function invaliderActions(queryClient: ReturnType<typeof useQueryClient>) {
 export function useCreateAction() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: EntreeAction) => api.post<ActionPlan>("/actions", input),
+    mutationFn: (input: EntreeAction) =>
+      api.post<ActionPlan>("/actions", input),
     onSuccess: () => invaliderActions(queryClient),
   });
 }

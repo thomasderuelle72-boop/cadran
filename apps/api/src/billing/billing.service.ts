@@ -42,16 +42,31 @@ export class BillingService {
    * déploiement.
    */
   async pourOrganisation(organizationId: string): Promise<Subscription> {
-    const existant = await this.prisma.subscription.findUnique({ where: { organizationId } });
-    if (existant) return existant;
-
-    return this.prisma.subscription.create({
-      data: {
+    /*
+     * `upsert` et non « lire puis créer ».
+     *
+     * La lecture suivie d'une création laisse une fenêtre entre les deux :
+     * deux requêtes simultanées n'y trouvent rien toutes les deux, tentent la
+     * création toutes les deux, et la seconde heurte l'unicité de
+     * `organizationId` — une erreur 500 sur un écran qui s'ouvrait très bien
+     * la fois d'avant. La fenêtre était étroite tant que seul l'écran
+     * d'abonnement passait par ici ; elle s'élargit dès qu'un garde appelle
+     * cette méthode sur des routes que le tableau de bord demande en
+     * parallèle. L'`upsert` confie l'arbitrage à la base, qui a l'index pour
+     * le faire.
+     *
+     * `update: {}` est voulu : on ne veut rien changer à un abonnement qui
+     * existe, seulement en obtenir un.
+     */
+    return this.prisma.subscription.upsert({
+      where: { organizationId },
+      create: {
         organizationId,
         plan: PLAN_PAR_DEFAUT,
         statut: "essai",
         finPeriode: new Date(Date.now() + JOURS_ESSAI * 24 * 60 * 60 * 1000),
       },
+      update: {},
     });
   }
 

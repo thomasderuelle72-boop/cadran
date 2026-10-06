@@ -4,6 +4,7 @@ import {
   useAlertEvents,
   useConsolidatedRatios,
   useConsolidationGroups,
+  useEtatAbonnement,
   useEntities,
   usePeriods,
   useRatios,
@@ -11,11 +12,24 @@ import {
 } from "../api/hooks";
 import { KpiTile } from "../components/KpiTile";
 import { StatusBadge } from "../components/StatusBadge";
-import { EntitySelector, CONSOLIDATED_VALUE } from "../components/EntitySelector";
+import {
+  EntitySelector,
+  CONSOLIDATED_VALUE,
+} from "../components/EntitySelector";
 import { CourbeTemporelle } from "../components/Graphique";
-import { EntetePage, EtatVide, SqueletteCarte, SqueletteTuiles, Zone } from "../components/etats";
+import {
+  EntetePage,
+  EtatVide,
+  SqueletteCarte,
+  SqueletteTuiles,
+  Zone,
+} from "../components/etats";
 import { formatCurrency, formatRatioValue } from "../lib/format";
-import type { RatioCategory, RatioResultPayload, RatioValue } from "../api/types";
+import type {
+  RatioCategory,
+  RatioResultPayload,
+  RatioValue,
+} from "../api/types";
 
 const CATEGORY_LABELS: Record<RatioCategory, string> = {
   RENTABILITE: "Rentabilité",
@@ -35,16 +49,28 @@ const OU_COMPRENDRE: Record<string, { to: string; libelle: string }> = {
   dso: { to: "/receivables", libelle: "Voir qui doit quoi" },
   dpo: { to: "/receivables", libelle: "Voir les dettes fournisseurs" },
   dio: { to: "/diagnostic", libelle: "Voir le besoin de financement" },
-  cycle_conversion_cash: { to: "/diagnostic", libelle: "Voir le besoin de financement" },
+  cycle_conversion_cash: {
+    to: "/diagnostic",
+    libelle: "Voir le besoin de financement",
+  },
   bfr: { to: "/diagnostic", libelle: "Voir le BFR en jours" },
   tresorerie_nette: { to: "/cash", libelle: "Voir la projection" },
   marge_brute: { to: "/analysis", libelle: "Voir les soldes de gestion" },
   marge_ebitda: { to: "/analysis", libelle: "Voir les soldes de gestion" },
   marge_nette: { to: "/analysis", libelle: "Voir les soldes de gestion" },
   gearing: { to: "/diagnostic", libelle: "Voir les scores de fragilité" },
-  autonomie_financiere: { to: "/diagnostic", libelle: "Voir les scores de fragilité" },
-  capacite_remboursement: { to: "/diagnostic", libelle: "Voir les scores de fragilité" },
-  couverture_interets: { to: "/diagnostic", libelle: "Voir les scores de fragilité" },
+  autonomie_financiere: {
+    to: "/diagnostic",
+    libelle: "Voir les scores de fragilité",
+  },
+  capacite_remboursement: {
+    to: "/diagnostic",
+    libelle: "Voir les scores de fragilité",
+  },
+  couverture_interets: {
+    to: "/diagnostic",
+    libelle: "Voir les scores de fragilité",
+  },
   croissance_ca: { to: "/analysis", libelle: "Voir l'évolution" },
 };
 
@@ -60,9 +86,16 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <EntetePage titre="Tableau de bord" sousTitre="Vue synthétique de la performance financière.">
+      <EntetePage
+        titre="Tableau de bord"
+        sousTitre="Vue synthétique de la performance financière."
+      >
         {entities && entities.length > 0 && (
-          <EntitySelector value={scope} onChange={setScope} allowConsolidated={entities.length > 1} />
+          <EntitySelector
+            value={scope}
+            onChange={setScope}
+            allowConsolidated={entities.length > 1}
+          />
         )}
       </EntetePage>
 
@@ -74,9 +107,13 @@ export function Dashboard() {
         squelette={<SqueletteTuiles />}
       >
         {!entities || entities.length === 0 ? (
-          <EtatVide titre="Bienvenue sur Cadran" action={{ to: "/import", label: "Importer des données" }}>
-            Aucune entité n&apos;a encore été créée. Importez un Fichier des Écritures Comptables ou
-            une balance pour commencer : tout le reste en découle.
+          <EtatVide
+            titre="Bienvenue sur Cadran"
+            action={{ to: "/import", label: "Importer des données" }}
+          >
+            Aucune entité n&apos;a encore été créée. Importez un Fichier des
+            Écritures Comptables ou une balance pour commencer : tout le reste
+            en découle.
           </EtatVide>
         ) : isConsolidated ? (
           <ConsolidatedDashboard />
@@ -94,7 +131,8 @@ function EntityDashboard({ entityId }: { entityId: string }) {
   const { data: trend } = useTrend(entityId);
 
   useEffect(() => {
-    if (periods && periods.length > 0) setPeriodId(periods[periods.length - 1].id);
+    if (periods && periods.length > 0)
+      setPeriodId(periods[periods.length - 1].id);
     else setPeriodId(null);
   }, [periods]);
 
@@ -158,7 +196,9 @@ function EntityDashboard({ entityId }: { entityId: string }) {
                     <h2 className="font-display text-lg font-semibold mb-1">
                       Chiffre d&apos;affaires et EBITDA
                     </h2>
-                    <p className="text-sm text-ink/50 mb-3">Par période importée.</p>
+                    <p className="text-sm text-ink/50 mb-3">
+                      Par période importée.
+                    </p>
                     <CourbeTemporelle
                       donnees={trend.map((t) => ({
                         label: t.label,
@@ -184,7 +224,27 @@ function EntityDashboard({ entityId }: { entityId: string }) {
 }
 
 function ConsolidatedDashboard() {
-  const { data: groups, isLoading, error, refetch } = useConsolidationGroups();
+  /*
+   * La formule décide, et l'écran le dit.
+   *
+   * Le serveur refuse désormais les deux routes de consolidation quand la
+   * formule ne l'inclut pas. Sans ce test, l'utilisateur tomberait sur « une
+   * erreur est survenue » là où la vraie réponse est « cette fonction
+   * commence à la formule Cabinet » — un message qui s'explique et se résout.
+   *
+   * On garde l'entrée visible dans le sélecteur plutôt que de la masquer :
+   * une fonction qu'on ne voit pas ne s'achète pas, et surtout on ne peut pas
+   * se demander pourquoi elle a disparu.
+   */
+  const { data: abonnement } = useEtatAbonnement();
+  const incluse = abonnement?.plan.quotas.consolidation ?? true;
+
+  const {
+    data: groups,
+    isLoading,
+    error,
+    refetch,
+  } = useConsolidationGroups({ actif: incluse });
   const [groupKey, setGroupKey] = useState<string>("");
 
   useEffect(() => {
@@ -198,8 +258,30 @@ function ConsolidatedDashboard() {
     error: ratiosError,
     refetch: refetchRatios,
   } = useConsolidatedRatios(
-    selectedGroup ? { startDate: selectedGroup.startDate, endDate: selectedGroup.endDate } : null
+    selectedGroup
+      ? { startDate: selectedGroup.startDate, endDate: selectedGroup.endDate }
+      : null,
   );
+
+  if (!incluse) {
+    return (
+      <div className="card">
+        <h2 className="font-display text-lg font-semibold">
+          Consolidation de groupe
+        </h2>
+        <p className="text-sm text-ink/70 mt-2 max-w-prose">
+          Elle additionne les comptes de plusieurs entités sur une même période
+          et recalcule les ratios sur l&apos;ensemble — pas la moyenne des
+          ratios de chacune, qui ne voudrait rien dire. La formule «{" "}
+          {abonnement?.plan.label} » ne l&apos;inclut pas ; elle commence à la
+          formule Cabinet.
+        </p>
+        <Link to="/abonnement" className="btn-secondary mt-4 inline-flex">
+          Voir les formules
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <Zone
@@ -211,8 +293,8 @@ function ConsolidatedDashboard() {
     >
       {!groups || groups.length === 0 ? (
         <EtatVide titre="Aucune période consolidable">
-          La consolidation regroupe les périodes de même plage de dates entre entités. Il n&apos;y en
-          a pas encore deux qui se recouvrent.
+          La consolidation regroupe les périodes de même plage de dates entre
+          entités. Il n&apos;y en a pas encore deux qui se recouvrent.
         </EtatVide>
       ) : (
         <div className="space-y-6">
@@ -282,7 +364,8 @@ function BandeauAlertes() {
             .slice(0, 2)
             .map((e) => e.rule.label)
             .join(" · ")}
-          {actives.length > 2 && ` · et ${actives.length - 2} autre${actives.length > 3 ? "s" : ""}`}
+          {actives.length > 2 &&
+            ` · et ${actives.length - 2} autre${actives.length > 3 ? "s" : ""}`}
         </span>
       </p>
       <Link to="/alerts" className="btn-secondary flex-none">
@@ -292,8 +375,17 @@ function BandeauAlertes() {
   );
 }
 
-function LigneRatio({ ratio, currency }: { ratio: RatioValue; currency: string }) {
-  const lien = ratio.status === "critique" || ratio.status === "attention" ? OU_COMPRENDRE[ratio.id] : undefined;
+function LigneRatio({
+  ratio,
+  currency,
+}: {
+  ratio: RatioValue;
+  currency: string;
+}) {
+  const lien =
+    ratio.status === "critique" || ratio.status === "attention"
+      ? OU_COMPRENDRE[ratio.id]
+      : undefined;
 
   return (
     <li className="flex items-start justify-between gap-3 text-sm py-1">
@@ -322,22 +414,29 @@ function LigneRatio({ ratio, currency }: { ratio: RatioValue; currency: string }
 function DashboardBody({
   ratioResult,
 }: {
-  ratioResult: Pick<RatioResultPayload, "currency" | "aggregates" | "derived" | "ratios">;
+  ratioResult: Pick<
+    RatioResultPayload,
+    "currency" | "aggregates" | "derived" | "ratios"
+  >;
 }) {
   const { currency } = ratioResult;
   const ecartBilan = ratioResult.derived.ecartBilan;
-  const bilanDesequilibre = ecartBilan !== undefined && Math.abs(ecartBilan) > 1;
+  const bilanDesequilibre =
+    ecartBilan !== undefined && Math.abs(ecartBilan) > 1;
 
   return (
     <div className="space-y-6">
       {bilanDesequilibre && (
         <div className="card border-warning/40 bg-warning-soft/40 flex items-start justify-between gap-4 flex-wrap">
           <p className="text-sm">
-            <span className="font-semibold text-warning">Bilan déséquilibré.</span>{" "}
+            <span className="font-semibold text-warning">
+              Bilan déséquilibré.
+            </span>{" "}
             <span className="text-ink/70">
-              Écart de {formatCurrency(Math.abs(ecartBilan!), currency)} entre l&apos;actif et le
-              passif. Un poste est probablement mal classé à l&apos;import : les ratios de structure
-              et de liquidité sont à interpréter avec prudence.
+              Écart de {formatCurrency(Math.abs(ecartBilan!), currency)} entre
+              l&apos;actif et le passif. Un poste est probablement mal classé à
+              l&apos;import : les ratios de structure et de liquidité sont à
+              interpréter avec prudence.
             </span>
           </p>
           <Link to="/import" className="btn-secondary flex-none">
@@ -351,22 +450,27 @@ function DashboardBody({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiTile
           label="Chiffre d'affaires"
-          value={formatCurrency(ratioResult.aggregates.chiffreAffaires, currency)}
+          value={formatCurrency(
+            ratioResult.aggregates.chiffreAffaires,
+            currency,
+          )}
         />
         <KpiTile
           label="EBITDA"
           value={formatCurrency(ratioResult.derived.ebitda, currency)}
           sublabel={`${formatRatioValue(
-            ratioResult.ratios.find((r) => r.id === "marge_ebitda")?.value ?? null,
-            "pourcentage"
+            ratioResult.ratios.find((r) => r.id === "marge_ebitda")?.value ??
+              null,
+            "pourcentage",
           )} de marge`}
         />
         <KpiTile
           label="Résultat net"
           value={formatCurrency(ratioResult.derived.resultatNet, currency)}
           sublabel={`${formatRatioValue(
-            ratioResult.ratios.find((r) => r.id === "marge_nette")?.value ?? null,
-            "pourcentage"
+            ratioResult.ratios.find((r) => r.id === "marge_nette")?.value ??
+              null,
+            "pourcentage",
           )} de marge`}
         />
         <KpiTile
@@ -378,13 +482,21 @@ function DashboardBody({
 
       <div className="grid lg:grid-cols-2 gap-4">
         {(Object.keys(CATEGORY_LABELS) as RatioCategory[]).map((category) => {
-          const ratios = ratioResult.ratios.filter((r) => r.category === category);
+          const ratios = ratioResult.ratios.filter(
+            (r) => r.category === category,
+          );
           return (
             <div key={category} className="card">
-              <h2 className="font-display text-lg font-semibold mb-2">{CATEGORY_LABELS[category]}</h2>
+              <h2 className="font-display text-lg font-semibold mb-2">
+                {CATEGORY_LABELS[category]}
+              </h2>
               <ul className="divide-y divide-rule/5">
                 {ratios.map((ratio) => (
-                  <LigneRatio key={ratio.id} ratio={ratio} currency={currency} />
+                  <LigneRatio
+                    key={ratio.id}
+                    ratio={ratio}
+                    currency={currency}
+                  />
                 ))}
               </ul>
             </div>

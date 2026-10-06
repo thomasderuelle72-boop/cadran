@@ -4,9 +4,10 @@ import { FecService } from "./fec.service";
 import { EntitiesModule } from "../entities/entities.module";
 import { RatiosModule } from "../ratios/ratios.module";
 import { AlertsModule } from "../alerts/alerts.module";
+import { BillingModule } from "../billing/billing.module";
 
 @Module({
-  imports: [EntitiesModule, RatiosModule, AlertsModule],
+  imports: [EntitiesModule, RatiosModule, AlertsModule, BillingModule],
   controllers: [FecController],
   providers: [FecService],
   exports: [FecService],
