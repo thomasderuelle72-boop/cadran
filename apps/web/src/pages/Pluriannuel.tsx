@@ -9,7 +9,13 @@ import {
   useSeriesPluriannuelles,
   useTableauPluriannuel,
 } from "../api/hooks";
-import type { Bloc, Hypotheses, Mesure, SerieExercice, TypeBloc } from "../api/types";
+import type {
+  Bloc,
+  Hypotheses,
+  Mesure,
+  SerieExercice,
+  TypeBloc,
+} from "../api/types";
 import {
   BarresComparees,
   BarresEmpilees,
@@ -42,11 +48,23 @@ import { EntetePage, SqueletteCarte } from "../components/etats";
  */
 
 const TYPES: { id: TypeBloc; label: string; aide: string }[] = [
-  { id: "courbe", label: "Courbe", aide: "Trajectoire sur plusieurs exercices" },
+  {
+    id: "courbe",
+    label: "Courbe",
+    aide: "Trajectoire sur plusieurs exercices",
+  },
   { id: "barres", label: "Barres", aide: "Comparaison d'exercices" },
   { id: "empile", label: "Composition", aide: "Parts d'un même ensemble" },
-  { id: "tableau", label: "Tableau", aide: "Chiffres exacts, unités mêlées admises" },
-  { id: "tuile", label: "Chiffre clé", aide: "Une seule valeur et sa variation" },
+  {
+    id: "tableau",
+    label: "Tableau",
+    aide: "Chiffres exacts, unités mêlées admises",
+  },
+  {
+    id: "tuile",
+    label: "Chiffre clé",
+    aide: "Une seule valeur et sa variation",
+  },
 ];
 
 const FAMILLES: { id: Mesure["famille"]; label: string }[] = [
@@ -83,7 +101,7 @@ export function PluriannuelPage() {
 
   const { data: previsionnel } = usePrevisionnel(
     avecPrevisionnel ? entityId : null,
-    avecPrevisionnel ? hypotheses : null
+    avecPrevisionnel ? hypotheses : null,
   );
 
   const enregistrer = useEnregistrerTableau(entityId);
@@ -91,7 +109,7 @@ export function PluriannuelPage() {
 
   const mesures = useMemo(
     () => new Map((mesuresListe ?? []).map((mesure) => [mesure.id, mesure])),
-    [mesuresListe]
+    [mesuresListe],
   );
 
   const entite = entites?.find((e) => e.id === entityId);
@@ -109,12 +127,17 @@ export function PluriannuelPage() {
    * il reste visible dès qu'on la referme.
    */
   const partielMasque =
-    avecPrevisionnel && (reels ?? []).some((exercice) => !exercice.complet) ? true : false;
+    avecPrevisionnel && (reels ?? []).some((exercice) => !exercice.complet)
+      ? true
+      : false;
 
   const exercices: SerieExercice[] = useMemo(() => {
     const realises = reels ?? [];
     if (!avecPrevisionnel) return realises;
-    return [...realises.filter((exercice) => exercice.complet), ...(previsionnel?.exercices ?? [])];
+    return [
+      ...realises.filter((exercice) => exercice.complet),
+      ...(previsionnel?.exercices ?? []),
+    ];
   }, [reels, previsionnel, avecPrevisionnel]);
 
   async function tenter(action: () => Promise<unknown>) {
@@ -122,7 +145,9 @@ export function PluriannuelPage() {
     try {
       await action();
     } catch (err) {
-      setErreur(err instanceof ApiError ? err.message : "Opération impossible.");
+      setErreur(
+        err instanceof ApiError ? err.message : "Opération impossible.",
+      );
     }
   }
 
@@ -165,14 +190,18 @@ export function PluriannuelPage() {
         <div className="ml-auto flex flex-wrap gap-2">
           <button
             type="button"
-            className={avecPrevisionnel ? "btn-primary text-sm" : "btn-secondary text-sm"}
+            className={
+              avecPrevisionnel ? "btn-primary text-sm" : "btn-secondary text-sm"
+            }
             onClick={() => setAvecPrevisionnel((valeur) => !valeur)}
           >
             Prévisionnel
           </button>
           <button
             type="button"
-            className={edition ? "btn-primary text-sm" : "btn-secondary text-sm"}
+            className={
+              edition ? "btn-primary text-sm" : "btn-secondary text-sm"
+            }
             onClick={() => setEdition((valeur) => !valeur)}
           >
             Personnaliser
@@ -182,9 +211,9 @@ export function PluriannuelPage() {
 
       {partielMasque && (
         <p className="text-xs text-ink/50">
-          L&apos;exercice en cours, incomplet, est retiré de l&apos;affichage pendant la projection :
-          il porte le même millésime que le premier exercice projeté. Fermez le prévisionnel pour le
-          revoir.
+          L&apos;exercice en cours, incomplet, est retiré de l&apos;affichage
+          pendant la projection : il porte le même millésime que le premier
+          exercice projeté. Fermez le prévisionnel pour le revoir.
         </p>
       )}
 
@@ -194,10 +223,16 @@ export function PluriannuelPage() {
         <PanneauHypotheses
           hypotheses={hypotheses}
           depart={previsionnel?.depart ?? null}
-          besoin={previsionnel?.exercices.find((e) => (e.besoinFinancement ?? 0) > 0) ?? null}
+          besoin={
+            previsionnel?.exercices.find(
+              (e) => (e.besoinFinancement ?? 0) > 0,
+            ) ?? null
+          }
           devise={devise}
           surChangement={setHypotheses}
-          surEnregistrement={() => tenter(() => enregistrerHypotheses.mutateAsync(hypotheses))}
+          surEnregistrement={() =>
+            tenter(() => enregistrerHypotheses.mutateAsync(hypotheses))
+          }
           enregistrement={enregistrerHypotheses.isPending}
         />
       )}
@@ -222,8 +257,9 @@ export function PluriannuelPage() {
       {!isLoading && exercices.length === 0 && (
         <div className="card">
           <p className="text-sm text-ink/60">
-            Aucun exercice calculé pour ce dossier. Importez un FEC ou saisissez une période depuis
-            l&apos;écran Import, et les exercices apparaîtront ici.
+            Aucun exercice calculé pour ce dossier. Importez un FEC ou saisissez
+            une période depuis l&apos;écran Import, et les exercices
+            apparaîtront ici.
           </p>
         </div>
       )}
@@ -235,8 +271,15 @@ export function PluriannuelPage() {
               key={bloc.id}
               className={`card ${bloc.largeur === "pleine" ? "lg:col-span-2" : ""}`}
             >
-              <h2 className="font-display text-base font-semibold mb-3">{bloc.titre}</h2>
-              <RenduBloc bloc={bloc} exercices={exercices} mesures={mesures} devise={devise} />
+              <h2 className="font-display text-base font-semibold mb-3">
+                {bloc.titre}
+              </h2>
+              <RenduBloc
+                bloc={bloc}
+                exercices={exercices}
+                mesures={mesures}
+                devise={devise}
+              />
             </section>
           ))}
         </div>
@@ -288,9 +331,23 @@ function RenduBloc({
 
   switch (bloc.type) {
     case "tuile":
-      return <BlocTuile bloc={bloc} exercices={exercices} mesures={mesures} currency={devise} />;
+      return (
+        <BlocTuile
+          bloc={bloc}
+          exercices={exercices}
+          mesures={mesures}
+          currency={devise}
+        />
+      );
     case "tableau":
-      return <BlocTableau bloc={bloc} exercices={exercices} mesures={mesures} currency={devise} />;
+      return (
+        <BlocTableau
+          bloc={bloc}
+          exercices={exercices}
+          mesures={mesures}
+          currency={devise}
+        />
+      );
     case "barres":
       return (
         <BarresComparees
@@ -394,7 +451,9 @@ function PanneauHypotheses({
   return (
     <div className="card space-y-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-display text-base font-semibold">Hypothèses du prévisionnel</h2>
+        <h2 className="font-display text-base font-semibold">
+          Hypothèses du prévisionnel
+        </h2>
         <p className="text-xs text-ink/45">
           {depart
             ? `Projeté à partir de l'exercice ${depart}, le dernier complet.`
@@ -403,7 +462,12 @@ function PanneauHypotheses({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        <Champ libelle="Horizon" valeur={hypotheses.horizon} unite="ans" surChangement={poser("horizon")} />
+        <Champ
+          libelle="Horizon"
+          valeur={hypotheses.horizon}
+          unite="ans"
+          surChangement={poser("horizon")}
+        />
         <Champ
           libelle="Croissance du CA"
           valeur={Math.round(hypotheses.croissanceCa * 1000) / 10}
@@ -434,9 +498,24 @@ function PanneauHypotheses({
           surChangement={pourcent("croissanceChargesPersonnel")}
           aide="Croissance annuelle"
         />
-        <Champ libelle="Délai clients" valeur={hypotheses.dso} unite="j" surChangement={poser("dso")} />
-        <Champ libelle="Délai fournisseurs" valeur={hypotheses.dpo} unite="j" surChangement={poser("dpo")} />
-        <Champ libelle="Rotation des stocks" valeur={hypotheses.dio} unite="j" surChangement={poser("dio")} />
+        <Champ
+          libelle="Délai clients"
+          valeur={hypotheses.dso}
+          unite="j"
+          surChangement={poser("dso")}
+        />
+        <Champ
+          libelle="Délai fournisseurs"
+          valeur={hypotheses.dpo}
+          unite="j"
+          surChangement={poser("dpo")}
+        />
+        <Champ
+          libelle="Rotation des stocks"
+          valeur={hypotheses.dio}
+          unite="j"
+          surChangement={poser("dio")}
+        />
         <Champ
           libelle="Investissements"
           valeur={hypotheses.investissements}
@@ -490,31 +569,46 @@ function PanneauHypotheses({
 
       {besoin && (
         <p className="panneau-discret text-sm">
-          <strong className="text-warning">Besoin de financement en {besoin.label}.</strong>{" "}
+          <strong className="text-warning">
+            Besoin de financement en {besoin.label}.
+          </strong>{" "}
           La trésorerie projetée ne boucle pas : il manque{" "}
           {(besoin.besoinFinancement ?? 0).toLocaleString("fr-FR", {
             style: "currency",
             currency: devise,
             maximumFractionDigits: 0,
           })}
-          . À trouver en emprunt, en apport, ou en réduisant le besoin en fonds de roulement.
+          . À trouver en emprunt, en apport, ou en réduisant le besoin en fonds
+          de roulement.
         </p>
       )}
 
       <div className="flex items-center gap-3">
-        <button type="button" className="btn-primary text-sm" onClick={surEnregistrement} disabled={enregistrement}>
+        <button
+          type="button"
+          className="btn-primary text-sm"
+          onClick={surEnregistrement}
+          disabled={enregistrement}
+        >
           {enregistrement ? "Enregistrement…" : "Enregistrer ces hypothèses"}
         </button>
         <span className="text-xs text-ink/40">
-          Les modifications s&apos;appliquent à l&apos;écran immédiatement ; elles ne sont
-          conservées qu&apos;une fois enregistrées.
+          Les modifications s&apos;appliquent à l&apos;écran immédiatement ;
+          elles ne sont conservées qu&apos;une fois enregistrées.
         </span>
       </div>
     </div>
   );
 }
 
-/** Éditeur de blocs : ajouter, retirer, choisir les mesures. */
+/** Échange deux blocs de place, sans toucher à la liste d'origine. */
+function deplacer(blocs: Bloc[], de: number, vers: number): Bloc[] {
+  const copie = [...blocs];
+  [copie[de], copie[vers]] = [copie[vers], copie[de]];
+  return copie;
+}
+
+/** Éditeur de blocs : ajouter, retirer, réordonner, choisir les mesures. */
 function EditeurBlocs({
   blocs,
   mesures,
@@ -529,7 +623,11 @@ function EditeurBlocs({
   enregistrement: boolean;
 }) {
   const modifier = (index: number, modifications: Partial<Bloc>) =>
-    surChangement(blocs.map((bloc, rang) => (rang === index ? { ...bloc, ...modifications } : bloc)));
+    surChangement(
+      blocs.map((bloc, rang) =>
+        rang === index ? { ...bloc, ...modifications } : bloc,
+      ),
+    );
 
   const ajouter = () =>
     surChangement([
@@ -545,16 +643,22 @@ function EditeurBlocs({
 
   return (
     <div className="card space-y-3">
-      <h2 className="font-display text-base font-semibold">Composition du tableau de bord</h2>
+      <h2 className="font-display text-base font-semibold">
+        Composition du tableau de bord
+      </h2>
       <p className="text-sm text-ink/50">
-        Un bloc ne mêle pas deux unités : un montant et un pourcentage sur un même axe demandent
-        deux échelles, et deux échelles font dire à deux courbes ce qu&apos;on veut. Pour les
-        rapprocher quand même, choisissez un tableau.
+        Un bloc ne mêle pas deux unités : un montant et un pourcentage sur un
+        même axe demandent deux échelles, et deux échelles font dire à deux
+        courbes ce qu&apos;on veut. Pour les rapprocher quand même, choisissez
+        un tableau.
       </p>
 
       <div className="space-y-2">
         {blocs.map((bloc, index) => (
-          <div key={bloc.id} className="panneau-discret grid gap-2 sm:grid-cols-[1fr_auto_auto_auto]">
+          <div
+            key={bloc.id}
+            className="panneau-discret grid gap-2 sm:grid-cols-[1fr_auto_auto_auto]"
+          >
             <input
               className="input"
               aria-label={`Titre du bloc ${index + 1}`}
@@ -565,7 +669,9 @@ function EditeurBlocs({
               className="input w-auto"
               aria-label={`Type du bloc ${index + 1}`}
               value={bloc.type}
-              onChange={(e) => modifier(index, { type: e.target.value as TypeBloc })}
+              onChange={(e) =>
+                modifier(index, { type: e.target.value as TypeBloc })
+              }
             >
               {TYPES.map((type) => (
                 <option key={type.id} value={type.id} title={type.aide}>
@@ -577,18 +683,51 @@ function EditeurBlocs({
               className="input w-auto"
               aria-label={`Largeur du bloc ${index + 1}`}
               value={bloc.largeur}
-              onChange={(e) => modifier(index, { largeur: e.target.value as "demi" | "pleine" })}
+              onChange={(e) =>
+                modifier(index, {
+                  largeur: e.target.value as "demi" | "pleine",
+                })
+              }
             >
               <option value="demi">Demi-largeur</option>
               <option value="pleine">Pleine largeur</option>
             </select>
-            <button
-              type="button"
-              className="btn-secondary text-xs px-2.5"
-              onClick={() => surChangement(blocs.filter((_, rang) => rang !== index))}
-            >
-              Retirer
-            </button>
+            <div className="flex gap-1">
+              {/*
+                L'ordre des blocs est une décision de lecture : ce qu'on veut
+                voir en premier dépend du dossier et de la saison. Le déplacer
+                suppose donc de pouvoir le changer sans tout retaper.
+              */}
+              <button
+                type="button"
+                className="btn-secondary text-xs px-2"
+                disabled={index === 0}
+                title="Monter ce bloc"
+                aria-label={`Monter le bloc ${index + 1}`}
+                onClick={() => surChangement(deplacer(blocs, index, index - 1))}
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                className="btn-secondary text-xs px-2"
+                disabled={index === blocs.length - 1}
+                title="Descendre ce bloc"
+                aria-label={`Descendre le bloc ${index + 1}`}
+                onClick={() => surChangement(deplacer(blocs, index, index + 1))}
+              >
+                ↓
+              </button>
+              <button
+                type="button"
+                className="btn-secondary text-xs px-2.5"
+                onClick={() =>
+                  surChangement(blocs.filter((_, rang) => rang !== index))
+                }
+              >
+                Retirer
+              </button>
+            </div>
 
             <div className="sm:col-span-4 flex flex-wrap gap-1.5">
               {bloc.mesures.map((id) => (
@@ -597,7 +736,9 @@ function EditeurBlocs({
                   type="button"
                   className="rounded-full border border-rule/30 px-2.5 py-1 text-xs hover:bg-ink/5"
                   onClick={() =>
-                    modifier(index, { mesures: bloc.mesures.filter((autre) => autre !== id) })
+                    modifier(index, {
+                      mesures: bloc.mesures.filter((autre) => autre !== id),
+                    })
                   }
                   title="Retirer cette mesure"
                 >
@@ -610,7 +751,9 @@ function EditeurBlocs({
                 value=""
                 onChange={(e) => {
                   if (!e.target.value) return;
-                  modifier(index, { mesures: [...bloc.mesures, e.target.value] });
+                  modifier(index, {
+                    mesures: [...bloc.mesures, e.target.value],
+                  });
                 }}
               >
                 <option value="">+ ajouter une mesure…</option>
@@ -633,7 +776,11 @@ function EditeurBlocs({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" className="btn-secondary text-sm" onClick={ajouter}>
+        <button
+          type="button"
+          className="btn-secondary text-sm"
+          onClick={ajouter}
+        >
           Ajouter un bloc
         </button>
         <button
