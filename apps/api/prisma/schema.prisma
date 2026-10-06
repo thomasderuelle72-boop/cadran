@@ -158,6 +158,8 @@ enum PlanId {
   solo
   cabinet
   groupe
+  // Formule de l'exploitant : hors catalogue, hors Stripe, sans quota.
+  interne
 }
 
 // Les statuts sont ceux de Stripe, traduits mais non réinventés : un second

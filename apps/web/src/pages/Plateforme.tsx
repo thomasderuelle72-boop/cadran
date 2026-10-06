@@ -26,7 +26,11 @@ import { EntetePage, SqueletteTableau } from "../components/etats";
  * piste d'audit du client — c'est-à-dire sous ses yeux.
  */
 
-const PLANS: PlanId[] = ["essai", "solo", "cabinet", "groupe"];
+/*
+ * « Interne » figure ici et nulle part ailleurs : c'est la console
+ * d'administration qui l'accorde, jamais la page d'abonnement ni un paiement.
+ */
+const PLANS: PlanId[] = ["essai", "solo", "cabinet", "groupe", "interne"];
 const STATUTS: StatutAbonnement[] = ["essai", "actif", "impaye", "resilie", "incomplet"];
 
 const COULEUR_STATUT: Record<StatutAbonnement, string> = {

@@ -13,7 +13,7 @@
  * revenu silencieuse.
  */
 
-export type PlanId = "essai" | "solo" | "cabinet" | "groupe";
+export type PlanId = "essai" | "solo" | "cabinet" | "groupe" | "interne";
 
 export interface Quotas {
   /** Nombre d'entités analysables. null = sans limite. */
@@ -81,6 +81,44 @@ export const PLANS: Record<PlanId, Plan> = {
     quotas: { entites: 15, utilisateurs: 10, periodes: null, consolidation: true, fec: true, questionsConseil: 250, marqueDocuments: true },
     variableTarif: "STRIPE_PRICE_CABINET",
   },
+  /**
+   * Formule interne : l'exploitant de la plateforme, et lui seul.
+   *
+   * Elle existe pour que l'accès de l'administrateur ne dépende d'aucune
+   * formule commerciale. Lui attribuer « Groupe » marchait, mais le liait à
+   * un produit vendu : le jour où l'on retouche les quotas de Groupe pour une
+   * raison tarifaire, on retouche sans le vouloir l'accès de celui qui
+   * administre. Les deux décisions n'ont rien à voir ; elles sont séparées.
+   *
+   * Elle n'a pas de tarif Stripe, ne figure pas au catalogue public, et ne
+   * s'obtient donc ni par la page d'abonnement ni par un paiement : seule la
+   * console d'administration ou le script de création d'administrateur
+   * l'attribuent.
+   */
+  interne: {
+    id: "interne",
+    label: "Interne",
+    promesse: "Accès complet de l'exploitant, hors catalogue et hors facturation.",
+    quotas: {
+      entites: null,
+      utilisateurs: null,
+      periodes: null,
+      consolidation: true,
+      fec: true,
+      /*
+       * Un plafond, et non l'absence de plafond.
+       *
+       * Ce n'est pas une limite commerciale — personne ne pose cent mille
+       * questions par mois — mais un fusible : chaque question appelle un
+       * modèle facturé au jeton, et une boucle dans un script d'intégration
+       * viderait un compte sans que rien ne l'arrête. Le chiffre se relève
+       * ici, à un seul endroit.
+       */
+      questionsConseil: 100000,
+      marqueDocuments: true,
+    },
+    variableTarif: null,
+  },
   groupe: {
     id: "groupe",
     label: "Groupe",
@@ -91,6 +129,64 @@ export const PLANS: Record<PlanId, Plan> = {
 };
 
 export const PLAN_IDS = Object.keys(PLANS) as PlanId[];
+
+/**
+ * Formules qu'un client peut voir et souscrire.
+ *
+ * Dérivé de l'absence de tarif Stripe plutôt que d'une liste à tenir à jour :
+ * une formule ajoutée sans tarif est par construction non vendable, et il
+ * devient impossible d'en publier une par oubli. L'essai en fait partie
+ * malgré lui — il n'a pas de tarif non plus — d'où la seconde condition.
+ */
+export const PLANS_PUBLICS: PlanId[] = PLAN_IDS.filter(
+  (id) => PLANS[id].variableTarif !== null || id === "essai"
+);
+
+/** La formule de l'exploitant, qui ne se vend pas et ne s'achète pas. */
+export function estPlanInterne(plan: PlanId): boolean {
+  return plan === "interne";
+}
+
+/**
+ * La formule qui s'applique réellement à une requête.
+ *
+ * Dans son organisation, l'administrateur de la plateforme porte la formule
+ * « Interne » : rien ne le borne. La question se pose ailleurs — en accès
+ * support, dans l'organisation d'un client — et la réponse n'est pas la même
+ * pour tous les quotas, parce qu'ils ne coûtent pas la même chose au client.
+ *
+ * **Les fonctions se délient.** Consulter une consolidation, importer un FEC
+ * pour reproduire un bogue, regarder un document à la marque du client : rien
+ * de tout cela ne laisse de trace qui gêne le client ensuite. Les lui refuser
+ * n'empêcherait que le dépannage.
+ *
+ * **Les stocks ne se délient pas.** Créer une entité, un utilisateur ou une
+ * période laisse une ligne qui survit au départ de l'administrateur. Un
+ * client en formule Indépendant retrouverait deux entités là où sa formule en
+ * autorise une : ses propres écrans lui annonceraient un dépassement qu'il
+ * n'a pas provoqué, et la prochaine création lui serait refusée sans qu'il
+ * comprenne pourquoi. L'administrateur qui doit vraiment créer au-delà change
+ * d'abord la formule du client depuis la console — un geste visible, qui
+ * laisse une trace, et qui est exactement ce qu'il faut ici.
+ */
+export function planApplicable(plan: PlanId, administrateurPlateforme: boolean): Plan {
+  const souscrit = PLANS[plan];
+  if (!administrateurPlateforme) return souscrit;
+
+  return {
+    ...souscrit,
+    quotas: {
+      ...souscrit.quotas,
+      consolidation: true,
+      fec: true,
+      marqueDocuments: true,
+      questionsConseil: Math.max(
+        souscrit.quotas.questionsConseil,
+        PLANS.interne.quotas.questionsConseil
+      ),
+    },
+  };
+}
 
 /** Formule d'une organisation sans abonnement : l'essai, pas le vide. */
 export const PLAN_PAR_DEFAUT: PlanId = "essai";
@@ -118,7 +214,15 @@ export type StatutAbonnement =
  * perdre pour de bon. L'accès reste ouvert pendant la relance, avec un
  * bandeau, et ne se ferme qu'à la résiliation effective.
  */
-export function accesOuvert(statut: StatutAbonnement): boolean {
+export function accesOuvert(statut: StatutAbonnement, plan?: PlanId): boolean {
+  /*
+   * La formule interne ne passe par aucun paiement : aucun événement Stripe
+   * ne viendra jamais la faire passer à « resilie ». Si un statut périmé s'y
+   * trouvait malgré tout — une ligne créée avant, une manipulation en base —
+   * il fermerait l'accès de celui qui administre la plateforme, c'est-à-dire
+   * de la seule personne capable de le rouvrir.
+   */
+  if (plan && estPlanInterne(plan)) return true;
   return statut === "essai" || statut === "actif" || statut === "impaye";
 }
 

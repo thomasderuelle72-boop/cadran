@@ -15,7 +15,7 @@ import { SkipThrottle } from "@nestjs/throttler";
 import { Role } from "@prisma/client";
 import { BillingService } from "./billing.service";
 import { StripeService } from "./stripe.service";
-import { PLANS, PLAN_IDS, estPlanConnu } from "./plans";
+import { PLANS, PLANS_PUBLICS, estPlanConnu } from "./plans";
 import { JwtAuthGuard } from "../common/jwt-auth.guard";
 import { RolesGuard } from "../common/roles.guard";
 import { Roles } from "../common/roles.decorator";
@@ -36,7 +36,7 @@ export class BillingController {
    */
   @Get("formules")
   formules() {
-    return PLAN_IDS.map((id) => ({
+    return PLANS_PUBLICS.map((id) => ({
       id,
       label: PLANS[id].label,
       promesse: PLANS[id].promesse,
@@ -47,7 +47,7 @@ export class BillingController {
   @Get("etat")
   @UseGuards(JwtAuthGuard)
   etat(@CurrentUser() user: AuthUser) {
-    return this.billing.etat(user.organizationId);
+    return this.billing.etat(user.organizationId, user.administrateurPlateforme);
   }
 
   /**
@@ -59,7 +59,7 @@ export class BillingController {
   @Roles(Role.ADMIN)
   checkout(@CurrentUser() user: AuthUser, @Body("plan") plan: string) {
     if (!plan || !estPlanConnu(plan)) {
-      throw new BadRequestException(`Formule inconnue. Valeurs admises : ${PLAN_IDS.join(", ")}.`);
+      throw new BadRequestException(`Formule inconnue. Valeurs admises : ${PLANS_PUBLICS.join(", ")}.`);
     }
     return this.billing.demarrerCheckout(user.organizationId, user.email, plan);
   }

@@ -138,8 +138,8 @@ async function main() {
      * pas lui-même, et un essai qui expire lui fermerait sa propre console. */
     await prisma.subscription.upsert({
       where: { organizationId: organisation.id },
-      create: { organizationId: organisation.id, plan: "groupe", statut: "actif", finPeriode: null },
-      update: { plan: "groupe", statut: "actif", finPeriode: null },
+      create: { organizationId: organisation.id, plan: "interne", statut: "actif", finPeriode: null },
+      update: { plan: "interne", statut: "actif", finPeriode: null },
     });
 
     console.log(`\nCompte créé : ${options.email}`);

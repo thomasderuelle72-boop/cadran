@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { BillingService } from "../billing/billing.service";
-import { PLANS, questionsRestantes } from "../billing/plans";
+import { planApplicable, questionsRestantes } from "../billing/plans";
 
 /**
  * Compteur mensuel des questions posées au conseiller.
@@ -30,14 +30,17 @@ export class UsageConseilService {
     return ligne?.questions ?? 0;
   }
 
-  async restantes(organizationId: string): Promise<number> {
+  async restantes(organizationId: string, administrateurPlateforme = false): Promise<number> {
     const abonnement = await this.billing.pourOrganisation(organizationId);
-    return questionsRestantes(PLANS[abonnement.plan], await this.posees(organizationId));
+    return questionsRestantes(
+      planApplicable(abonnement.plan, administrateurPlateforme),
+      await this.posees(organizationId)
+    );
   }
 
-  async etat(organizationId: string) {
+  async etat(organizationId: string, administrateurPlateforme = false) {
     const abonnement = await this.billing.pourOrganisation(organizationId);
-    const plan = PLANS[abonnement.plan];
+    const plan = planApplicable(abonnement.plan, administrateurPlateforme);
     const posees = await this.posees(organizationId);
     return {
       posees,

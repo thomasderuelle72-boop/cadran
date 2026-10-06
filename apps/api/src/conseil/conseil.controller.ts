@@ -29,7 +29,7 @@ export class ConseilController {
   /** Ce que le frontend doit savoir avant d'afficher le champ de saisie. */
   @Get("etat")
   async etat(@CurrentUser() user: AuthUser) {
-    const compteur = await this.usage.etat(user.organizationId);
+    const compteur = await this.usage.etat(user.organizationId, user.administrateurPlateforme);
     return { disponible: this.conseil.configure, ...compteur };
   }
 
@@ -56,7 +56,10 @@ export class ConseilController {
 
     /* Le quota est vérifié avant l'appel, jamais après : constater le
      * dépassement une fois le modèle payé ne protège de rien. */
-    const restantes = await this.usage.restantes(user.organizationId);
+    const restantes = await this.usage.restantes(
+      user.organizationId,
+      user.administrateurPlateforme
+    );
     if (restantes <= 0) {
       throw new ForbiddenException(
         "Vous avez utilisé toutes les questions incluses dans votre formule ce mois-ci. " +

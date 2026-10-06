@@ -1,8 +1,10 @@
 import {
   PLANS,
+  PLANS_PUBLICS,
   PLAN_IDS,
   PLAN_PAR_DEFAUT,
   accesOuvert,
+  planApplicable,
   demandeAction,
   estPlanConnu,
   verifierQuota,
@@ -101,5 +103,86 @@ describe("verifierQuota", () => {
     // « formule insuffisante », qui n'aide ni à décider ni à acheter.
     expect(depassement?.libelle).toBe("utilisateurs");
     expect(depassement?.limite).toBe(2);
+  });
+});
+
+describe("formule interne et droits de l'administrateur de plateforme", () => {
+  it("ne propose pas la formule interne au catalogue public", () => {
+    // Elle ne se vend pas : l'afficher sur la page de tarifs promettrait un
+    // accès illimité que personne ne peut souscrire.
+    expect(PLANS_PUBLICS).not.toContain("interne");
+    expect(PLANS_PUBLICS).toEqual(["essai", "solo", "cabinet", "groupe"]);
+  });
+
+  it("ne borne ni les entités, ni les utilisateurs, ni les périodes en interne", () => {
+    const quotas = PLANS.interne.quotas;
+    expect(quotas.entites).toBeNull();
+    expect(quotas.utilisateurs).toBeNull();
+    expect(quotas.periodes).toBeNull();
+    expect(verifierQuota(PLANS.interne, "entites", 10_000)).toBeNull();
+  });
+
+  it("inclut toutes les fonctions en interne", () => {
+    expect(PLANS.interne.quotas.consolidation).toBe(true);
+    expect(PLANS.interne.quotas.fec).toBe(true);
+    expect(PLANS.interne.quotas.marqueDocuments).toBe(true);
+  });
+
+  it("n'attache aucun tarif Stripe à la formule interne", () => {
+    // Un tarif la rendrait souscriptible, donc vendable par accident.
+    expect(PLANS.interne.variableTarif).toBeNull();
+  });
+
+  it("garde l'accès ouvert en interne, quel que soit le statut", () => {
+    /*
+     * Aucun événement Stripe ne traverse la formule interne : un statut
+     * « resilie » ne peut y venir que d'une anomalie, et il fermerait l'accès
+     * de la seule personne capable de le rouvrir.
+     */
+    expect(accesOuvert("resilie", "interne")).toBe(true);
+    expect(accesOuvert("resilie", "solo")).toBe(false);
+    expect(accesOuvert("resilie")).toBe(false);
+  });
+});
+
+describe("planApplicable", () => {
+  it("laisse la formule intacte pour un utilisateur ordinaire", () => {
+    expect(planApplicable("solo", false)).toEqual(PLANS.solo);
+  });
+
+  it("délie les fonctions pour un administrateur chez un client", () => {
+    // Consulter une consolidation ou importer un FEC pour reproduire un bogue
+    // ne laisse rien derrière soi : le refuser n'empêche que le dépannage.
+    const applicable = planApplicable("solo", true);
+    expect(PLANS.solo.quotas.consolidation).toBe(false);
+    expect(applicable.quotas.consolidation).toBe(true);
+    expect(applicable.quotas.marqueDocuments).toBe(true);
+    expect(applicable.quotas.questionsConseil).toBeGreaterThan(
+      PLANS.solo.quotas.questionsConseil
+    );
+  });
+
+  it("ne délie PAS les stocks du client", () => {
+    /*
+     * La règle qui compte. Une entité créée en accès support survit au départ
+     * de l'administrateur : le client en formule Indépendant se retrouverait
+     * à deux entités là où il en a droit à une, verrait un dépassement qu'il
+     * n'a pas provoqué, et sa prochaine création lui serait refusée sans
+     * explication. Pour créer au-delà, on change d'abord sa formule — un
+     * geste visible, qui laisse une trace.
+     */
+    const applicable = planApplicable("solo", true);
+    expect(applicable.quotas.entites).toBe(1);
+    expect(applicable.quotas.utilisateurs).toBe(2);
+    expect(verifierQuota(applicable, "entites", 1)).not.toBeNull();
+  });
+
+  it("ne diminue jamais un quota en déliant", () => {
+    // Groupe accorde plus de questions que le plancher administrateur : le
+    // délier ne doit pas le rabaisser.
+    const groupe = planApplicable("groupe", true);
+    expect(groupe.quotas.questionsConseil).toBeGreaterThanOrEqual(
+      PLANS.groupe.quotas.questionsConseil
+    );
   });
 });

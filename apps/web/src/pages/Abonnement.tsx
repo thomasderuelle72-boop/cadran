@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { useDemarrerCheckout, useEtatAbonnement, useOuvrirPortail } from "../api/hooks";
+import {
+  useDemarrerCheckout,
+  useEtatAbonnement,
+  useOuvrirPortail,
+} from "../api/hooks";
 import { ApiError } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { FORMULES, prixAnnualise } from "../lib/formules";
@@ -48,7 +52,10 @@ function Jauge({
         <span className="text-sm text-ink/70">{libelle}</span>
         <span className="text-sm tabular-nums font-medium">
           {actuel}
-          <span className="text-ink/40"> / {limite === null ? "illimité" : limite}</span>
+          <span className="text-ink/40">
+            {" "}
+            / {limite === null ? "illimité" : limite}
+          </span>
         </span>
       </div>
       {part !== null && (
@@ -97,10 +104,14 @@ function CarteFormule({
       <div className="flex items-baseline justify-between gap-2">
         <h3 className="font-display text-lg font-semibold">{formule.label}</h3>
         {courante && (
-          <span className="text-xs text-primary font-medium whitespace-nowrap">En cours</span>
+          <span className="text-xs text-primary font-medium whitespace-nowrap">
+            En cours
+          </span>
         )}
       </div>
-      <p className="text-xs text-ink/50 mt-0.5 min-h-[2rem]">{formule.pourQui}</p>
+      <p className="text-xs text-ink/50 mt-0.5 min-h-[2rem]">
+        {formule.pourQui}
+      </p>
 
       <p className="mt-3">
         {formule.prixMensuel === null ? (
@@ -134,7 +145,12 @@ function CarteFormule({
       <button
         type="button"
         className={`${courante ? "btn-secondary" : "btn-primary"} w-full mt-auto min-h-[3.5rem]`}
-        disabled={!bouton.actif || !estAdmin || enCours !== null || !etat.paiementDisponible}
+        disabled={
+          !bouton.actif ||
+          !estAdmin ||
+          enCours !== null ||
+          !etat.paiementDisponible
+        }
         onClick={() => surChoix(formule.id)}
       >
         {enCours === formule.id ? "Ouverture…" : bouton.texte}
@@ -175,7 +191,10 @@ export function AbonnementPage() {
   const estAdmin = user?.role === "ADMIN";
   const maintenant = new Date();
 
-  async function allerChezStripe(action: () => Promise<{ url: string }>, plan: PlanId | null) {
+  async function allerChezStripe(
+    action: () => Promise<{ url: string }>,
+    plan: PlanId | null,
+  ) {
     setEchec(null);
     setPlanEnCours(plan);
     try {
@@ -203,7 +222,9 @@ export function AbonnementPage() {
   if (error || !etat) {
     return (
       <div className="card border-critical/40">
-        <h1 className="font-display text-lg font-semibold">Abonnement indisponible</h1>
+        <h1 className="font-display text-lg font-semibold">
+          Abonnement indisponible
+        </h1>
         <p className="text-sm text-ink/70 mt-1">
           {error instanceof ApiError
             ? error.message
@@ -221,7 +242,8 @@ export function AbonnementPage() {
       <div>
         <h1 className="font-display text-2xl font-semibold">Abonnement</h1>
         <p className="text-sm text-ink/60 mt-1">
-          Votre formule, ce qu&apos;elle autorise, et comment en changer ou la résilier.
+          Votre formule, ce qu&apos;elle autorise, et comment en changer ou la
+          résilier.
         </p>
       </div>
 
@@ -229,8 +251,9 @@ export function AbonnementPage() {
         <div className="card border-success/40 bg-success-soft">
           <p className="font-medium text-sm">Paiement accepté</p>
           <p className="text-sm text-ink/75 mt-1">
-            Nous attendons la confirmation de notre prestataire — quelques secondes. Votre formule
-            se met à jour ci-dessous dès qu&apos;elle nous parvient.
+            Nous attendons la confirmation de notre prestataire — quelques
+            secondes. Votre formule se met à jour ci-dessous dès qu&apos;elle
+            nous parvient.
           </p>
         </div>
       )}
@@ -255,7 +278,9 @@ export function AbonnementPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="label">Formule en cours</p>
-            <p className="font-display text-xl font-semibold mt-0.5">{etat.plan.label}</p>
+            <p className="font-display text-xl font-semibold mt-0.5">
+              {etat.plan.label}
+            </p>
             <p className="text-sm text-ink/60 mt-0.5">{etat.plan.promesse}</p>
           </div>
           <div className="min-w-0 sm:text-right">
@@ -266,14 +291,17 @@ export function AbonnementPage() {
         <p className="text-sm text-ink/70 mt-3">{lecture.explication}</p>
         {!etat.accesOuvert && (
           <p className="text-sm text-critical mt-2">
-            L&apos;accès aux analyses est suspendu. Vos données restent intactes.
+            L&apos;accès aux analyses est suspendu. Vos données restent
+            intactes.
           </p>
         )}
       </section>
 
       {/* Consommation */}
       <section className="card">
-        <h2 className="font-display text-base font-semibold mb-3">Ce que vous utilisez</h2>
+        <h2 className="font-display text-base font-semibold mb-3">
+          Ce que vous utilisez
+        </h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <Jauge
             libelle="Entreprises suivies"
@@ -289,7 +317,9 @@ export function AbonnementPage() {
         <div className="flex flex-wrap gap-x-6 gap-y-1 mt-4 text-sm text-ink/60">
           <span>
             Import FEC :{" "}
-            <span className="text-ink">{etat.plan.quotas.fec ? "inclus" : "non inclus"}</span>
+            <span className="text-ink">
+              {etat.plan.quotas.fec ? "inclus" : "non inclus"}
+            </span>
           </span>
           <span>
             Consolidation de groupe :{" "}
@@ -310,51 +340,79 @@ export function AbonnementPage() {
           masqués derrière un bouton qui échouerait au clic. */}
       {!etat.paiementDisponible && (
         <div className="card border-warning/40 bg-warning-soft">
-          <p className="font-medium text-sm">Souscription momentanément indisponible</p>
+          <p className="font-medium text-sm">
+            Souscription momentanément indisponible
+          </p>
           <p className="text-sm text-ink/75 mt-1">
-            Le paiement en ligne n&apos;est pas actif sur cette instance. Aucun changement de
-            formule ne peut aboutir pour l&apos;instant — nous écrire reste le moyen le plus
-            rapide.
+            Le paiement en ligne n&apos;est pas actif sur cette instance. Aucun
+            changement de formule ne peut aboutir pour l&apos;instant — nous
+            écrire reste le moyen le plus rapide.
           </p>
         </div>
       )}
       {!estAdmin && (
         <div className="card">
           <p className="text-sm text-ink/70">
-            Seul un administrateur de votre organisation peut changer de formule ou résilier. Vous
-            pouvez consulter cet écran librement.
+            Seul un administrateur de votre organisation peut changer de formule
+            ou résilier. Vous pouvez consulter cet écran librement.
           </p>
         </div>
       )}
       {echec && <p className="text-sm text-critical">{echec}</p>}
 
       {/* Formules */}
-      <section>
-        <h2 className="font-display text-lg font-semibold mb-3">Changer de formule</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {FORMULES.map((formule) => (
-            <CarteFormule
-              key={formule.id}
-              formule={formule}
-              etat={etat}
-              maintenant={maintenant}
-              estAdmin={estAdmin}
-              enCours={planEnCours}
-              surChoix={(plan) =>
-                void allerChezStripe(() => checkout.mutateAsync(plan), plan)
-              }
-            />
-          ))}
-        </div>
-        <p className="text-xs text-ink/45 mt-3">
-          Les montants sont hors taxes. Un changement en cours de période est calculé au prorata
-          par notre prestataire de paiement. Conditions complètes dans les{" "}
-          <Link to="/cgv" className="text-primary hover:underline">
-            conditions générales de vente
-          </Link>
-          .
-        </p>
-      </section>
+      {/*
+        La formule interne ne se change pas depuis cet écran : elle n'a pas de
+        tarif, et le serveur refuse de la porter au paiement. Afficher la
+        grille malgré tout proposerait à l'exploitant de « revenir à Cabinet »,
+        c'est-à-dire de se retirer à lui-même des droits — pour les reprendre
+        il faudrait repasser par la console. On la remplace par la seule
+        information utile.
+      */}
+      {etat.plan.id === "interne" ? (
+        <section className="card">
+          <h2 className="font-display text-lg font-semibold">
+            Formule interne
+          </h2>
+          <p className="text-sm text-ink/70 mt-2">
+            Ce compte est celui de l&apos;exploitant de la plateforme : accès
+            complet, aucune limite de dossiers, d&apos;utilisateurs ni de
+            périodes, et aucune facturation. Elle ne s&apos;obtient ni ne se
+            quitte depuis cet écran — seule la console d&apos;administration
+            l&apos;accorde ou la retire.
+          </p>
+        </section>
+      ) : (
+        <section>
+          <h2 className="font-display text-lg font-semibold mb-3">
+            Changer de formule
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {FORMULES.map((formule) => (
+              <CarteFormule
+                key={formule.id}
+                formule={formule}
+                etat={etat}
+                maintenant={maintenant}
+                estAdmin={estAdmin}
+                enCours={planEnCours}
+                surChoix={(plan) =>
+                  void allerChezStripe(() => checkout.mutateAsync(plan), plan)
+                }
+              />
+            ))}
+          </div>
+          <p className="text-xs text-ink/45 mt-3">
+            Les montants sont hors taxes. Un changement en cours de période est
+            calculé au prorata par notre prestataire de paiement. Conditions
+            complètes dans les{" "}
+            <Link to="/cgv" className="text-primary hover:underline">
+              conditions générales de vente
+            </Link>
+            .
+          </p>
+        </section>
+      )}
 
       {/*
         Résiliation en ligne. Les conditions générales la promettent en trois
@@ -364,23 +422,29 @@ export function AbonnementPage() {
         dont l'interface ne dit rien est un manquement.
       */}
       <section className="card">
-        <h2 className="font-display text-base font-semibold">Résilier mon abonnement</h2>
+        <h2 className="font-display text-base font-semibold">
+          Résilier mon abonnement
+        </h2>
         {resiliation.possible ? (
           <>
             <p className="text-sm text-ink/70 mt-1">
-              Sans justification à fournir. Votre accès reste entier jusqu&apos;au terme de la
-              période déjà payée, et vos données sont conservées trois mois ensuite.
+              Sans justification à fournir. Votre accès reste entier
+              jusqu&apos;au terme de la période déjà payée, et vos données sont
+              conservées trois mois ensuite.
             </p>
             <button
               type="button"
               className="btn-secondary mt-3"
               disabled={!estAdmin || planEnCours !== null}
-              onClick={() => void allerChezStripe(() => portail.mutateAsync(), null)}
+              onClick={() =>
+                void allerChezStripe(() => portail.mutateAsync(), null)
+              }
             >
               Résilier mon abonnement
             </button>
             <p className="text-xs text-ink/45 mt-2">
-              Vous pourrez aussi, depuis le même écran, changer de carte et retrouver vos factures.
+              Vous pourrez aussi, depuis le même écran, changer de carte et
+              retrouver vos factures.
             </p>
           </>
         ) : (

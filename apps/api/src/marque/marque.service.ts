@@ -6,7 +6,7 @@ import {
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { BillingService } from "../billing/billing.service";
-import { PLANS } from "../billing/plans";
+import { PLANS, planApplicable } from "../billing/plans";
 import { MOTIFS, validerImage, type ImageValide } from "./image";
 
 export type Emplacement = "logo" | "signature";
@@ -52,13 +52,16 @@ export class MarqueService {
     private billing: BillingService
   ) {}
 
-  async autorisee(organizationId: string): Promise<boolean> {
+  async autorisee(organizationId: string, administrateurPlateforme = false): Promise<boolean> {
     const abonnement = await this.billing.pourOrganisation(organizationId);
-    return PLANS[abonnement.plan].quotas.marqueDocuments;
+    return planApplicable(abonnement.plan, administrateurPlateforme).quotas.marqueDocuments;
   }
 
-  private async exigerAutorisation(organizationId: string): Promise<void> {
-    if (await this.autorisee(organizationId)) return;
+  private async exigerAutorisation(
+    organizationId: string,
+    administrateurPlateforme = false
+  ): Promise<void> {
+    if (await this.autorisee(organizationId, administrateurPlateforme)) return;
     const abonnement = await this.billing.pourOrganisation(organizationId);
     throw new ForbiddenException(
       `La personnalisation des documents n'est pas incluse dans la formule ` +
@@ -67,7 +70,7 @@ export class MarqueService {
   }
 
   /** Ce que l'écran de réglage affiche. Jamais les octets. */
-  async lire(organizationId: string): Promise<MarqueLisible> {
+  async lire(organizationId: string, administrateurPlateforme = false): Promise<MarqueLisible> {
     const marque = await this.prisma.marque.findUnique({
       where: { organizationId },
       select: {
@@ -85,7 +88,7 @@ export class MarqueService {
       },
     });
 
-    const autorisee = await this.autorisee(organizationId);
+    const autorisee = await this.autorisee(organizationId, administrateurPlateforme);
     if (!marque) {
       return {
         nomAffiche: null,
@@ -153,9 +156,10 @@ export class MarqueService {
       couleurAccent?: string | null;
       signataireNom?: string | null;
       signataireFonction?: string | null;
-    }
+    },
+    administrateurPlateforme = false
   ): Promise<MarqueLisible> {
-    await this.exigerAutorisation(organizationId);
+    await this.exigerAutorisation(organizationId, administrateurPlateforme);
 
     if (champs.couleurAccent && !HEXA.test(champs.couleurAccent)) {
       throw new BadRequestException(
@@ -178,15 +182,16 @@ export class MarqueService {
       create: { organizationId, ...propre },
       update: propre,
     });
-    return this.lire(organizationId);
+    return this.lire(organizationId, administrateurPlateforme);
   }
 
   async televerser(
     organizationId: string,
     emplacement: Emplacement,
-    octets: Buffer
+    octets: Buffer,
+    administrateurPlateforme = false
   ): Promise<MarqueLisible> {
-    await this.exigerAutorisation(organizationId);
+    await this.exigerAutorisation(organizationId, administrateurPlateforme);
 
     const verdict = validerImage(octets);
     if (!verdict.valide) throw new BadRequestException(MOTIFS[verdict.motif]);
@@ -196,11 +201,15 @@ export class MarqueService {
       create: { organizationId, ...colonnes(emplacement, octets, verdict.image) },
       update: colonnes(emplacement, octets, verdict.image),
     });
-    return this.lire(organizationId);
+    return this.lire(organizationId, administrateurPlateforme);
   }
 
-  async retirer(organizationId: string, emplacement: Emplacement): Promise<MarqueLisible> {
-    await this.exigerAutorisation(organizationId);
+  async retirer(
+    organizationId: string,
+    emplacement: Emplacement,
+    administrateurPlateforme = false
+  ): Promise<MarqueLisible> {
+    await this.exigerAutorisation(organizationId, administrateurPlateforme);
     const existe = await this.prisma.marque.findUnique({ where: { organizationId } });
     if (!existe) throw new NotFoundException("Aucune marque enregistrée.");
 
@@ -208,7 +217,7 @@ export class MarqueService {
       where: { organizationId },
       data: colonnes(emplacement, null, null),
     });
-    return this.lire(organizationId);
+    return this.lire(organizationId, administrateurPlateforme);
   }
 }
 

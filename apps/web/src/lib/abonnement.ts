@@ -11,7 +11,7 @@
 
 export type StatutAbonnement = "essai" | "actif" | "impaye" | "resilie" | "incomplet";
 
-export type PlanId = "essai" | "solo" | "cabinet" | "groupe";
+export type PlanId = "essai" | "solo" | "cabinet" | "groupe" | "interne";
 
 export interface Quotas {
   entites: number | null;
@@ -173,7 +173,20 @@ export function quotaAtteint(actuel: number, limite: number | null): boolean {
 }
 
 /** Ordre des formules, pour savoir si un changement monte ou descend. */
-export const RANG: Record<PlanId, number> = { essai: 0, solo: 1, cabinet: 2, groupe: 3 };
+/**
+ * Ordre des formules, pour savoir si un changement monte ou descend.
+ *
+ * « Interne » est au-dessus de tout : elle ne se vend pas, donc aucun bouton
+ * ne la vise, mais elle peut être la formule *courante* de l'exploitant — et
+ * sans rang, toute comparaison la ferait passer pour une descente.
+ */
+export const RANG: Record<PlanId, number> = {
+  essai: 0,
+  solo: 1,
+  cabinet: 2,
+  groupe: 3,
+  interne: 4,
+};
 
 export type SensChangement = "actuelle" | "superieure" | "inferieure";
 

@@ -40,7 +40,7 @@ export class MarqueController {
    *  identité partent les documents qu'il produit. */
   @Get()
   lire(@CurrentUser() user: AuthUser) {
-    return this.marque.lire(user.organizationId);
+    return this.marque.lire(user.organizationId, user.administrateurPlateforme);
   }
 
   /**
@@ -81,7 +81,7 @@ export class MarqueController {
       signataireFonction?: string | null;
     }
   ) {
-    return this.marque.enregistrer(user.organizationId, corps);
+    return this.marque.enregistrer(user.organizationId, corps, user.administrateurPlateforme);
   }
 
   /**
@@ -104,14 +104,23 @@ export class MarqueController {
     if (!fichier?.buffer) {
       throw new BadRequestException("Aucun fichier reçu : le champ doit s'appeler « fichier ».");
     }
-    return this.marque.televerser(user.organizationId, lireEmplacement(emplacement), fichier.buffer);
+    return this.marque.televerser(
+      user.organizationId,
+      lireEmplacement(emplacement),
+      fichier.buffer,
+      user.administrateurPlateforme
+    );
   }
 
   @Delete(":emplacement")
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
   retirer(@CurrentUser() user: AuthUser, @Param("emplacement") emplacement: string) {
-    return this.marque.retirer(user.organizationId, lireEmplacement(emplacement));
+    return this.marque.retirer(
+      user.organizationId,
+      lireEmplacement(emplacement),
+      user.administrateurPlateforme
+    );
   }
 }
 

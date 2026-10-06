@@ -9,7 +9,15 @@ import type { PlanId, Subscription } from "@prisma/client";
 import type Stripe from "stripe";
 import { PrismaService } from "../prisma/prisma.service";
 import { StripeService } from "./stripe.service";
-import { PLANS, PLAN_PAR_DEFAUT, accesOuvert, demandeAction, verifierQuota } from "./plans";
+import {
+  PLANS,
+  PLAN_PAR_DEFAUT,
+  accesOuvert,
+  demandeAction,
+  estPlanInterne,
+  planApplicable,
+  verifierQuota,
+} from "./plans";
 import { lireEnv, urlApplication } from "../config/environnement";
 import { estEvenementSuivi, planDepuisTarif, statutDepuisStripe } from "./statuts-stripe";
 
@@ -47,10 +55,16 @@ export class BillingService {
     });
   }
 
-  /** Ce que le frontend a besoin de savoir pour afficher l'état du compte. */
-  async etat(organizationId: string) {
+  /**
+   * Ce que le frontend a besoin de savoir pour afficher l'état du compte.
+   *
+   * Les quotas renvoyés sont ceux qui s'appliquent vraiment au demandeur, et
+   * non ceux de la formule souscrite : l'écran d'abonnement annoncerait sinon
+   * à l'administrateur une limite qu'il ne rencontrera jamais.
+   */
+  async etat(organizationId: string, administrateurPlateforme = false) {
     const abonnement = await this.pourOrganisation(organizationId);
-    const plan = PLANS[abonnement.plan];
+    const plan = planApplicable(abonnement.plan, administrateurPlateforme);
 
     const [entites, utilisateurs] = await Promise.all([
       this.prisma.entity.count({ where: { organizationId } }),
@@ -60,7 +74,7 @@ export class BillingService {
     return {
       plan: { id: plan.id, label: plan.label, promesse: plan.promesse, quotas: plan.quotas },
       statut: abonnement.statut,
-      accesOuvert: accesOuvert(abonnement.statut),
+      accesOuvert: accesOuvert(abonnement.statut, abonnement.plan),
       demandeAction: demandeAction(abonnement.statut),
       finPeriode: abonnement.finPeriode,
       resiliationDemandee: abonnement.resiliationDemandee,
@@ -98,9 +112,13 @@ export class BillingService {
   }
 
   /** Refuse une fonction que la formule n'inclut pas. */
-  async exigerFonction(organizationId: string, fonction: "consolidation" | "fec"): Promise<void> {
+  async exigerFonction(
+    organizationId: string,
+    fonction: "consolidation" | "fec",
+    administrateurPlateforme = false
+  ): Promise<void> {
     const abonnement = await this.pourOrganisation(organizationId);
-    const plan = PLANS[abonnement.plan];
+    const plan = planApplicable(abonnement.plan, administrateurPlateforme);
     if (plan.quotas[fonction]) return;
 
     const libelles = { consolidation: "La consolidation de groupe", fec: "L'import FEC" };
@@ -112,6 +130,9 @@ export class BillingService {
   /** Ouvre la page de paiement Stripe pour une formule donnée. */
   async demarrerCheckout(organizationId: string, email: string, planId: PlanId) {
     const plan = PLANS[planId];
+    if (estPlanInterne(planId)) {
+      throw new BadRequestException("La formule interne ne se souscrit pas.");
+    }
     if (!plan.variableTarif) {
       throw new BadRequestException("L'essai ne se souscrit pas : il est accordé à l'inscription.");
     }
