@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import type { Request } from "express";
+import { originesAutorisees } from "../config/environnement";
 import {
   COOKIE_CSRF,
   COOKIE_SESSION,
@@ -29,11 +29,8 @@ export const ENTETE_CSRF = "x-jeton-csrf";
 export class CsrfGuard implements CanActivate {
   private readonly origines: string[];
 
-  constructor(config: ConfigService) {
-    this.origines = (config.get<string>("CORS_ORIGINS") ?? "http://localhost:5173")
-      .split(",")
-      .map((o) => o.trim())
-      .filter(Boolean);
+  constructor() {
+    this.origines = originesAutorisees();
   }
 
   canActivate(context: ExecutionContext): boolean {

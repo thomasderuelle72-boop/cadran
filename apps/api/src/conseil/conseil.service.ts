@@ -4,12 +4,12 @@ import {
   Logger,
   ServiceUnavailableException,
 } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import Anthropic from "@anthropic-ai/sdk";
 import { ExecuteurOutils } from "./executeur";
 import { CONSIGNE_STABLE, contexteSession } from "./consigne";
 import { OUTILS, TOURS_MAX } from "./outils";
 import { boucleConseil } from "./boucle";
+import { lireEnv } from "../config/environnement";
 
 /**
  * Le conseiller : une boucle d'appels d'outils autour du modèle.
@@ -46,11 +46,8 @@ export class ConseilService {
   private readonly logger = new Logger(ConseilService.name);
   private readonly client: Anthropic | null;
 
-  constructor(
-    private config: ConfigService,
-    private executeur: ExecuteurOutils
-  ) {
-    const cle = this.config.get<string>("ANTHROPIC_API_KEY");
+  constructor(private executeur: ExecuteurOutils) {
+    const cle = lireEnv("ANTHROPIC_API_KEY");
     if (!cle) {
       this.logger.warn(
         "ANTHROPIC_API_KEY absente : le conseiller est désactivé sur cette instance."

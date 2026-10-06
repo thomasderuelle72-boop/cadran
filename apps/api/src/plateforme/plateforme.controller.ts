@@ -10,12 +10,12 @@ import {
   Res,
   UseGuards,
 } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import type { Response } from "express";
 import { JwtAuthGuard } from "../common/jwt-auth.guard";
 import { CurrentUser, AuthUser } from "../common/current-user.decorator";
 import { PlateformeGuard } from "./plateforme.guard";
 import { PlateformeService } from "./plateforme.service";
+import { estProduction } from "../config/environnement";
 import { ChangerFormuleDto, DroitPlateformeDto, SupprimerOrganisationDto } from "./dto";
 import {
   COOKIE_CSRF,
@@ -37,13 +37,10 @@ import {
 @Controller("plateforme")
 @UseGuards(JwtAuthGuard, PlateformeGuard)
 export class PlateformeController {
-  constructor(
-    private plateforme: PlateformeService,
-    private config: ConfigService
-  ) {}
+  constructor(private plateforme: PlateformeService) {}
 
   private get production(): boolean {
-    return this.config.get<string>("NODE_ENV") === "production";
+    return estProduction();
   }
 
   @Get("sante")

@@ -8,7 +8,6 @@ import {
   Res,
   UseGuards,
 } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import type { Response } from "express";
 import { AuthService } from "./auth.service";
 import { RegisterDto } from "./dto/register.dto";
@@ -18,6 +17,7 @@ import { Throttle } from "@nestjs/throttler";
 import { JwtAuthGuard } from "../common/jwt-auth.guard";
 import { CurrentUser, AuthUser } from "../common/current-user.decorator";
 import { PrismaService } from "../prisma/prisma.service";
+import { estProduction } from "../config/environnement";
 import {
   COOKIE_CSRF,
   COOKIE_SESSION,
@@ -30,13 +30,12 @@ import {
 export class AuthController {
   constructor(
     private authService: AuthService,
-    private prisma: PrismaService,
-    private config: ConfigService
+    private prisma: PrismaService
   ) {}
 
   /** `secure` et `SameSite=None` hors développement : voir session.ts. */
   private get production(): boolean {
-    return this.config.get<string>("NODE_ENV") === "production";
+    return estProduction();
   }
 
   /**

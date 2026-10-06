@@ -1,6 +1,6 @@
 // Doit être chargé avant tout le reste : plusieurs modules (AuthModule en
-// tête) lisent process.env.JWT_SECRET dès l'évaluation de leur décorateur
-// @Module, donc avant que ConfigModule.forRoot() n'ait eu la main.
+// tête) lisent process.env dès l'évaluation de leur décorateur @Module, donc
+// avant qu'aucun service n'ait été construit.
 import "dotenv/config";
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
@@ -8,6 +8,7 @@ import { ValidationPipe } from "@nestjs/common";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import { AppModule } from "./app.module";
+import { estProduction, originesAutorisees } from "./config/environnement";
 
 async function bootstrap() {
   // rawBody conserve le corps brut des requêtes en plus du corps analysé.
@@ -47,11 +48,12 @@ async function bootstrap() {
    *
    * Sans CORS_ORIGINS, on retombe sur le frontend local : une instance mal
    * configurée refuse les appels plutôt que de les accepter tous.
+   *
+   * La même fonction sert au garde anti-CSRF : deux listes d'origines lues
+   * séparément finiraient par diverger, et l'écart entre les deux est
+   * exactement la faille qu'elles sont censées fermer.
    */
-  const origines = (process.env.CORS_ORIGINS ?? "http://localhost:5173")
-    .split(",")
-    .map((o) => o.trim())
-    .filter(Boolean);
+  const origines = originesAutorisees();
   app.enableCors({ origin: origines, credentials: true });
   /*
    * Doit précéder les gardes : sans cet intergiciel, `requete.cookies` reste
@@ -70,7 +72,7 @@ async function bootstrap() {
    * parce qu'il ressemble à un mot de passe refusé.
    */
   const distant = origines.some((o) => o.startsWith("https://"));
-  if (distant && process.env.NODE_ENV !== "production") {
+  if (distant && !estProduction()) {
     console.warn(
       "ATTENTION : des origines HTTPS sont declarees mais NODE_ENV ne vaut pas " +
         "\"production\". Le cookie de session sortira en SameSite=Lax et ne sera " +

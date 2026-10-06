@@ -1,6 +1,6 @@
 import { Injectable, Logger, ServiceUnavailableException } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import Stripe from "stripe";
+import { lireEnv } from "../config/environnement";
 
 /**
  * Accès à Stripe, isolé derrière un service.
@@ -20,8 +20,8 @@ export class StripeService {
   private readonly logger = new Logger(StripeService.name);
   private readonly client: Stripe | null;
 
-  constructor(private config: ConfigService) {
-    const cle = this.config.get<string>("STRIPE_SECRET_KEY");
+  constructor() {
+    const cle = lireEnv("STRIPE_SECRET_KEY");
     if (!cle) {
       this.logger.warn(
         "STRIPE_SECRET_KEY absente : les abonnements payants sont désactivés. " +
@@ -116,7 +116,7 @@ export class StripeService {
    * re-sérialisé ne produit pas la même signature.
    */
   construireEvenement(corpsBrut: Buffer, signature: string): Stripe.Event {
-    const secret = this.config.get<string>("STRIPE_WEBHOOK_SECRET");
+    const secret = lireEnv("STRIPE_WEBHOOK_SECRET");
     if (!secret) {
       throw new ServiceUnavailableException(
         "STRIPE_WEBHOOK_SECRET absente : les webhooks ne peuvent pas être authentifiés."

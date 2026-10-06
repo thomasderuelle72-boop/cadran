@@ -70,7 +70,14 @@ export class AuditInterceptor implements NestInterceptor {
     const organizationId = request.user?.organizationId ?? responseUser?.organizationId;
     if (!organizationId) return null;
 
-    const params: Record<string, string> = request.params ?? {};
+    /*
+     * Express 5 autorise un paramètre de route à valoir un tableau — un
+     * segment générique répété en produit un. Aucune de nos routes n'est dans
+     * ce cas, mais écrire un tableau dans la colonne `targetId` y mettrait
+     * « id1,id2 », qui ne correspond à rien de consultable. On ne retient donc
+     * que la première valeur, et on le dit.
+     */
+    const params = premiereValeur(request.params);
     const routePath = (request.route as { path?: string } | undefined)?.path ?? request.originalUrl;
 
     return {
@@ -99,4 +106,27 @@ export class AuditInterceptor implements NestInterceptor {
       } as Prisma.InputJsonValue,
     };
   }
+}
+
+/**
+ * Ramène les paramètres de route à une valeur simple par clé.
+ *
+ * Isolée et exportée pour être vérifiable : c'est la seule fonction du
+ * fichier qui transforme une donnée venue de la requête, et une erreur ici
+ * écrirait un identifiant faux dans la piste d'audit — c'est-à-dire la
+ * désignerait, à la relecture d'un incident, comme la preuve d'une action qui
+ * n'a pas eu lieu.
+ */
+export function premiereValeur(
+  params: Record<string, string | string[]> | undefined
+): Record<string, string> {
+  const simples: Record<string, string> = {};
+  for (const [cle, valeur] of Object.entries(params ?? {})) {
+    if (Array.isArray(valeur)) {
+      if (valeur.length > 0) simples[cle] = valeur[0];
+    } else {
+      simples[cle] = valeur;
+    }
+  }
+  return simples;
 }

@@ -1,5 +1,4 @@
 import { Module } from "@nestjs/common";
-import { ConfigModule } from "@nestjs/config";
 import { APP_GUARD } from "@nestjs/core";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { CsrfGuard } from "./auth/csrf.guard";
@@ -27,7 +26,6 @@ import { EmailModule } from "./email/email.module";
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
     /*
      * Limitation de débit, appliquée globalement.
      *

@@ -5,12 +5,12 @@ import {
   Logger,
   NotFoundException,
 } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import type { PlanId, Subscription } from "@prisma/client";
 import type Stripe from "stripe";
 import { PrismaService } from "../prisma/prisma.service";
 import { StripeService } from "./stripe.service";
 import { PLANS, PLAN_PAR_DEFAUT, accesOuvert, demandeAction, verifierQuota } from "./plans";
+import { lireEnv, urlApplication } from "../config/environnement";
 import { estEvenementSuivi, planDepuisTarif, statutDepuisStripe } from "./statuts-stripe";
 
 /** Durée de l'essai accordé à l'inscription, sans carte bancaire. */
@@ -22,8 +22,7 @@ export class BillingService {
 
   constructor(
     private prisma: PrismaService,
-    private stripe: StripeService,
-    private config: ConfigService
+    private stripe: StripeService
   ) {}
 
   /**
@@ -117,7 +116,7 @@ export class BillingService {
       throw new BadRequestException("L'essai ne se souscrit pas : il est accordé à l'inscription.");
     }
 
-    const priceId = this.config.get<string>(plan.variableTarif);
+    const priceId = lireEnv(plan.variableTarif);
     if (!priceId) {
       throw new BadRequestException(
         `Aucun tarif Stripe n'est configuré pour la formule « ${plan.label} ».`
@@ -125,7 +124,7 @@ export class BillingService {
     }
 
     const abonnement = await this.pourOrganisation(organizationId);
-    const base = this.config.get<string>("APP_URL") ?? "http://localhost:5173";
+    const base = urlApplication();
 
     return this.stripe.creerSessionCheckout({
       priceId,
@@ -145,7 +144,7 @@ export class BillingService {
         "Aucun abonnement payant à gérer : vous êtes en période d'essai."
       );
     }
-    const base = this.config.get<string>("APP_URL") ?? "http://localhost:5173";
+    const base = urlApplication();
     return this.stripe.creerSessionPortail(abonnement.stripeCustomerId, `${base}/abonnement`);
   }
 

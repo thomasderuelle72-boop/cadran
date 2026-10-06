@@ -5,7 +5,6 @@ import {
   Logger,
   UnauthorizedException,
 } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
@@ -15,6 +14,7 @@ import { gabarit } from "../email/gabarit";
 import { RegisterDto } from "./dto/register.dto";
 import { LoginDto } from "./dto/login.dto";
 import { emettreJeton, empreinteDe, verifierJeton } from "./reinitialisation";
+import { urlApplication } from "../config/environnement";
 
 @Injectable()
 export class AuthService {
@@ -23,8 +23,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
-    private email: EmailService,
-    private config: ConfigService
+    private email: EmailService
   ) {}
 
   /**
@@ -164,7 +163,7 @@ export class AuthService {
       data: { userId: user.id, empreinte, expireLe },
     });
 
-    const base = this.config.get<string>("APP_URL") ?? "http://localhost:5173";
+    const base = urlApplication();
     const lien = `${base}/mot-de-passe/nouveau?jeton=${jetonClair}`;
 
     await this.email.envoyer({

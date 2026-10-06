@@ -1,4 +1,5 @@
 import { summarizePayload } from "./audit.service";
+import { premiereValeur } from "./audit.interceptor";
 
 describe("résumé des corps de requête pour la piste d'audit", () => {
   it("n'écrit jamais un secret dans le journal", () => {
@@ -42,5 +43,26 @@ describe("résumé des corps de requête pour la piste d'audit", () => {
 
     expect(String(summary.label)).toHaveLength(201);
     expect(summary.a).toEqual({ b: { c: "…" } });
+  });
+});
+
+describe("normalisation des paramètres de route", () => {
+  it("laisse passer une valeur simple", () => {
+    expect(premiereValeur({ id: "abc", periodId: "def" })).toEqual({ id: "abc", periodId: "def" });
+  });
+
+  it("ne retient que la première valeur d'un tableau", () => {
+    // Express 5 autorise un paramètre à valoir un tableau. Écrire « a,b »
+    // dans targetId désignerait, à la relecture d'un incident, un
+    // identifiant qui n'existe pas.
+    expect(premiereValeur({ id: ["a", "b"] })).toEqual({ id: "a" });
+  });
+
+  it("écarte un tableau vide plutôt que d'écrire une chaîne vide", () => {
+    expect(premiereValeur({ id: [] })).toEqual({});
+  });
+
+  it("supporte l'absence de paramètres", () => {
+    expect(premiereValeur(undefined)).toEqual({});
   });
 });

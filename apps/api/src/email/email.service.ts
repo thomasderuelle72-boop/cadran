@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import { createTransport, type Transporter } from "nodemailer";
+import { lireEnv, lireEnvOuDefaut } from "../config/environnement";
 
 export interface Courriel {
   destinataire: string;
@@ -30,9 +30,9 @@ export class EmailService {
   private readonly transport: Transporter | null;
   private readonly expediteur: string;
 
-  constructor(private config: ConfigService) {
-    this.expediteur = this.config.get<string>("SMTP_FROM") ?? "Cadran <ne-pas-repondre@cadran.fr>";
-    const hote = this.config.get<string>("SMTP_HOST");
+  constructor() {
+    this.expediteur = lireEnvOuDefaut("SMTP_FROM", "Cadran <ne-pas-repondre@cadran.fr>");
+    const hote = lireEnv("SMTP_HOST");
 
     if (!hote) {
       this.logger.warn(
@@ -42,18 +42,19 @@ export class EmailService {
       return;
     }
 
+    /* Lu une fois : la version précédente relisait la variable quatre fois,
+     * si bien qu'un port changé entre deux lectures aurait pu donner un
+     * transport incohérent — et surtout, cela se lit mal. */
+    const port = Number(lireEnvOuDefaut("SMTP_PORT", "587"));
+    const utilisateur = lireEnv("SMTP_USER");
+
     this.transport = createTransport({
       host: hote,
-      port: Number(this.config.get<string>("SMTP_PORT") ?? 587),
+      port,
       // Le port 465 impose TLS dès la connexion ; les autres passent par
       // STARTTLS. Se tromper donne une erreur de protocole peu parlante.
-      secure: Number(this.config.get<string>("SMTP_PORT") ?? 587) === 465,
-      auth: this.config.get<string>("SMTP_USER")
-        ? {
-            user: this.config.get<string>("SMTP_USER"),
-            pass: this.config.get<string>("SMTP_PASSWORD"),
-          }
-        : undefined,
+      secure: port === 465,
+      auth: utilisateur ? { user: utilisateur, pass: lireEnv("SMTP_PASSWORD") } : undefined,
     });
   }
 
