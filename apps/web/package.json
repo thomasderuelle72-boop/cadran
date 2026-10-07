@@ -15,8 +15,8 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router": "^7.18.4",
-    "recharts": "^3.10.1",
-    "xlsx": "^0.18.5"
+    "read-excel-file": "^9.3.10",
+    "recharts": "^3.10.1"
   },
   "devDependencies": {
     "@types/papaparse": "^5.3.15",
