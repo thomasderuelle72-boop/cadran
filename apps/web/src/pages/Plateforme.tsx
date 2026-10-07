@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { ApiError } from "../api/client";
 import {
   useChangerFormulePlateforme,
+  useDossierTest,
   useDroitPlateforme,
   useMotDePasseProvisoire,
   useOrganisationsPlateforme,
@@ -31,7 +32,13 @@ import { EntetePage, SqueletteTableau } from "../components/etats";
  * d'administration qui l'accorde, jamais la page d'abonnement ni un paiement.
  */
 const PLANS: PlanId[] = ["essai", "solo", "cabinet", "groupe", "interne"];
-const STATUTS: StatutAbonnement[] = ["essai", "actif", "impaye", "resilie", "incomplet"];
+const STATUTS: StatutAbonnement[] = [
+  "essai",
+  "actif",
+  "impaye",
+  "resilie",
+  "incomplet",
+];
 
 const COULEUR_STATUT: Record<StatutAbonnement, string> = {
   actif: "text-success bg-success/10",
@@ -63,11 +70,13 @@ export function PlateformePage() {
    * piste d'audit qu'on consulte justement pour y voir clair.
    */
   const [bascule, setBascule] = useState(false);
-  const autorise = user?.administrateurPlateforme === true && user.support === false;
+  const autorise =
+    user?.administrateurPlateforme === true && user.support === false;
   const interroge = autorise && !bascule;
 
   const { data: sante } = useSantePlateforme(interroge);
-  const { data: organisations, isLoading } = useOrganisationsPlateforme(interroge);
+  const { data: organisations, isLoading } =
+    useOrganisationsPlateforme(interroge);
   const [ouverte, setOuverte] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -76,7 +85,9 @@ export function PlateformePage() {
   if (!autorise) {
     return (
       <div className="card max-w-xl">
-        <h2 className="font-display text-lg font-semibold mb-1">Console indisponible</h2>
+        <h2 className="font-display text-lg font-semibold mb-1">
+          Console indisponible
+        </h2>
         <p className="text-sm text-ink/60">
           {user?.support
             ? "Quittez l'accès support en cours pour revenir à la console."
@@ -131,11 +142,13 @@ export function PlateformePage() {
       {erreur && <p className="text-critical text-sm">{erreur}</p>}
 
       <div className="card">
-        <h2 className="font-display text-lg font-semibold mb-1">Organisations</h2>
+        <h2 className="font-display text-lg font-semibold mb-1">
+          Organisations
+        </h2>
         <p className="text-sm text-ink/50 mb-4">
-          Les volumes suffisent à facturer et à diagnostiquer. Le contenu des dossiers n&apos;est pas
-          lisible d&apos;ici : il faut ouvrir un accès support, que le client voit dans sa propre
-          piste d&apos;audit.
+          Les volumes suffisent à facturer et à diagnostiquer. Le contenu des
+          dossiers n&apos;est pas lisible d&apos;ici : il faut ouvrir un accès
+          support, que le client voit dans sa propre piste d&apos;audit.
         </p>
 
         {isLoading && <SqueletteTableau lignes={5} colonnes={6} />}
@@ -161,7 +174,9 @@ export function PlateformePage() {
                     <tr className="border-b border-rule/5">
                       <td className="py-2.5 pr-4">
                         <div className="font-medium">{org.nom}</div>
-                        <div className="text-xs text-ink/40">créée le {date(org.creeeLe)}</div>
+                        <div className="text-xs text-ink/40">
+                          créée le {date(org.creeeLe)}
+                        </div>
                       </td>
                       <td className="py-2.5 pr-4">
                         <span
@@ -170,19 +185,33 @@ export function PlateformePage() {
                           {org.plan} · {org.statut}
                         </span>
                         {org.resiliationDemandee && (
-                          <div className="text-xs text-warning mt-0.5">résiliation demandée</div>
+                          <div className="text-xs text-warning mt-0.5">
+                            résiliation demandée
+                          </div>
                         )}
                       </td>
-                      <td className="py-2.5 pr-4 text-right font-mono tabular-nums">{nombre(org.utilisateurs)}</td>
-                      <td className="py-2.5 pr-4 text-right font-mono tabular-nums">{nombre(org.entites)}</td>
-                      <td className="py-2.5 pr-4 text-right font-mono tabular-nums">{nombre(org.periodes)}</td>
-                      <td className="py-2.5 pr-6 text-right font-mono tabular-nums">{nombre(org.ecritures)}</td>
-                      <td className="py-2.5 pr-4 text-ink/60 whitespace-nowrap">{date(org.derniereActivite)}</td>
+                      <td className="py-2.5 pr-4 text-right font-mono tabular-nums">
+                        {nombre(org.utilisateurs)}
+                      </td>
+                      <td className="py-2.5 pr-4 text-right font-mono tabular-nums">
+                        {nombre(org.entites)}
+                      </td>
+                      <td className="py-2.5 pr-4 text-right font-mono tabular-nums">
+                        {nombre(org.periodes)}
+                      </td>
+                      <td className="py-2.5 pr-6 text-right font-mono tabular-nums">
+                        {nombre(org.ecritures)}
+                      </td>
+                      <td className="py-2.5 pr-4 text-ink/60 whitespace-nowrap">
+                        {date(org.derniereActivite)}
+                      </td>
                       <td className="py-2.5 text-right whitespace-nowrap">
                         <button
                           type="button"
                           className="btn-secondary text-xs px-2.5 py-1"
-                          onClick={() => setOuverte(ouverte === org.id ? null : org.id)}
+                          onClick={() =>
+                            setOuverte(ouverte === org.id ? null : org.id)
+                          }
                         >
                           {ouverte === org.id ? "Fermer" : "Gérer"}
                         </button>
@@ -248,11 +277,15 @@ function Detail({
   const motDePasse = useMotDePasseProvisoire();
   const droit = useDroitPlateforme();
   const supprimer = useSupprimerOrganisation();
+  const dossier = useDossierTest();
 
   const [plan, setPlan] = useState<PlanId>(organisation.plan);
   const [statut, setStatut] = useState<StatutAbonnement>(organisation.statut);
   const [confirmation, setConfirmation] = useState("");
-  const [provisoire, setProvisoire] = useState<{ email: string; motDePasse: string } | null>(null);
+  const [provisoire, setProvisoire] = useState<{
+    email: string;
+    motDePasse: string;
+  } | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
 
   async function tenter(action: () => Promise<unknown>) {
@@ -260,7 +293,9 @@ function Detail({
     try {
       await action();
     } catch (err) {
-      setErreur(err instanceof ApiError ? err.message : "Opération impossible.");
+      setErreur(
+        err instanceof ApiError ? err.message : "Opération impossible.",
+      );
     }
   }
 
@@ -313,7 +348,11 @@ function Detail({
               }
               onClick={() =>
                 tenter(() =>
-                  changerFormule.mutateAsync({ organizationId: organisation.id, plan, statut })
+                  changerFormule.mutateAsync({
+                    organizationId: organisation.id,
+                    plan,
+                    statut,
+                  }),
                 )
               }
             >
@@ -321,17 +360,18 @@ function Detail({
             </button>
           </div>
           <p className="text-xs text-ink/40">
-            Appliqué en base seulement. Un abonnement Stripe existant continue de son côté : deux
-            sources de vérité qui s&apos;écrivent mutuellement finissent toujours par diverger.
+            Appliqué en base seulement. Un abonnement Stripe existant continue
+            de son côté : deux sources de vérité qui s&apos;écrivent
+            mutuellement finissent toujours par diverger.
           </p>
         </section>
 
         <section className="space-y-3">
           <h3 className="text-sm font-medium">Accès support</h3>
           <p className="text-xs text-ink/50">
-            Bascule votre session sur {organisation.nom} pour une heure. Chaque requête, lecture
-            comprise, est inscrite dans la piste d&apos;audit de ce client, qui la voit depuis son
-            écran Paramètres.
+            Bascule votre session sur {organisation.nom} pour une heure. Chaque
+            requête, lecture comprise, est inscrite dans la piste d&apos;audit
+            de ce client, qui la voit depuis son écran Paramètres.
           </p>
           <button
             type="button"
@@ -341,6 +381,62 @@ function Detail({
           >
             {entreeEnCours ? "Ouverture…" : `Entrer dans ${organisation.nom}`}
           </button>
+        </section>
+
+        <section className="space-y-3">
+          <h3 className="text-sm font-medium">Dossier de test</h3>
+          <p className="text-xs text-ink/50">
+            Une entreprise fictive de quatre exercices,{" "}
+            <strong>volontairement en difficulté</strong> — deux années de
+            pertes, délai client qui dérive, apport du dirigeant pour tenir. Un
+            dossier en bonne santé ne teste rien : les alertes restent muettes
+            et le conseiller n &apos;a rien à dire. Le créer remplace celui qui
+            existe déjà.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="btn-secondary text-sm"
+              disabled={dossier.isPending}
+              onClick={() =>
+                dossier.mutate({
+                  organizationId: organisation.id,
+                  action: "creer",
+                })
+              }
+            >
+              {dossier.isPending ? "En cours…" : "Créer le dossier de test"}
+            </button>
+            <button
+              type="button"
+              className="btn-secondary text-sm"
+              disabled={dossier.isPending}
+              onClick={() =>
+                dossier.mutate({
+                  organizationId: organisation.id,
+                  action: "supprimer",
+                })
+              }
+            >
+              Le retirer
+            </button>
+          </div>
+          {dossier.isSuccess && (
+            <p className="text-xs text-ink/60">
+              {dossier.data.cree
+                ? `« ${dossier.data.nom} » est en place${dossier.data.supprime ? " (l'ancien a été remplacé)" : ""}.`
+                : dossier.data.supprime
+                  ? `« ${dossier.data.nom} » a été retiré.`
+                  : "Aucun dossier de test à retirer."}
+            </p>
+          )}
+          {dossier.isError && (
+            <p className="text-xs text-critical">
+              {dossier.error instanceof Error
+                ? dossier.error.message
+                : "Échec."}
+            </p>
+          )}
         </section>
       </div>
 
@@ -370,14 +466,18 @@ function Detail({
                   </td>
                   <td className="py-1.5 text-ink/60">{u.email}</td>
                   <td className="py-1.5 text-ink/60">{u.role}</td>
-                  <td className="py-1.5 text-ink/60">{date(u.derniereConnexion)}</td>
+                  <td className="py-1.5 text-ink/60">
+                    {date(u.derniereConnexion)}
+                  </td>
                   <td className="py-1.5 text-right whitespace-nowrap">
                     <button
                       type="button"
                       className="btn-secondary text-xs px-2 py-1"
                       disabled={motDePasse.isPending}
                       onClick={() =>
-                        tenter(async () => setProvisoire(await motDePasse.mutateAsync(u.id)))
+                        tenter(async () =>
+                          setProvisoire(await motDePasse.mutateAsync(u.id)),
+                        )
                       }
                     >
                       Mot de passe
@@ -391,11 +491,13 @@ function Detail({
                           droit.mutateAsync({
                             userId: u.id,
                             accorde: !u.administrateurPlateforme,
-                          })
+                          }),
                         )
                       }
                     >
-                      {u.administrateurPlateforme ? "Retirer plateforme" : "Donner plateforme"}
+                      {u.administrateurPlateforme
+                        ? "Retirer plateforme"
+                        : "Donner plateforme"}
                     </button>
                   </td>
                 </tr>
@@ -409,10 +511,13 @@ function Detail({
             <p className="text-sm">
               Mot de passe provisoire pour <strong>{provisoire.email}</strong> :
             </p>
-            <p className="font-mono text-base mt-1 select-all">{provisoire.motDePasse}</p>
+            <p className="font-mono text-base mt-1 select-all">
+              {provisoire.motDePasse}
+            </p>
             <p className="text-xs text-ink/50 mt-1.5">
-              Affiché une seule fois — il n&apos;est stocké qu&apos;en condensat. Les sessions
-              ouvertes de ce compte viennent d&apos;être closes.
+              Affiché une seule fois — il n&apos;est stocké qu&apos;en
+              condensat. Les sessions ouvertes de ce compte viennent d&apos;être
+              closes.
             </p>
             <button
               type="button"
@@ -426,11 +531,14 @@ function Detail({
       </section>
 
       <section className="space-y-2 border-t border-rule/10 pt-4">
-        <h3 className="text-sm font-medium text-critical">Supprimer l&apos;organisation</h3>
+        <h3 className="text-sm font-medium text-critical">
+          Supprimer l&apos;organisation
+        </h3>
         <p className="text-xs text-ink/50">
-          Efface les comptes, les entités, les périodes et le grand livre. Sans retour : c&apos;est
-          ce qu&apos;exige une demande d&apos;effacement, qu&apos;une colonne « supprimé » ne
-          satisferait pas. Saisissez le nom exact pour confirmer.
+          Efface les comptes, les entités, les périodes et le grand livre. Sans
+          retour : c&apos;est ce qu&apos;exige une demande d&apos;effacement,
+          qu&apos;une colonne « supprimé » ne satisferait pas. Saisissez le nom
+          exact pour confirmer.
         </p>
         <div className="flex flex-wrap gap-2 items-center">
           <input
@@ -446,7 +554,10 @@ function Detail({
             disabled={confirmation !== organisation.nom || supprimer.isPending}
             onClick={() =>
               tenter(() =>
-                supprimer.mutateAsync({ organizationId: organisation.id, nom: confirmation })
+                supprimer.mutateAsync({
+                  organizationId: organisation.id,
+                  nom: confirmation,
+                }),
               )
             }
           >

@@ -195,16 +195,70 @@ const PART_ETIQUETTES = 0.32;
  * Le calcul demande la largeur réelle du bloc, que seul le rendu connaît :
  * d'où la mesure plutôt qu'un seuil écrit à la main.
  */
+/**
+ * Écart vertical minimal entre deux étiquettes, en part de l'amplitude de
+ * l'axe.
+ *
+ * Une étiquette occupe environ 14 px ; le tracé d'un bloc en fait 200. En
+ * deçà de 7 % de l'amplitude, deux séries qui finissent au même niveau
+ * écrivent leurs noms l'un sur l'autre.
+ */
+const ECART_VERTICAL_MIN = 0.07;
+
+/** Les séries se terminent-elles trop près les unes des autres ? */
+function finissentAuMemeNiveau(
+  series: SerieGraphique[],
+  donnees: PointGraphique[],
+): boolean {
+  if (donnees.length === 0) return false;
+
+  const toutes = donnees.flatMap((point) =>
+    series
+      .map((serie) => point[serie.cle])
+      .filter((v): v is number => typeof v === "number"),
+  );
+  if (toutes.length === 0) return false;
+
+  const amplitude = Math.max(...toutes) - Math.min(...toutes);
+  if (amplitude === 0) return series.length > 1;
+
+  const fins = series
+    .map((serie) => donnees[donnees.length - 1][serie.cle])
+    .filter((v): v is number => typeof v === "number")
+    .sort((a, b) => a - b);
+
+  return fins.some(
+    (valeur, index) =>
+      index > 0 && (valeur - fins[index - 1]) / amplitude < ECART_VERTICAL_MIN,
+  );
+}
+
 function etiquettesDirectes(
   series: SerieGraphique[],
   largeur: number,
+  donnees: PointGraphique[],
 ): { directes: boolean; marge: number } {
   const plusLong = series.reduce(
     (max, serie) => Math.max(max, serie.label.length),
     0,
   );
   const besoin = plusLong * LARGEUR_CARACTERE + 16;
-  const directes = largeur > 0 && besoin <= largeur * PART_ETIQUETTES;
+
+  /*
+   * Deux conditions, et la même conclusion : en entier ou pas du tout.
+   *
+   * La largeur ne suffit pas. Sur une société en difficulté, l'EBITDA et le
+   * résultat net finissent à quelques milliers d'euros l'un de l'autre : les
+   * deux étiquettes s'écrivent l'une sur l'autre et on ne lit plus ni l'une ni
+   * l'autre. Le cas s'est présenté sur le dossier de test, et nulle part
+   * ailleurs — c'est bien pour cela qu'un dossier d'essai doit être en
+   * difficulté. La légende, toujours présente, porte alors seule l'identité.
+   */
+  const directes =
+    largeur > 0 &&
+    besoin <= largeur * PART_ETIQUETTES &&
+    !finissentAuMemeNiveau(series, donnees);
+
   return { directes, marge: directes ? besoin : MARGE_DROITE_NUE };
 }
 
@@ -347,7 +401,7 @@ export function CourbeTemporelle({
   const couleurs = useCouleursGraphique();
   const infobulle = useInfobulle(unite, currency);
   const [conteneur, largeur] = useLargeur();
-  const { directes, marge } = etiquettesDirectes(series, largeur);
+  const { directes, marge } = etiquettesDirectes(series, largeur, donnees);
 
   return (
     <div ref={conteneur}>

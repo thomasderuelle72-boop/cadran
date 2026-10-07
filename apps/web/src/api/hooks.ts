@@ -732,6 +732,37 @@ export function useSupprimerOrganisation() {
   });
 }
 
+/**
+ * Pose ou retire le dossier de test dans une organisation.
+ *
+ * Existe comme route et non seulement comme script : un script ne s'exécute
+ * pas sur un serveur déployé, et c'est justement là qu'on veut éprouver les
+ * écrans — sur l'installation réelle plutôt que sur une base locale qui n'a
+ * jamais tout à fait la même tête.
+ */
+export function useDossierTest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      organizationId,
+      action,
+    }: {
+      organizationId: string;
+      action: "creer" | "supprimer";
+    }) =>
+      action === "creer"
+        ? api.post<{ cree: boolean; supprime: boolean; nom: string }>(
+            `/plateforme/organisations/${organizationId}/dossier-test`,
+          )
+        : api.delete<{ cree: boolean; supprime: boolean; nom: string }>(
+            `/plateforme/organisations/${organizationId}/dossier-test`,
+          ),
+    /* Les entités changent : le reste de l'application doit les relire, pas
+     * seulement la console. */
+    onSuccess: () => queryClient.invalidateQueries(),
+  });
+}
+
 /** Ouvre un accès support : la session en cours bascule sur le client. */
 export function useOuvrirAccesSupport() {
   return useMutation({

@@ -92,6 +92,25 @@ export class PlateformeController {
    * l'autre sur un client, est la configuration qui fait saisir une écriture
    * dans le mauvais dossier. On est quelque part, ou ailleurs.
    */
+  /**
+   * Le dossier de test, posé ou retiré depuis la console.
+   *
+   * `POST` crée (et remplace un dossier existant), `DELETE` retire. Réservé à
+   * l'administration de la plateforme comme tout ce contrôleur : poser des
+   * données fictives dans l'organisation d'un client n'est pas un geste
+   * anodin, et il est journalisé comme les autres.
+   */
+  @Post("organisations/:id/dossier-test")
+  @HttpCode(200)
+  creerDossierTest(@Param("id") id: string) {
+    return this.plateforme.dossierTest(id, "creer");
+  }
+
+  @Delete("organisations/:id/dossier-test")
+  supprimerDossierTest(@Param("id") id: string) {
+    return this.plateforme.dossierTest(id, "supprimer");
+  }
+
   @Post("organisations/:id/acces")
   @HttpCode(200)
   async acces(

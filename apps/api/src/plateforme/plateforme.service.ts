@@ -4,6 +4,7 @@ import { PlanId, Role, StatutAbonnement } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 import { PrismaService } from "../prisma/prisma.service";
 import { PLANS } from "../billing/plans";
+import { NOM_DOSSIER, construireDossierTest } from "./dossier-test";
 import { genererMotDePasse } from "./motdepasse";
 
 /**
@@ -276,6 +277,43 @@ export class PlateformeService {
   }
 
   /** Vue d'ensemble : ce qu'on regarde le matin. */
+  /**
+   * Pose — ou retire — le dossier de test dans une organisation.
+   *
+   * Existe comme route et non seulement comme script parce qu'un script ne
+   * s'exécute pas sur un serveur déployé : c'est précisément là qu'on a besoin
+   * d'un dossier d'essai, pour éprouver les écrans sur la vraie installation
+   * plutôt que sur une base locale qui n'a jamais tout à fait la même tête.
+   *
+   * La suppression de l'ancien et la construction du nouveau tiennent dans une
+   * seule transaction : interrompue, l'opération ne laisse pas des exercices
+   * sans ratios, qui feraient chercher un bogue du calcul là où il n'y a qu'un
+   * import inachevé.
+   */
+  async dossierTest(organizationId: string, action: "creer" | "supprimer") {
+    await this.exigerOrganisation(organizationId);
+
+    const existant = await this.prisma.entity.findFirst({
+      where: { organizationId, name: NOM_DOSSIER },
+    });
+
+    if (action === "supprimer") {
+      if (!existant) return { cree: false, supprime: false, nom: NOM_DOSSIER };
+      await this.prisma.entity.delete({ where: { id: existant.id } });
+      return { cree: false, supprime: true, nom: NOM_DOSSIER };
+    }
+
+    await this.prisma.$transaction(
+      async (tx) => {
+        if (existant) await tx.entity.delete({ where: { id: existant.id } });
+        await construireDossierTest(tx, organizationId);
+      },
+      { timeout: 60000 }
+    );
+
+    return { cree: true, supprime: Boolean(existant), nom: NOM_DOSSIER };
+  }
+
   async sante() {
     const depuis = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const [organisations, utilisateurs, actifs, echecs, parStatut] = await Promise.all([

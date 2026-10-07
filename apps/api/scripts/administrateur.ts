@@ -111,9 +111,41 @@ async function main() {
           : {}),
       },
     });
+    /*
+     * La formule suit le droit, sur cette branche comme sur l'autre.
+     *
+     * Elle ne le faisait pas : promouvoir un compte existant lui donnait la
+     * console d'administration et le laissait sur son ancien forfait — essai
+     * compris, échéance comprise. L'administrateur se retrouvait bridé par une
+     * limite de dossiers sur sa propre installation, et l'oubli était invisible
+     * puisque le script n'affichait rien de l'abonnement sur ce chemin. C'est
+     * ce chemin qu'emprunte toute installation déjà en service.
+     *
+     * Conditionné à `--plateforme` : un simple passage au rôle ADMIN ne doit
+     * pas offrir une formule sans limite à l'organisation d'un client.
+     */
+    const abonnement = options.plateforme
+      ? await prisma.subscription.upsert({
+          where: { organizationId: existant.organizationId },
+          create: {
+            organizationId: existant.organizationId,
+            plan: "interne",
+            statut: "actif",
+            finPeriode: null,
+          },
+          update: { plan: "interne", statut: "actif", finPeriode: null },
+        })
+      : null;
+
     console.log(`\nCompte existant promu : ${options.email}`);
     console.log(`  rôle                      ADMIN`);
     console.log(`  administrateur plateforme ${options.plateforme ? "oui" : "non"}`);
+    if (abonnement) {
+      console.log(
+        `  formule                   ${abonnement.plan} (${abonnement.statut}, ` +
+          `${abonnement.finPeriode ? abonnement.finPeriode.toISOString().slice(0, 10) : "sans échéance"})`
+      );
+    }
     console.log(`  mot de passe              ${motDePasse}`);
     console.log(`  (les sessions ouvertes de ce compte sont closes)`);
   } else {
@@ -134,9 +166,12 @@ async function main() {
       },
     });
 
-    /* La formule la plus complète, sans échéance : l'exploitant ne se facture
-     * pas lui-même, et un essai qui expire lui fermerait sa propre console. */
-    await prisma.subscription.upsert({
+    /* La formule interne, sans échéance : l'exploitant ne se facture pas
+     * lui-même, et un essai qui expire lui fermerait sa propre console. Elle
+     * plutôt que « Groupe » pour que son accès ne dépende d'aucun produit
+     * vendu — retoucher les quotas de Groupe pour une raison tarifaire ne doit
+     * pas retoucher l'accès de celui qui administre. */
+    const abonnement = await prisma.subscription.upsert({
       where: { organizationId: organisation.id },
       create: { organizationId: organisation.id, plan: "interne", statut: "actif", finPeriode: null },
       update: { plan: "interne", statut: "actif", finPeriode: null },
@@ -146,7 +181,14 @@ async function main() {
     console.log(`  organisation              ${organisation.name}`);
     console.log(`  rôle                      ADMIN`);
     console.log(`  administrateur plateforme ${options.plateforme ? "oui" : "non"}`);
-    console.log(`  formule                   groupe (actif, sans échéance)`);
+    /* Lu dans ce que la base a réellement enregistré, et non recopié à la
+     * main : le littéral disait encore « groupe » longtemps après que le code
+     * eut basculé sur « interne ». Un script qui ment sur ce qu'il vient de
+     * faire est pire qu'un script muet. */
+    console.log(
+      `  formule                   ${abonnement.plan} (${abonnement.statut}, ` +
+        `${abonnement.finPeriode ? abonnement.finPeriode.toISOString().slice(0, 10) : "sans échéance"})`
+    );
     console.log(`  mot de passe              ${motDePasse}`);
   }
 
