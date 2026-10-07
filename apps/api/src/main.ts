@@ -85,6 +85,19 @@ async function bootstrap() {
   app.setGlobalPrefix("api");
   const port = process.env.PORT ? Number(process.env.PORT) : 3001;
   await app.listen(port);
-  console.log(`Cadran API listening on http://localhost:${port}/api`);
+
+  /*
+   * La version de Node est journalisée au démarrage.
+   *
+   * `engines` dit celle qu'on exige ; seule cette ligne dit celle qui tourne.
+   * Les deux ont divergé sans bruit : l'API a servi des mois sur Node 20
+   * après sa fin de support, et rien dans les journaux ne permettait de s'en
+   * apercevoir — il fallait ouvrir un terminal sur la machine. Une ligne au
+   * démarrage rend la question vérifiable depuis les journaux, pour nous
+   * comme pour un auditeur.
+   */
+  console.log(
+    `Cadran API listening on http://localhost:${port}/api — Node ${process.version}`
+  );
 }
 bootstrap();
