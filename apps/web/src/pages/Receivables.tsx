@@ -21,7 +21,7 @@ const SEUIL_DEPENDANCE = 0.25;
 const SEUIL_HERFINDAHL = 0.25;
 
 function formatPart(part: number | null): string {
-  return part === null ? "—" : `${(part * 100).toFixed(1)} %`;
+  return part === null ? "—" : `${(part * 100).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
 }
 
 function Jauge({ part }: { part: number | null }) {

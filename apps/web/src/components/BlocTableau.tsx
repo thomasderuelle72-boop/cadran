@@ -32,7 +32,7 @@ function Variation({ valeur }: { valeur: number | null }) {
   return (
     <span className="tabular-nums text-ink-3">
       {signe}
-      {(valeur * 100).toFixed(1)} %
+      {(valeur * 100).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %
     </span>
   );
 }

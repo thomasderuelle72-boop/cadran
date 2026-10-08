@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { useEntities, useFlux, usePeriods, useSig } from "../api/hooks";
+import { useEntities, useFlux, usePeriods, useRatios, useSig } from "../api/hooks";
+import { Cascade } from "../components/tableau/Cascade";
+import { etapesCascade } from "../lib/tableauDeBord";
 import { DetailComptes } from "../components/DetailComptes";
 import { EntetePage, EtatVide, SqueletteCarte, SqueletteTableau, Zone } from "../components/etats";
 import { formatCurrency } from "../lib/format";
@@ -7,7 +9,7 @@ import type { LigneFlux, SoldeIntermediaire } from "../api/types";
 import { useDossierCourant } from "../lib/dossierCourant";
 
 function formatPart(part: number | null): string {
-  return part === null ? "—" : `${(part * 100).toFixed(1)} %`;
+  return part === null ? "—" : `${(part * 100).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
 }
 
 /**
@@ -43,7 +45,7 @@ function LigneSolde({
         ) : (
           <span className={variation >= 0 ? "text-success" : "text-critical"}>
             {variation >= 0 ? "+" : ""}
-            {(variation * 100).toFixed(1)} %
+            {(variation * 100).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %
           </span>
         )}
       </td>
@@ -96,6 +98,9 @@ export function AnalysisPage() {
     refetch: recharger,
   } = useSig(periodId);
   const { data: fluxData, isLoading: fluxChargement, error: fluxError } = useFlux(periodId);
+  // Les agrégats de la période, déjà en cache si l'on vient du tableau de
+  // bord : ils nourrissent la cascade d'en-tête.
+  const { data: ratios } = useRatios(periodId);
 
   const currency = sigData?.currency ?? "EUR";
   const flux = fluxData?.flux;
@@ -124,6 +129,17 @@ export function AnalysisPage() {
         <EtatVide titre="Aucune période" action={{ to: "/import", label: "Importer des données" }}>
           Cette entité n&apos;a aucune période. Importez un FEC ou une balance pour la remplir.
         </EtatVide>
+      )}
+
+      {periodId && ratios && (
+        <section className="card apparition">
+          <h2 className="text-lg font-bold">En un coup d&apos;œil</h2>
+          <p className="text-sm text-ink-3 mt-0.5 mb-4 max-w-prose">
+            Du chiffre d&apos;affaires au résultat net : les totaux en vert, ce qui s&apos;en retranche en gris. Le
+            détail ligne à ligne suit, dans le tableau des soldes.
+          </p>
+          <Cascade etapes={etapesCascade(ratios.aggregates, ratios.derived)} currency={ratios.currency} />
+        </section>
       )}
 
       {periodId && (

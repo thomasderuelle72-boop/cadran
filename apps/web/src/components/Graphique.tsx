@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -60,6 +62,9 @@ export interface CouleursGraphique {
   surface: string;
   encre: string;
   trait: string;
+  /** Couleurs d'état, réservées à ce qui est bon ou mauvais : jamais une série. */
+  succes: string;
+  critique: string;
 }
 
 function lireCouleurs(): CouleursGraphique {
@@ -81,6 +86,8 @@ function lireCouleurs(): CouleursGraphique {
     surface: variable("--surface", "#ffffff"),
     encre: variable("--ink", "#171F19"),
     trait: variable("--rule", "#171F19"),
+    succes: variable("--success", "#177050"),
+    critique: variable("--critical", "#AD3D2E"),
   };
 }
 
@@ -449,7 +456,8 @@ export function CourbeTemporelle({
                         x={Number(x) + 9}
                         y={Number(y)}
                         dy={4}
-                        fill={couleurs.series[index]}
+                        fill="currentColor"
+                        className="text-ink-2"
                         fontSize={11.5}
                         fontWeight={600}
                       >
@@ -462,6 +470,83 @@ export function CourbeTemporelle({
             </Line>
           ))}
         </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+/**
+ * Aires sur une même échelle : une trajectoire, et le volume qu'elle porte.
+ *
+ * La même chose que la courbe, avec un lavis à 10 % sous chaque trait : il
+ * fait voir l'ordre de grandeur (le chiffre d'affaires porte l'EBITDA) sans
+ * masquer les graduations. Un aplat plus soutenu ferait de chaque série un
+ * bloc, et la seconde cacherait la première.
+ */
+export function AiresTemporelles({
+  donnees,
+  series,
+  cleAbscisse,
+  currency = "EUR",
+  unite = "devise",
+  hauteur = 260,
+}: {
+  donnees: PointGraphique[];
+  series: SerieGraphique[];
+  cleAbscisse: string;
+  currency?: string;
+  unite?: RatioUnit;
+  hauteur?: number;
+}) {
+  const dernierIndex = donnees.length - 1;
+  const couleurs = useCouleursGraphique();
+  const infobulle = useInfobulle(unite, currency);
+  const [conteneur, largeur] = useLargeur();
+  const { directes, marge } = etiquettesDirectes(series, largeur, donnees);
+
+  return (
+    <div ref={conteneur}>
+      <ResponsiveContainer width="100%" height={hauteur}>
+        <AreaChart data={donnees} margin={{ ...MARGE, right: marge }}>
+          <Axes cleAbscisse={cleAbscisse} unite={unite} />
+          <Tooltip {...infobulle} />
+          {series.length > 1 && <LegendeHaute series={series} couleurs={couleurs} />}
+          {series.map((serie, index) => (
+            <Area
+              key={serie.cle}
+              type="monotone"
+              dataKey={serie.cle}
+              name={serie.label}
+              stroke={couleurs.series[index]}
+              strokeWidth={2}
+              fill={couleurs.series[index]}
+              fillOpacity={0.1}
+              dot={false}
+              activeDot={{ r: 4, strokeWidth: 2, stroke: couleurs.surface }}
+              animationDuration={700}
+              connectNulls={false}
+            >
+              {directes && (
+                <LabelList
+                  dataKey={serie.cle}
+                  content={(proprietes) => {
+                    const { index: position, x, y } = proprietes as {
+                      index?: number;
+                      x?: number | string;
+                      y?: number | string;
+                    };
+                    if (position !== dernierIndex) return null;
+                    return (
+                      <text x={Number(x) + 9} y={Number(y)} dy={4} fill="currentColor" className="text-ink-2" fontSize={11.5} fontWeight={600}>
+                        {serie.label}
+                      </text>
+                    );
+                  }}
+                />
+              )}
+            </Area>
+          ))}
+        </AreaChart>
       </ResponsiveContainer>
     </div>
   );

@@ -180,7 +180,7 @@ function LigneCompte({
         </td>
         <td className="py-1.5 text-right font-mono">{formatCurrency(montant(item), currency)}</td>
         <td className="py-1.5 text-right font-mono text-ink-3">
-          {part === null ? "—" : `${(part * 100).toFixed(1)} %`}
+          {part === null ? "—" : `${(part * 100).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`}
         </td>
       </tr>
       {ouvert && (

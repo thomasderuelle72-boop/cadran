@@ -5,12 +5,7 @@ import { EntetePage, EtatVide, SqueletteTableau, Zone } from "../components/etat
 import type { RatioCategory } from "../api/types";
 import { useDossierCourant } from "../lib/dossierCourant";
 
-const CATEGORY_LABELS: Record<RatioCategory, string> = {
-  RENTABILITE: "Rentabilité",
-  LIQUIDITE: "Liquidité",
-  SOLVABILITE: "Solvabilité",
-  ACTIVITE: "Activité",
-};
+const CATEGORIES: RatioCategory[] = ["RENTABILITE", "LIQUIDITE", "SOLVABILITE", "ACTIVITE"];
 
 export function RatiosPage() {
   const { data: entities } = useEntities();
@@ -30,7 +25,7 @@ export function RatiosPage() {
   return (
     <div className="space-y-6">
       <EntetePage
-        titre="Catalogue des ratios"
+        titre="Ratios"
         sousTitre="Les 19 ratios calculés automatiquement à chaque import."
       >
         {periods && periods.length > 0 && (
@@ -68,10 +63,10 @@ export function RatiosPage() {
         >
           <div className="space-y-6">
             {ratioResult &&
-              (Object.keys(CATEGORY_LABELS) as RatioCategory[]).map((category) => (
+              CATEGORIES.map((category) => (
                 <RatioTable
                   key={category}
-                  title={CATEGORY_LABELS[category]}
+                  categorie={category}
                   ratios={ratioResult.ratios.filter((r) => r.category === category)}
                   currency={ratioResult.currency}
                 />

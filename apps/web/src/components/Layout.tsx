@@ -450,7 +450,7 @@ export function Layout() {
         */}
         <div className="sticky top-0 z-30">
           <BandeauSupport />
-          <div className="hidden lg:flex items-center gap-2 h-14 px-10 border-b border-rule/10 bg-surface">
+          <div className="hidden lg:flex items-center gap-2 h-14 px-10 border-b border-rule/10 bg-surface/80 backdrop-blur-md">
             <span className="text-sm text-ink-3 truncate max-w-[16rem]" title={user?.organizationName}>
               {user?.organizationName}
             </span>
@@ -461,7 +461,9 @@ export function Layout() {
           </div>
         </div>
         <main className="px-4 sm:px-6 lg:px-10 py-6 lg:py-8">
-          <div className="max-w-[1320px] mx-auto">
+          {/* Rejoué à chaque changement d'écran : la page arrive, au lieu de
+              remplacer l'autre d'un coup. */}
+          <div key={pathname} className="max-w-[1320px] mx-auto apparition">
             <Outlet />
           </div>
         </main>

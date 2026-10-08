@@ -31,7 +31,7 @@ const LIBELLE_POSTE: Record<string, string> = {
 };
 
 function formatPart(part: number | null): string {
-  return part === null ? "—" : `${(part * 100).toFixed(1)} %`;
+  return part === null ? "—" : `${(part * 100).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
 }
 
 function CarteScore({ score }: { score: ScoreRisque }) {
@@ -253,12 +253,12 @@ export function DiagnosticPage() {
                   <div className="font-mono text-xl font-semibold">
                     {seuil.levierOperationnel === null
                       ? "n/d"
-                      : seuil.levierOperationnel.toFixed(2)}
+                      : seuil.levierOperationnel.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                   <div className="text-xs text-ink-3">
                     {seuil.levierOperationnel === null
                       ? ""
-                      : `−10 % de CA → −${Math.abs(seuil.levierOperationnel * 10).toFixed(0)} % de résultat`}
+                      : `−10 % de CA → −${Math.abs(seuil.levierOperationnel * 10).toLocaleString("fr-FR", { maximumFractionDigits: 0 })} % de résultat`}
                   </div>
                 </div>
               </div>
@@ -374,7 +374,7 @@ export function DiagnosticPage() {
                     {bfr.besoinCroissance.map((hypothese) => (
                       <div key={hypothese.croissance} className="rounded-lg bg-ink/[0.03] px-3 py-2">
                         <div className="text-xs text-ink-3">
-                          +{(hypothese.croissance * 100).toFixed(0)} % de CA
+                          +{(hypothese.croissance * 100).toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} % de CA
                         </div>
                         <div className="font-mono font-semibold">
                           {formatCurrency(hypothese.besoin, currency)}

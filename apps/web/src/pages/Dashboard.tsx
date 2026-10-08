@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Link } from "react-router";
+import { AlertTriangle, CalendarDays } from "lucide-react";
 import {
   useAlertEvents,
   useConsolidatedRatios,
@@ -10,10 +11,14 @@ import {
   useRatios,
   useTrend,
 } from "../api/hooks";
-import { KpiTile } from "../components/KpiTile";
 import { BoutonDemonstration } from "../components/BoutonDemonstration";
-import { StatusBadge } from "../components/StatusBadge";
-import { CourbeTemporelle } from "../components/Graphique";
+import { AiresTemporelles } from "../components/Graphique";
+import { Synthese } from "../components/tableau/Synthese";
+import { TuileChiffre } from "../components/tableau/TuileChiffre";
+import { Cascade } from "../components/tableau/Cascade";
+import { EquationTresorerie } from "../components/tableau/EquationTresorerie";
+import { Delais } from "../components/tableau/Delais";
+import { FAMILLES, FamilleIndicateurs } from "../components/tableau/FamilleIndicateurs";
 import {
   EntetePage,
   EtatVide,
@@ -22,19 +27,9 @@ import {
   Zone,
 } from "../components/etats";
 import { formatCurrency, formatRatioValue } from "../lib/format";
-import type {
-  RatioCategory,
-  RatioResultPayload,
-  RatioValue,
-} from "../api/types";
+import { ecart, etapesCascade, etatIndicateurs, periodesComparables } from "../lib/tableauDeBord";
+import type { RatioCategory, RatioResultPayload, TrendPoint } from "../api/types";
 import { useDossierCourant } from "../lib/dossierCourant";
-
-const CATEGORY_LABELS: Record<RatioCategory, string> = {
-  RENTABILITE: "Rentabilité",
-  LIQUIDITE: "Liquidité",
-  SOLVABILITE: "Solvabilité",
-  ACTIVITE: "Activité",
-};
 
 /**
  * Page vers laquelle mène chaque ratio qui décroche.
@@ -160,6 +155,16 @@ function EntityDashboard({ entityId }: { entityId: string }) {
     refetch: refetchRatios,
   } = useRatios(periodId);
 
+  /* Les périodes de même durée, pour l'écart et la tendance : un trimestre
+   * ne se compare qu'à des trimestres. */
+  const comparables = periodesComparables(periods ?? [], periodId)
+    .map((p) => trend?.find((t) => t.periodId === p.id))
+    .filter((t): t is TrendPoint => Boolean(t));
+  const contexte: ContexteTemporel = {
+    comparables,
+    precedent: comparables.length > 1 ? comparables[comparables.length - 2] : null,
+  };
+
   return (
     <Zone
       chargement={isLoading}
@@ -180,20 +185,30 @@ function EntityDashboard({ entityId }: { entityId: string }) {
         </EtatVide>
       ) : (
         <div className="space-y-6">
-          <div className="flex items-center justify-between gap-4">
-            <span className="oeil">Période analysée</span>
-            <select
-              className="input w-48"
-              value={periodId ?? ""}
-              aria-label="Période"
-              onChange={(e) => setPeriodId(e.target.value)}
-            >
-              {periods.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <CalendarDays size={18} className="text-ink-3" aria-hidden="true" />
+              <label htmlFor="periode-tableau" className="text-sm font-medium text-ink-2">
+                Période
+              </label>
+              <select
+                id="periode-tableau"
+                className="input w-auto py-1.5 font-semibold"
+                value={periodId ?? ""}
+                onChange={(e) => setPeriodId(e.target.value)}
+              >
+                {periods.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {contexte.precedent && (
+              <span className="text-sm text-ink-3">
+                Évolutions calculées par rapport à {contexte.precedent.label}
+              </span>
+            )}
           </div>
 
           <Zone
@@ -208,34 +223,7 @@ function EntityDashboard({ entityId }: { entityId: string }) {
               </div>
             }
           >
-            {ratioResult && (
-              <div className="space-y-6">
-                <DashboardBody ratioResult={ratioResult} />
-                {trend && trend.length > 1 && (
-                  <div className="card">
-                    <h2 className="font-display text-lg font-semibold mb-1">
-                      Chiffre d&apos;affaires et EBITDA
-                    </h2>
-                    <p className="text-sm text-ink-3 mb-3">
-                      Par période importée.
-                    </p>
-                    <CourbeTemporelle
-                      donnees={trend.map((t) => ({
-                        label: t.label,
-                        chiffreAffaires: t.chiffreAffaires,
-                        ebitda: t.ebitda,
-                      }))}
-                      series={[
-                        { cle: "chiffreAffaires", label: "CA" },
-                        { cle: "ebitda", label: "EBITDA" },
-                      ]}
-                      cleAbscisse="label"
-                      currency={ratioResult.currency}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
+            {ratioResult && <DashboardBody ratioResult={ratioResult} contexte={contexte} />}
           </Zone>
         </div>
       )}
@@ -366,6 +354,12 @@ function ConsolidatedDashboard() {
   );
 }
 
+interface ContexteTemporel {
+  /** Points de tendance des périodes comparables, jusqu'à la période affichée. */
+  comparables: TrendPoint[];
+  precedent: TrendPoint | null;
+}
+
 /** Bandeau des alertes non acquittées, avec le chemin pour les traiter. */
 function BandeauAlertes() {
   const { data: evenements } = useAlertEvents();
@@ -373,93 +367,99 @@ function BandeauAlertes() {
   if (actives.length === 0) return null;
 
   return (
-    <div className="card border-warning/40 bg-warning-soft/30 flex items-start justify-between gap-4 flex-wrap">
-      <p className="text-sm">
-        <span className="font-semibold text-warning">
-          {actives.length} alerte{actives.length > 1 ? "s" : ""} non acquittée
-          {actives.length > 1 ? "s" : ""}.
-        </span>{" "}
-        <span className="text-ink-2">
-          {actives
-            .slice(0, 2)
-            .map((e) => e.rule.label)
-            .join(" · ")}
-          {actives.length > 2 &&
-            ` · et ${actives.length - 2} autre${actives.length > 3 ? "s" : ""}`}
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/30 bg-warning-soft/60 px-4 py-3">
+      <p className="flex items-start gap-2.5 text-sm min-w-0">
+        <AlertTriangle size={18} className="flex-none text-warning mt-px" aria-hidden="true" />
+        <span>
+          <span className="font-semibold">
+            {actives.length} alerte{actives.length > 1 ? "s" : ""} à traiter
+          </span>{" "}
+          <span className="text-ink-2">
+            —{" "}
+            {actives
+              .slice(0, 2)
+              .map((e) => e.rule.label)
+              .join(" · ")}
+            {actives.length > 2 && ` · et ${actives.length - 2} autre${actives.length > 3 ? "s" : ""}`}
+          </span>
         </span>
       </p>
-      <Link to="/alerts" className="btn-secondary flex-none">
+      <Link to="/alerts" className="btn-secondary py-1.5 flex-none">
         Traiter les alertes
       </Link>
     </div>
   );
 }
 
-function LigneRatio({
-  ratio,
-  currency,
+/** Un bloc titré du tableau de bord, qui apparaît à son tour. */
+function Bloc({
+  titre,
+  sousTitre,
+  children,
+  className = "",
+  rang = 0,
+  id,
 }: {
-  ratio: RatioValue;
-  currency: string;
+  titre: string;
+  sousTitre?: string;
+  children: ReactNode;
+  className?: string;
+  rang?: number;
+  id?: string;
 }) {
-  const lien =
-    ratio.status === "critique" || ratio.status === "attention"
-      ? OU_COMPRENDRE[ratio.id]
-      : undefined;
-
   return (
-    <li className="flex items-start justify-between gap-3 text-sm py-1">
-      <span className="min-w-0">
-        <span className="text-ink-2">{ratio.label}</span>
-        {lien && (
-          <Link
-            to={lien.to}
-            className="block text-xs text-primary hover:underline mt-0.5"
-            title={ratio.interpretation}
-          >
-            {lien.libelle} →
-          </Link>
-        )}
-      </span>
-      <span className="flex items-center gap-2 flex-none">
-        <span className="font-mono font-semibold">
-          {formatRatioValue(ratio.value, ratio.unit, currency)}
-        </span>
-        <StatusBadge status={ratio.status} />
-      </span>
-    </li>
+    <section id={id} className={`card apparition ${className}`} style={{ animationDelay: `${rang * 70}ms` } as CSSProperties}>
+      <h2 className="text-lg font-bold">{titre}</h2>
+      {sousTitre && <p className="text-sm text-ink-3 mt-0.5 mb-4 max-w-prose">{sousTitre}</p>}
+      {!sousTitre && <div className="mb-4" />}
+      {children}
+    </section>
   );
 }
 
+/**
+ * Le tableau de bord, du plus synthétique au plus détaillé.
+ *
+ * 1. Où en est l'entreprise, en une phrase et un décompte.
+ * 2. Les quatre chiffres qu'on demande d'abord, avec leur évolution.
+ * 3. Pourquoi : la cascade du chiffre d'affaires au résultat, et l'équation
+ *    de la trésorerie.
+ * 4. Comment ça évolue, et combien de jours l'argent reste dehors.
+ * 5. Le détail, famille par famille.
+ *
+ * Chaque graphique répond à une question écrite au-dessus de lui : un
+ * graphique sans question laisse le lecteur deviner ce qu'il doit y voir.
+ */
 function DashboardBody({
   ratioResult,
+  contexte,
 }: {
-  ratioResult: Pick<
-    RatioResultPayload,
-    "currency" | "aggregates" | "derived" | "ratios"
-  >;
+  ratioResult: Pick<RatioResultPayload, "currency" | "aggregates" | "derived" | "ratios">;
+  contexte?: ContexteTemporel;
 }) {
-  const { currency } = ratioResult;
-  const ecartBilan = ratioResult.derived.ecartBilan;
-  const bilanDesequilibre =
-    ecartBilan !== undefined && Math.abs(ecartBilan) > 1;
+  const { currency, aggregates, derived, ratios } = ratioResult;
+  const ecartBilan = derived.ecartBilan;
+  const bilanDesequilibre = ecartBilan !== undefined && Math.abs(ecartBilan) > 1;
+  const etat = etatIndicateurs(ratios);
+  const precedent = contexte?.precedent ?? null;
+  const serie = (cle: "chiffreAffaires" | "ebitda" | "resultatNet" | "tresorerieNette") =>
+    contexte && contexte.comparables.length > 1 ? contexte.comparables.slice(-8).map((t) => t[cle]) : undefined;
+  const euros = (n: number) => formatCurrency(Math.round(n), currency);
+  const marge = (id: string) => formatRatioValue(ratios.find((r) => r.id === id)?.value ?? null, "pourcentage");
 
   return (
     <div className="space-y-6">
       {bilanDesequilibre && (
-        <div className="card border-warning/40 bg-warning-soft/40 flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/30 bg-warning-soft/60 px-4 py-3">
           <p className="text-sm">
-            <span className="font-semibold text-warning">
-              Bilan déséquilibré.
-            </span>{" "}
+            <span className="font-semibold">Bilan déséquilibré.</span>{" "}
             <span className="text-ink-2">
-              Écart de {formatCurrency(Math.abs(ecartBilan!), currency)} entre
-              l&apos;actif et le passif. Un poste est probablement mal classé à
-              l&apos;import : les ratios de structure et de liquidité sont à
-              interpréter avec prudence.
+              Écart de {formatCurrency(Math.abs(ecartBilan!), currency)} entre l&apos;actif et le passif. Un poste est
+              probablement mal classé à l&apos;import : les ratios de structure et de liquidité sont à interpréter
+              avec prudence.
             </span>
           </p>
-          <Link to="/import" className="btn-secondary flex-none">
+          <Link to="/import" className="btn-secondary py-1.5 flex-none">
             Reprendre l&apos;import
           </Link>
         </div>
@@ -467,62 +467,142 @@ function DashboardBody({
 
       <BandeauAlertes />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiTile
-          label="Chiffre d'affaires"
-          value={formatCurrency(
-            ratioResult.aggregates.chiffreAffaires,
-            currency,
-          )}
-        />
-        <KpiTile
-          label="EBITDA"
-          value={formatCurrency(ratioResult.derived.ebitda, currency)}
-          sublabel={`${formatRatioValue(
-            ratioResult.ratios.find((r) => r.id === "marge_ebitda")?.value ??
-              null,
-            "pourcentage",
-          )} de marge`}
-        />
-        <KpiTile
-          label="Résultat net"
-          value={formatCurrency(ratioResult.derived.resultatNet, currency)}
-          sublabel={`${formatRatioValue(
-            ratioResult.ratios.find((r) => r.id === "marge_nette")?.value ??
-              null,
-            "pourcentage",
-          )} de marge`}
-        />
-        <KpiTile
-          label="Trésorerie nette"
-          value={formatCurrency(ratioResult.derived.tresorerieNette, currency)}
-          sublabel="FR − BFR"
-        />
+      <div className="apparition">
+        <Synthese etat={etat} currency={currency} ouComprendre={OU_COMPRENDRE} />
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-4">
-        {(Object.keys(CATEGORY_LABELS) as RatioCategory[]).map((category) => {
-          const ratios = ratioResult.ratios.filter(
-            (r) => r.category === category,
-          );
-          return (
-            <div key={category} className="card">
-              <h2 className="font-display text-lg font-semibold mb-2">
-                {CATEGORY_LABELS[category]}
-              </h2>
-              <ul className="divide-y divide-rule/5">
-                {ratios.map((ratio) => (
-                  <LigneRatio
-                    key={ratio.id}
-                    ratio={ratio}
-                    currency={currency}
-                  />
-                ))}
-              </ul>
-            </div>
-          );
-        })}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {[
+          {
+            libelle: "Chiffre d'affaires",
+            aide: "Les ventes de la période, hors taxes.",
+            valeur: aggregates.chiffreAffaires,
+            avant: precedent?.chiffreAffaires,
+            serie: serie("chiffreAffaires"),
+          },
+          {
+            libelle: "EBITDA",
+            aide: "Ce que l'activité dégage avant amortissements, intérêts et impôt : la rentabilité du métier lui-même.",
+            valeur: derived.ebitda,
+            avant: precedent?.ebitda,
+            sousTitre: `${marge("marge_ebitda")} du chiffre d'affaires`,
+            serie: serie("ebitda"),
+          },
+          {
+            libelle: "Résultat net",
+            aide: "Ce qui reste une fois tout payé, impôt compris : le bénéfice, ou la perte.",
+            valeur: derived.resultatNet,
+            avant: precedent?.resultatNet,
+            sousTitre: `${marge("marge_nette")} du chiffre d'affaires`,
+            serie: serie("resultatNet"),
+          },
+          {
+            libelle: "Trésorerie nette",
+            aide: "Fonds de roulement moins besoin en fonds de roulement : l'argent réellement disponible.",
+            valeur: derived.tresorerieNette,
+            avant: precedent?.tresorerieNette,
+            serie: serie("tresorerieNette"),
+          },
+        ].map((t, rang) => (
+          <div key={t.libelle} className="apparition h-full" style={{ animationDelay: `${(rang + 1) * 60}ms` }}>
+            <TuileChiffre
+              libelle={t.libelle}
+              aide={t.aide}
+              valeur={t.valeur}
+              formater={euros}
+              ecart={ecart(t.valeur, t.avant)}
+              comparaison={precedent?.label}
+              sousTitre={t.sousTitre}
+              serie={t.serie}
+            />
+          </div>
+        ))}
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <Bloc
+          titre="Du chiffre d'affaires au résultat"
+          sousTitre="Ce que deviennent les ventes : chaque barre grise est ce qui s'en va, chaque barre verte ce qui reste à cette étape."
+          className="lg:col-span-7"
+          rang={5}
+        >
+          <Cascade etapes={etapesCascade(aggregates, derived)} currency={currency} />
+        </Bloc>
+        <Bloc
+          titre="D'où vient la trésorerie"
+          sousTitre="Ce qui la finance, ce qui la consomme, et ce qui reste."
+          className="lg:col-span-5"
+          rang={6}
+        >
+          <EquationTresorerie
+            fondsDeRoulement={derived.fondsDeRoulement}
+            bfr={derived.bfr}
+            tresorerie={derived.tresorerieNette}
+            currency={currency}
+          />
+        </Bloc>
+
+        {contexte && (
+          <Bloc
+            titre="Évolution"
+            sousTitre={
+              contexte.comparables.length > 1
+                ? `Chiffre d'affaires et EBITDA sur les ${contexte.comparables.length} dernières périodes de même durée.`
+                : undefined
+            }
+            className="lg:col-span-7"
+            rang={7}
+          >
+            {contexte.comparables.length > 1 ? (
+              <AiresTemporelles
+                donnees={contexte.comparables.slice(-8).map((t) => ({
+                  label: t.label,
+                  chiffreAffaires: t.chiffreAffaires,
+                  ebitda: t.ebitda,
+                }))}
+                series={[
+                  { cle: "chiffreAffaires", label: "Chiffre d'affaires" },
+                  { cle: "ebitda", label: "EBITDA" },
+                ]}
+                cleAbscisse="label"
+                currency={currency}
+                hauteur={250}
+              />
+            ) : (
+              <p className="text-sm text-ink-3">
+                L&apos;évolution s&apos;affichera dès qu&apos;une deuxième période de même durée sera importée.
+              </p>
+            )}
+          </Bloc>
+        )}
+        <Bloc
+          titre="Combien de temps l'argent reste dehors"
+          sousTitre="Les délais du cycle d'exploitation, en jours."
+          className={contexte ? "lg:col-span-5" : "lg:col-span-12"}
+          rang={8}
+        >
+          <Delais ratios={ratios} />
+        </Bloc>
+      </div>
+
+      <section id="indicateurs" className="apparition" style={{ animationDelay: "560ms" }}>
+        <h2 className="text-lg font-bold">Le détail des indicateurs</h2>
+        <p className="text-sm text-ink-3 mt-0.5 mb-4">
+          Les {ratios.length} ratios calculés à chaque import, rangés par question. La définition de chacun est au
+          survol de l&apos;icône ⓘ.
+        </p>
+        <div className="grid lg:grid-cols-2 gap-4">
+          {(Object.keys(FAMILLES) as RatioCategory[]).map((categorie) => (
+            <FamilleIndicateurs
+              key={categorie}
+              categorie={categorie}
+              ratios={ratios.filter((r) => r.category === categorie)}
+              currency={currency}
+              ouComprendre={OU_COMPRENDRE}
+            />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
