@@ -22,7 +22,7 @@ function variation(courant: number | null, precedent: number | null): number | n
 }
 
 function Variation({ valeur }: { valeur: number | null }) {
-  if (valeur === null) return <span className="text-ink/30">—</span>;
+  if (valeur === null) return <span className="text-ink-3">—</span>;
   const signe = valeur > 0 ? "+" : "";
   /*
    * Pas de couleur verte ou rouge : une hausse n'est pas une bonne nouvelle
@@ -30,7 +30,7 @@ function Variation({ valeur }: { valeur: number | null }) {
    * parce qu'elle monte dirait exactement le contraire de ce qu'elle vaut.
    */
   return (
-    <span className="tabular-nums text-ink/60">
+    <span className="tabular-nums text-ink-3">
       {signe}
       {(valeur * 100).toFixed(1)} %
     </span>
@@ -49,14 +49,14 @@ export function BlocTableau({
   currency: string;
 }) {
   if (exercices.length === 0) {
-    return <p className="text-sm text-ink/45">Aucun exercice à afficher.</p>;
+    return <p className="text-sm text-ink-3">Aucun exercice à afficher.</p>;
   }
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
+          <tr className="text-left text-xs uppercase tracking-wide text-ink-3 border-b border-rule/10">
             <th className="py-2 pr-4 font-medium">Mesure</th>
             {exercices.map((exercice) => (
               <th
@@ -83,7 +83,7 @@ export function BlocTableau({
                 {valeurs.map((valeur, index) => (
                   <td
                     key={exercices[index].annee}
-                    className="py-2 pr-4 text-right tabular-nums font-mono text-ink/80"
+                    className="py-2 pr-4 text-right tabular-nums font-mono text-ink-2"
                   >
                     {formatRatioValue(valeur, mesure?.unite ?? "ratio", currency)}
                   </td>
@@ -139,7 +139,7 @@ export function BlocTuile({
   const dernier = serie[serie.length - 1];
   const precedent = serie[serie.length - 2];
 
-  if (!dernier) return <p className="text-sm text-ink/45">Aucun exercice.</p>;
+  if (!dernier) return <p className="text-sm text-ink-3">Aucun exercice.</p>;
 
   const valeur = dernier.valeurs[id] ?? null;
   const ecart = variation(valeur, precedent?.valeurs[id] ?? null);
@@ -149,7 +149,7 @@ export function BlocTuile({
       <div className="font-display text-3xl font-semibold tabular-nums">
         {formatRatioValue(valeur, mesure?.unite ?? "devise", currency)}
       </div>
-      <div className="mt-1 flex items-baseline gap-2 text-xs text-ink/50">
+      <div className="mt-1 flex items-baseline gap-2 text-xs text-ink-3">
         <span>
           {dernier.label}
           {!dernier.reel && " · projeté"}

@@ -5,7 +5,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center text-ink/50">Chargement…</div>;
+    return <div className="min-h-screen flex items-center justify-center text-ink-3">Chargement…</div>;
   }
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;

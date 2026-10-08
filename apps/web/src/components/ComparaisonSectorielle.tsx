@@ -63,7 +63,7 @@ function Bande({ ratio }: { ratio: RatioSectoriel }) {
   return (
     <svg width="140" height="18" viewBox="0 0 140 18" aria-hidden className="block">
       <rect x={x(q1)} y="5" width={Math.max(x(q3) - x(q1), 1)} height="8" rx="2" className="fill-current text-ink/15" />
-      <line x1={x(q2)} x2={x(q2)} y1="3" y2="15" strokeWidth="2" className="stroke-current text-ink/50" />
+      <line x1={x(q2)} x2={x(q2)} y1="3" y2="15" strokeWidth="2" className="stroke-current text-ink-3" />
       {v !== null && (
         <circle
           cx={x(v)}
@@ -94,7 +94,7 @@ export function ComparaisonSectorielle({ entityId }: { entityId: string }) {
     return (
       <section className="card">
         <h2 className="font-display text-lg font-semibold">Comparaison sectorielle</h2>
-        <p className="text-sm text-ink/60 mt-1 max-w-prose">
+        <p className="text-sm text-ink-3 mt-1 max-w-prose">
           {RAISONS[data.raison]}
           {data.raison === "secteur_absent" && data.codeNaf ? ` (NAF ${data.codeNaf})` : ""}
         </p>
@@ -108,7 +108,7 @@ export function ComparaisonSectorielle({ entityId }: { entityId: string }) {
     <section className="card space-y-4">
       <div>
         <h2 className="font-display text-lg font-semibold">Comparaison sectorielle</h2>
-        <p className="text-sm text-ink/60 mt-0.5">
+        <p className="text-sm text-ink-3 mt-0.5">
           {data.exercice} comparé aux entreprises{" "}
           {data.secteur.niveau === "division" ? "de la division" : "de la section"} {data.secteur.code} —{" "}
           {data.secteur.libelle.toLocaleLowerCase("fr")} — données {data.source.millesime}.
@@ -116,7 +116,7 @@ export function ComparaisonSectorielle({ entityId }: { entityId: string }) {
       </div>
 
       {data.avertissements.length > 0 && (
-        <ul className="rounded-md bg-warning-soft px-3 py-2 text-sm text-ink/75 space-y-1">
+        <ul className="rounded-md bg-warning-soft px-3 py-2 text-sm text-ink-2 space-y-1">
           {data.avertissements.map((a) => (
             <li key={a}>{a}</li>
           ))}
@@ -126,7 +126,7 @@ export function ComparaisonSectorielle({ entityId }: { entityId: string }) {
       <div className="overflow-x-auto">
         <table className="w-full text-sm min-w-[760px]">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-ink/45 border-b border-rule/10">
+            <tr className="text-left text-xs uppercase tracking-wide text-ink-3 border-b border-rule/10">
               <th scope="col" className="py-2 pr-3 font-medium">Ratio</th>
               <th scope="col" className="py-2 px-3 font-medium text-right">Ce dossier</th>
               <th scope="col" className="py-2 px-3 font-medium text-right" title="25 % des entreprises sont en dessous">Q1</th>
@@ -144,7 +144,7 @@ export function ComparaisonSectorielle({ entityId }: { entityId: string }) {
                   <td className="py-2.5 pr-3">
                     {r.libelle}
                     {r.comparabilite === "approchee" && (
-                      <span className="text-ink/40 ml-1" title={`Calcul approché : ${r.ecart ?? ""}`}>
+                      <span className="text-ink-3 ml-1" title={`Calcul approché : ${r.ecart ?? ""}`}>
                         ≈
                       </span>
                     )}
@@ -152,13 +152,13 @@ export function ComparaisonSectorielle({ entityId }: { entityId: string }) {
                   <td className="py-2.5 px-3 text-right tabular-nums font-medium whitespace-nowrap">
                     {formater(r.valeur, r.unite)}
                   </td>
-                  <td className="py-2.5 px-3 text-right tabular-nums text-ink/60 whitespace-nowrap">
+                  <td className="py-2.5 px-3 text-right tabular-nums text-ink-3 whitespace-nowrap">
                     {formater(r.quartiles!.q1, r.unite)}
                   </td>
-                  <td className="py-2.5 px-3 text-right tabular-nums text-ink/60 whitespace-nowrap">
+                  <td className="py-2.5 px-3 text-right tabular-nums text-ink-3 whitespace-nowrap">
                     {formater(r.quartiles!.q2, r.unite)}
                   </td>
-                  <td className="py-2.5 px-3 text-right tabular-nums text-ink/60 whitespace-nowrap">
+                  <td className="py-2.5 px-3 text-right tabular-nums text-ink-3 whitespace-nowrap">
                     {formater(r.quartiles!.q3, r.unite)}
                   </td>
                   <td className="py-2.5 px-3">
@@ -167,11 +167,11 @@ export function ComparaisonSectorielle({ entityId }: { entityId: string }) {
                   <td className="py-2.5 pl-3 text-xs">
                     {r.position ? (
                       <>
-                        <span className="text-ink/70">{r.position.phrase}</span>
+                        <span className="text-ink-2">{r.position.phrase}</span>
                         {lecture && <span className={`block font-semibold ${lecture.texte}`}>{lecture.libelle}</span>}
                       </>
                     ) : (
-                      <span className="text-ink/40">Non calculable pour ce dossier</span>
+                      <span className="text-ink-3">Non calculable pour ce dossier</span>
                     )}
                   </td>
                 </tr>
@@ -182,24 +182,24 @@ export function ComparaisonSectorielle({ entityId }: { entityId: string }) {
       </div>
 
       <details className="text-sm">
-        <summary className="cursor-pointer text-ink/60 hover:text-ink">Comment ces ratios sont calculés</summary>
-        <dl className="mt-3 space-y-2 text-xs text-ink/65">
+        <summary className="cursor-pointer text-ink-3 hover:text-ink">Comment ces ratios sont calculés</summary>
+        <dl className="mt-3 space-y-2 text-xs text-ink-2">
           {affiches.map((r) => (
             <div key={r.id}>
-              <dt className="font-medium text-ink/80">
+              <dt className="font-medium text-ink-2">
                 {r.libelle}
                 {r.comparabilite === "exacte" ? " — calcul identique" : " — calcul approché"}
               </dt>
               <dd>
                 {r.definition}
-                {r.ecart && <span className="block text-ink/50">{r.ecart}</span>}
+                {r.ecart && <span className="block text-ink-3">{r.ecart}</span>}
               </dd>
             </div>
           ))}
         </dl>
       </details>
 
-      <p className="text-xs text-ink/45">{data.source.mention}</p>
+      <p className="text-xs text-ink-3">{data.source.mention}</p>
     </section>
   );
 }

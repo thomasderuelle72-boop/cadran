@@ -123,9 +123,9 @@ function Televersement({
     <div className="panneau-discret">
       <div className="flex items-baseline justify-between gap-3">
         <h3 className="text-sm font-medium">{titre}</h3>
-        {image && <span className="text-xs text-ink/40 font-mono">{image.largeur} × {image.hauteur} px</span>}
+        {image && <span className="text-xs text-ink-3 font-mono">{image.largeur} × {image.hauteur} px</span>}
       </div>
-      <p className="text-xs text-ink/50 mt-1 mb-3">{aide}</p>
+      <p className="text-xs text-ink-3 mt-1 mb-3">{aide}</p>
 
       <div
         className="flex items-center justify-center bg-paper rounded border border-rule/20 mb-3"
@@ -134,7 +134,7 @@ function Televersement({
         {url && taille ? (
           <img src={url} alt={titre} style={{ width: taille.largeur, height: taille.hauteur }} />
         ) : (
-          <span className="text-xs text-ink/35">{image ? "Chargement…" : "Aucune image"}</span>
+          <span className="text-xs text-ink-3">{image ? "Chargement…" : "Aucune image"}</span>
         )}
       </div>
 
@@ -194,23 +194,23 @@ function Apercu({
       <p className="text-sm font-medium mt-0.5" style={{ color: accent }}>
         Rapport financier
       </p>
-      <p className="text-xs text-ink/55 mt-1.5">Entité cliente · Exercice 2025</p>
-      <p className="text-[11px] text-ink/40">
+      <p className="text-xs text-ink-3 mt-1.5">Entité cliente · Exercice 2025</p>
+      <p className="text-[11px] text-ink-3">
         Période du 01/01/2025 au 31/12/2025 · Calculé le{" "}
         {new Date().toLocaleDateString("fr-FR")}
       </p>
       <div className="h-px my-3" style={{ backgroundColor: accent }} />
-      <p className="text-[11px] text-ink/35">Synthèse · Rentabilité · Liquidité · Solvabilité…</p>
+      <p className="text-[11px] text-ink-3">Synthèse · Rentabilité · Liquidité · Solvabilité…</p>
       {marque.signataireNom.trim() && (
-        <p className="text-[11px] text-ink/55 mt-3 pt-2 border-t border-rule/20">
+        <p className="text-[11px] text-ink-3 mt-3 pt-2 border-t border-rule/20">
           {marque.signataireNom}
           {marque.signataireFonction.trim() && (
-            <span className="text-ink/40"> · {marque.signataireFonction}</span>
+            <span className="text-ink-3"> · {marque.signataireFonction}</span>
           )}
         </p>
       )}
       {marque.mentionsPied.trim() && (
-        <p className="text-[10px] text-ink/35 mt-3 leading-snug">{marque.mentionsPied}</p>
+        <p className="text-[10px] text-ink-3 mt-3 leading-snug">{marque.mentionsPied}</p>
       )}
     </div>
   );
@@ -297,7 +297,7 @@ export function MarqueDocuments({
   return (
     <div className="card">
       <h2 className="font-display text-lg font-semibold mb-1">Marque des documents</h2>
-      <p className="text-sm text-ink/50 mb-4">
+      <p className="text-sm text-ink-3 mb-4">
         Les exports PDF et Excel portent cette identité : le cabinet remet à son client un document
         à son nom, pas à celui de son outil.
       </p>
@@ -400,7 +400,7 @@ export function MarqueDocuments({
               value={champs.mentionsPied}
               onChange={(e) => setChamps({ ...champs, mentionsPied: e.target.value })}
             />
-            <p className="text-xs text-ink/40 mt-1">
+            <p className="text-xs text-ink-3 mt-1">
               Reprises telles quelles sur chaque page, à côté de la numérotation.
             </p>
           </div>
@@ -418,7 +418,7 @@ export function MarqueDocuments({
             </button>
           )}
           {estAdmin === false && (
-            <p className="text-xs text-ink/40">
+            <p className="text-xs text-ink-3">
               Seul un administrateur peut modifier la marque de l&apos;organisation.
             </p>
           )}
@@ -427,7 +427,7 @@ export function MarqueDocuments({
         <div className="space-y-3">
           <p className="oeil">
             Aperçu de l&apos;en-tête{" "}
-            <span className="normal-case text-ink/35">
+            <span className="normal-case text-ink-3">
               {marque.autorisee
                 ? "— entité et chiffres d'exemple"
                 : "— non appliqué avec la formule actuelle"}

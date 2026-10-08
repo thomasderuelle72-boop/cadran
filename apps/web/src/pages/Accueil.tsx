@@ -57,8 +57,8 @@ function Etape({
       </div>
       <div className="min-w-0">
         <h3 className="font-display text-lg font-semibold mb-1">{titre}</h3>
-        <p className="text-ink/60 text-sm max-w-prose">{texte}</p>
-        <p className="mt-2.5 text-sm font-mono text-ink/80 border-l-2 border-accent/50 pl-3 py-0.5">
+        <p className="text-ink-3 text-sm max-w-prose">{texte}</p>
+        <p className="mt-2.5 text-sm font-mono text-ink-2 border-l-2 border-accent/50 pl-3 py-0.5">
           {exemple}
         </p>
       </div>
@@ -94,10 +94,10 @@ export function Accueil() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           <Marque />
           <nav className="flex items-center gap-2 sm:gap-4 text-sm">
-            <a href="#tarifs" className="hidden sm:inline text-ink/60 hover:text-ink transition">
+            <a href="#tarifs" className="hidden sm:inline text-ink-3 hover:text-ink transition">
               Tarifs
             </a>
-            <Link to="/login" className="text-ink/60 hover:text-ink transition px-2">
+            <Link to="/login" className="text-ink-3 hover:text-ink transition px-2">
               Se connecter
             </Link>
             <Link to="/register" className="btn-primary whitespace-nowrap">
@@ -120,7 +120,7 @@ export function Accueil() {
               Cadran vous dit si c&apos;est normal, et quoi faire.
             </span>
           </h1>
-          <p className="mt-6 text-lg text-ink/60 max-w-2xl">
+          <p className="mt-6 text-lg text-ink-3 max-w-2xl">
             Importez votre fichier des écritures comptables. En quelques secondes, dix-neuf ratios,
             vos soldes de gestion, votre tableau de flux, vos encours client et un diagnostic de
             fragilité — chacun remontant jusqu&apos;à l&apos;écriture qui l&apos;explique.
@@ -134,7 +134,7 @@ export function Accueil() {
               Voir les tarifs
             </a>
           </div>
-          <p className="mt-4 text-sm text-ink/45">
+          <p className="mt-4 text-sm text-ink-3">
             14 jours, sans carte bancaire. Aucune installation.
           </p>
 
@@ -148,7 +148,7 @@ export function Accueil() {
               <div key={quoi} className="panneau-discret">
                 <div className="font-mono text-3xl font-semibold text-primary">{chiffre}</div>
                 <div className="font-medium text-sm mt-1">{quoi}</div>
-                <div className="text-xs text-ink/50 mt-0.5">{precision}</div>
+                <div className="text-xs text-ink-3 mt-0.5">{precision}</div>
               </div>
             ))}
           </div>
@@ -162,7 +162,7 @@ export function Accueil() {
             <h2 className="font-display text-3xl font-semibold text-balance">
               Un outil de reporting s&apos;arrête à la première marche
             </h2>
-            <p className="mt-3 text-ink/60 max-w-2xl">
+            <p className="mt-3 text-ink-3 max-w-2xl">
               Un chiffre sans contexte n&apos;est pas une information. Cadran descend les quatre
               marches, et chacune mène à la suivante d&apos;un clic.
             </p>
@@ -204,7 +204,7 @@ export function Accueil() {
             <h2 className="font-display text-3xl sm:text-4xl font-semibold text-balance">
               Un tarif par taille de périmètre
             </h2>
-            <p className="mt-3 text-ink/60">
+            <p className="mt-3 text-ink-3">
               Toutes les formules donnent accès à l&apos;analyse complète. Ce qui change, c&apos;est
               le nombre d&apos;entités et d&apos;intervenants.
             </p>
@@ -229,7 +229,7 @@ export function Accueil() {
                   className={`rounded-lg px-4 py-1.5 text-sm font-medium transition ${
                     annuel === option.id
                       ? "bg-surface text-ink shadow-sm"
-                      : "text-ink/55 hover:text-ink/80"
+                      : "text-ink-3 hover:text-ink-2"
                   }`}
                 >
                   {option.label}
@@ -263,7 +263,7 @@ export function Accueil() {
                   )}
 
                   <h3 className="font-display text-xl font-semibold">{formule.label}</h3>
-                  <p className="text-xs text-ink/50 mt-0.5 min-h-[2.5rem]">{formule.pourQui}</p>
+                  <p className="text-xs text-ink-3 mt-0.5 min-h-[2.5rem]">{formule.pourQui}</p>
 
                   <div className="mt-4 mb-1 flex items-baseline gap-1.5">
                     {prix === null ? (
@@ -271,11 +271,11 @@ export function Accueil() {
                     ) : (
                       <>
                         <span className="font-mono text-3xl font-semibold">{prix} €</span>
-                        <span className="text-sm text-ink/50">/ mois</span>
+                        <span className="text-sm text-ink-3">/ mois</span>
                       </>
                     )}
                   </div>
-                  <p className="text-xs text-ink/45 min-h-[2.5rem]">
+                  <p className="text-xs text-ink-3 min-h-[2.5rem]">
                     {prix === null
                       ? "14 jours, sans carte"
                       : annuel
@@ -294,7 +294,7 @@ export function Accueil() {
 
                   <ul className="mt-5 space-y-2 text-sm">
                     {formule.arguments.map((argument) => (
-                      <li key={argument} className="flex gap-2 text-ink/70">
+                      <li key={argument} className="flex gap-2 text-ink-2">
                         <Coche />
                         <span>{argument}</span>
                       </li>
@@ -305,7 +305,7 @@ export function Accueil() {
             })}
           </div>
 
-          <p className="mt-8 text-center text-sm text-ink/50 max-w-2xl mx-auto">
+          <p className="mt-8 text-center text-sm text-ink-3 max-w-2xl mx-auto">
             Tous les prix sont hors taxes. Les clients professionnels de l&apos;Union européenne
             disposant d&apos;un numéro de TVA intracommunautaire relèvent de l&apos;autoliquidation.
             Résiliation en ligne à tout moment, sans justification.
@@ -320,18 +320,18 @@ export function Accueil() {
         <section className="border-t border-rule/10 bg-surface">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 py-14">
             <h2 className="font-display text-2xl font-semibold">Ce que Cadran ne fait pas</h2>
-            <div className="mt-5 grid sm:grid-cols-3 gap-5 text-sm text-ink/60">
+            <div className="mt-5 grid sm:grid-cols-3 gap-5 text-sm text-ink-3">
               <p>
-                <strong className="text-ink/80 block mb-1">Ce n&apos;est pas un logiciel de comptabilité.</strong>
+                <strong className="text-ink-2 block mb-1">Ce n&apos;est pas un logiciel de comptabilité.</strong>
                 Cadran lit vos écritures, il ne les produit pas. Votre expert-comptable garde sa place.
               </p>
               <p>
-                <strong className="text-ink/80 block mb-1">Les seuils ne sont pas sectoriels.</strong>
+                <strong className="text-ink-2 block mb-1">Les seuils ne sont pas sectoriels.</strong>
                 Ils sont communs à tous les métiers pour l&apos;instant. Une marge de 58 % ne se juge
                 pas pareil en industrie et en logiciel : nous y travaillons.
               </p>
               <p>
-                <strong className="text-ink/80 block mb-1">La projection n&apos;est pas une prévision.</strong>
+                <strong className="text-ink-2 block mb-1">La projection n&apos;est pas une prévision.</strong>
                 Elle part du rythme de la dernière période, sans modéliser les délais
                 d&apos;encaissement ni la TVA. C&apos;est un point de départ à ajuster.
               </p>
@@ -343,7 +343,7 @@ export function Accueil() {
           <h2 className="font-display text-3xl font-semibold text-balance">
             Un fichier, et vous saurez
           </h2>
-          <p className="mt-3 text-ink/60 max-w-xl mx-auto">
+          <p className="mt-3 text-ink-3 max-w-xl mx-auto">
             Votre logiciel comptable exporte déjà le FEC. Quatorze jours suffisent pour voir ce
             qu&apos;il contient.
           </p>
@@ -357,30 +357,30 @@ export function Accueil() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10 flex flex-wrap items-start justify-between gap-6">
           <div>
             <Marque />
-            <p className="text-xs text-ink/45 mt-2 max-w-xs">
+            <p className="text-xs text-ink-3 mt-2 max-w-xs">
               Plateforme de pilotage et de conseil financier pour l&apos;entreprise.
             </p>
           </div>
           <div className="flex flex-col gap-2 text-sm">
-            <Link to="/login" className="text-ink/60 hover:text-ink transition">
+            <Link to="/login" className="text-ink-3 hover:text-ink transition">
               Se connecter
             </Link>
-            <a href="#tarifs" className="text-ink/60 hover:text-ink transition">
+            <a href="#tarifs" className="text-ink-3 hover:text-ink transition">
               Tarifs
             </a>
           </div>
           <nav className="flex flex-col gap-2 text-sm">
-            <Link to="/mentions-legales" className="text-ink/60 hover:text-ink transition">
+            <Link to="/mentions-legales" className="text-ink-3 hover:text-ink transition">
               Mentions légales
             </Link>
-            <Link to="/confidentialite" className="text-ink/60 hover:text-ink transition">
+            <Link to="/confidentialite" className="text-ink-3 hover:text-ink transition">
               Confidentialité
             </Link>
-            <Link to="/cgv" className="text-ink/60 hover:text-ink transition">
+            <Link to="/cgv" className="text-ink-3 hover:text-ink transition">
               CGV
             </Link>
           </nav>
-          <div className="w-44">
+          <div className="w-fit">
             <BasculeTheme />
           </div>
         </div>

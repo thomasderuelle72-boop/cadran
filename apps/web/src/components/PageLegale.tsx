@@ -17,10 +17,10 @@ export function Section({ numero, titre, children }: { numero: number; titre: st
   return (
     <section id={ancre} className="scroll-mt-24">
       <h2 className="font-display text-xl font-semibold mt-10 mb-3">
-        <span className="text-ink/35 font-mono text-base mr-2">{numero}.</span>
+        <span className="text-ink-3 font-mono text-base mr-2">{numero}.</span>
         {titre}
       </h2>
-      <div className="space-y-3 text-[15px] leading-relaxed text-ink/75">{children}</div>
+      <div className="space-y-3 text-[15px] leading-relaxed text-ink-2">{children}</div>
     </section>
   );
 }
@@ -60,7 +60,7 @@ export function PageLegale({
             />
             <span className="font-display font-semibold text-lg">Cadran</span>
           </Link>
-          <Link to="/" className="text-sm text-ink/60 hover:text-ink transition">
+          <Link to="/" className="text-sm text-ink-3 hover:text-ink transition">
             Retour au site
           </Link>
         </div>
@@ -68,8 +68,8 @@ export function PageLegale({
 
       <main className="mx-auto max-w-3xl px-4 sm:px-6 py-10 sm:py-14">
         <h1 className="font-display text-3xl sm:text-4xl font-semibold text-balance">{titre}</h1>
-        <p className="mt-3 text-ink/60">{chapeau}</p>
-        <p className="mt-2 text-xs text-ink/40">
+        <p className="mt-3 text-ink-3">{chapeau}</p>
+        <p className="mt-2 text-xs text-ink-3">
           Dernière mise à jour : {DERNIERE_MISE_A_JOUR}
         </p>
 
@@ -82,7 +82,7 @@ export function PageLegale({
         {incomplete && (
           <div className="mt-6 card border-warning/40 bg-warning-soft">
             <p className="text-sm font-medium text-ink">Document en cours de constitution</p>
-            <p className="text-sm text-ink/70 mt-1">
+            <p className="text-sm text-ink-2 mt-1">
               La société éditrice n&apos;est pas encore immatriculée. Les mentions suivantes
               restent à compléter : {champsManquants().join(", ")}. Le service n&apos;est pas
               commercialisé en l&apos;état.
@@ -98,9 +98,9 @@ export function PageLegale({
                 <li key={entree}>
                   <a
                     href={`#article-${index + 1}`}
-                    className="text-ink/70 hover:text-primary transition"
+                    className="text-ink-2 hover:text-primary transition"
                   >
-                    <span className="font-mono text-ink/35 mr-2">{index + 1}.</span>
+                    <span className="font-mono text-ink-3 mr-2">{index + 1}.</span>
                     {entree}
                   </a>
                 </li>
@@ -115,17 +115,17 @@ export function PageLegale({
       <footer className="border-t border-rule/10">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8 flex flex-wrap gap-6 justify-between items-start text-sm">
           <nav className="flex flex-col gap-2">
-            <Link to="/mentions-legales" className="text-ink/60 hover:text-ink transition">
+            <Link to="/mentions-legales" className="text-ink-3 hover:text-ink transition">
               Mentions légales
             </Link>
-            <Link to="/confidentialite" className="text-ink/60 hover:text-ink transition">
+            <Link to="/confidentialite" className="text-ink-3 hover:text-ink transition">
               Politique de confidentialité
             </Link>
-            <Link to="/cgv" className="text-ink/60 hover:text-ink transition">
+            <Link to="/cgv" className="text-ink-3 hover:text-ink transition">
               Conditions générales de vente
             </Link>
           </nav>
-          <div className="w-44">
+          <div className="w-fit">
             <BasculeTheme />
           </div>
         </div>

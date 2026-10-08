@@ -77,7 +77,7 @@ export function SettingsPage() {
         <div className="overflow-x-auto">
         <table className="w-full text-sm mb-4 min-w-[560px]">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
+            <tr className="text-left text-xs uppercase tracking-wide text-ink-3 border-b border-rule/10">
               <th className="py-2">Nom</th>
               <th className="py-2">Pays</th>
               <th className="py-2">Devise</th>
@@ -90,11 +90,11 @@ export function SettingsPage() {
             {entities?.map((entity) => (
               <tr key={entity.id} className="border-b border-rule/5 last:border-0">
                 <td className="py-2 font-medium">{entity.name}</td>
-                <td className="py-2 text-ink/60">{entity.country ?? "—"}</td>
-                <td className="py-2 text-ink/60">{entity.currency}</td>
-                <td className="py-2 font-mono text-ink/60">{entity.fxRateToOrgCurrency}</td>
-                <td className="py-2 font-mono text-ink/60">{entity.nafCode ?? "—"}</td>
-                <td className="py-2 font-mono text-ink/60">{entity.headcount ?? "—"}</td>
+                <td className="py-2 text-ink-3">{entity.country ?? "—"}</td>
+                <td className="py-2 text-ink-3">{entity.currency}</td>
+                <td className="py-2 font-mono text-ink-3">{entity.fxRateToOrgCurrency}</td>
+                <td className="py-2 font-mono text-ink-3">{entity.nafCode ?? "—"}</td>
+                <td className="py-2 font-mono text-ink-3">{entity.headcount ?? "—"}</td>
               </tr>
             ))}
           </tbody>
@@ -158,7 +158,7 @@ export function SettingsPage() {
               />
             </div>
             <div className="col-span-4">
-              <p className="text-xs text-ink/40 mb-2">
+              <p className="text-xs text-ink-3 mb-2">
                 Le code d&apos;activité et l&apos;effectif situent l&apos;entité dans une cohorte
                 sectorielle comparable : ils conditionnent le futur positionnement de ses ratios face
                 à son secteur.
@@ -181,7 +181,7 @@ export function SettingsPage() {
         <h2 className="font-display text-lg font-semibold mb-3">Utilisateurs</h2>
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
+            <tr className="text-left text-xs uppercase tracking-wide text-ink-3 border-b border-rule/10">
               <th className="py-2">Nom</th>
               <th className="py-2">E-mail</th>
               <th className="py-2">Rôle</th>
@@ -191,8 +191,8 @@ export function SettingsPage() {
             {users?.map((u) => (
               <tr key={u.id} className="border-b border-rule/5 last:border-0">
                 <td className="py-2 font-medium">{u.name}</td>
-                <td className="py-2 text-ink/60">{u.email}</td>
-                <td className="py-2 text-ink/60">{ROLE_LABELS[u.role]}</td>
+                <td className="py-2 text-ink-3">{u.email}</td>
+                <td className="py-2 text-ink-3">{ROLE_LABELS[u.role]}</td>
               </tr>
             ))}
           </tbody>
@@ -248,15 +248,15 @@ export function SettingsPage() {
       {peutVoirAudit && (
         <div className="card">
           <h2 className="font-display text-lg font-semibold mb-1">Piste d&apos;audit</h2>
-          <p className="text-sm text-ink/50 mb-3">
+          <p className="text-sm text-ink-3 mb-3">
             Toute opération qui modifie des données est enregistrée, sans possibilité de modification ni de suppression.
           </p>
-          {auditLogs?.items.length === 0 && <p className="text-sm text-ink/50">Aucune opération enregistrée.</p>}
+          {auditLogs?.items.length === 0 && <p className="text-sm text-ink-3">Aucune opération enregistrée.</p>}
           {auditLogs && auditLogs.items.length > 0 && (
             <div className="overflow-x-auto max-h-96">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-surface">
-                  <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
+                  <tr className="text-left text-xs uppercase tracking-wide text-ink-3 border-b border-rule/10">
                     <th className="py-2 pr-3">Date</th>
                     <th className="py-2 pr-3">Auteur</th>
                     <th className="py-2 pr-3">Opération</th>
@@ -266,17 +266,17 @@ export function SettingsPage() {
                 <tbody>
                   {auditLogs.items.map((entry) => (
                     <tr key={entry.id} className="border-b border-rule/5 last:border-0">
-                      <td className="py-2 pr-3 whitespace-nowrap text-ink/60">
+                      <td className="py-2 pr-3 whitespace-nowrap text-ink-3">
                         {new Date(entry.createdAt).toLocaleString("fr-FR")}
                       </td>
                       <td className="py-2 pr-3">
                         {entry.userEmail}
-                        {entry.userRole && <span className="text-ink/40 text-xs"> · {ROLE_LABELS[entry.userRole]}</span>}
+                        {entry.userRole && <span className="text-ink-3 text-xs"> · {ROLE_LABELS[entry.userRole]}</span>}
                       </td>
                       <td className="py-2 pr-3 font-mono text-xs">{entry.action}</td>
-                      <td className="py-2 font-mono text-xs text-ink/50">
+                      <td className="py-2 font-mono text-xs text-ink-3">
                         {entry.targetId ?? "—"}
-                        <span className={entry.statusCode >= 400 ? "text-critical" : "text-ink/40"}>
+                        <span className={entry.statusCode >= 400 ? "text-critical" : "text-ink-3"}>
                           {" "}
                           ({entry.statusCode})
                         </span>

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDiagnostic, useEntities, usePeriods } from "../api/hooks";
 import { CadranScore } from "../components/CadranScore";
-import { EntitySelector } from "../components/EntitySelector";
 import { EntetePage, EtatVide, SqueletteCarte, SqueletteTuiles, Zone } from "../components/etats";
 import { formatCurrency } from "../lib/format";
 import type { ScoreRisque, ZoneScore } from "../api/types";
@@ -19,7 +18,7 @@ const COULEUR_ZONE: Record<ZoneScore, string> = {
   sain: "text-success bg-success/10",
   incertain: "text-warning bg-warning/10",
   danger: "text-critical bg-critical/10",
-  indisponible: "text-ink/50 bg-ink/5",
+  indisponible: "text-ink-3 bg-ink/5",
 };
 
 const LIBELLE_POSTE: Record<string, string> = {
@@ -43,7 +42,7 @@ function CarteScore({ score }: { score: ScoreRisque }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="font-display text-lg font-semibold">{score.label}</h3>
-          <p className="text-xs text-ink/40 mt-0.5">{score.source}</p>
+          <p className="text-xs text-ink-3 mt-0.5">{score.source}</p>
         </div>
         <span
           className={`text-xs font-mono uppercase tracking-wide px-2 py-1 rounded flex-none ${COULEUR_ZONE[score.zone]}`}
@@ -53,13 +52,13 @@ function CarteScore({ score }: { score: ScoreRisque }) {
       </div>
 
       {score.valeur === null ? (
-        <div className="mt-3 font-mono text-xl text-ink/30">n/d</div>
+        <div className="mt-3 font-mono text-xl text-ink-3">n/d</div>
       ) : (
         <CadranScore score={score} />
       )}
 
       {score.motifIndisponibilite && (
-        <p className="mt-3 text-sm text-ink/60">{score.motifIndisponibilite}</p>
+        <p className="mt-3 text-sm text-ink-3">{score.motifIndisponibilite}</p>
       )}
 
       {score.avertissementCalibration && (
@@ -68,7 +67,7 @@ function CarteScore({ score }: { score: ScoreRisque }) {
         </p>
       )}
 
-      <p className="mt-3 text-xs text-ink/50">{score.limites}</p>
+      <p className="mt-3 text-xs text-ink-3">{score.limites}</p>
 
       <button
         type="button"
@@ -82,7 +81,7 @@ function CarteScore({ score }: { score: ScoreRisque }) {
         <div className="mt-3 overflow-x-auto">
           <table className="w-full text-xs min-w-[440px]">
             <thead>
-              <tr className="text-left uppercase tracking-wide text-ink/40 border-b border-rule/10">
+              <tr className="text-left uppercase tracking-wide text-ink-3 border-b border-rule/10">
                 <th className="py-1.5">Composante</th>
                 <th className="py-1.5 text-right">Valeur</th>
                 <th className="py-1.5 text-right">Coefficient</th>
@@ -94,10 +93,10 @@ function CarteScore({ score }: { score: ScoreRisque }) {
                 <tr key={composante.id} className="border-b border-rule/5 last:border-0">
                   <td className="py-1.5">
                     {composante.label}
-                    <span className="block text-ink/40 font-mono">{composante.formule}</span>
+                    <span className="block text-ink-3 font-mono">{composante.formule}</span>
                   </td>
                   <td className="py-1.5 text-right font-mono">{composante.valeur ?? "n/d"}</td>
-                  <td className="py-1.5 text-right font-mono text-ink/50">
+                  <td className="py-1.5 text-right font-mono text-ink-3">
                     {composante.coefficient}
                   </td>
                   <td className="py-1.5 text-right font-mono font-medium">
@@ -115,7 +114,7 @@ function CarteScore({ score }: { score: ScoreRisque }) {
 
 export function DiagnosticPage() {
   const { data: entities } = useEntities();
-  const [entityId, setEntityId] = useDossierCourant(entities);
+  const [entityId] = useDossierCourant(entities);
   const [periodId, setPeriodId] = useState<string | null>(null);
 
 
@@ -137,7 +136,6 @@ export function DiagnosticPage() {
   return (
     <div className="space-y-6">
       <EntetePage titre="Diagnostic" sousTitre="Fragilité, point mort et besoin de financement du cycle.">
-        <EntitySelector value={entityId} onChange={setEntityId} />
         <select
           className="input w-48"
           value={periodId ?? ""}
@@ -179,7 +177,7 @@ export function DiagnosticPage() {
         <div className="space-y-6">
           <div className="card bg-ink/[0.02]">
             <h2 className="font-display text-lg font-semibold mb-1">Scores de fragilité</h2>
-            <p className="text-sm text-ink/50">
+            <p className="text-sm text-ink-3">
               Deux modèles statistiques publiés, appliqués à {data.periodLabel} ({data.joursPeriode}{" "}
               jours). Ce sont des indices, pas des prédictions : chaque composante est affichée avec
               son coefficient pour que le calcul reste vérifiable, et les flux sont annualisés avant
@@ -208,14 +206,14 @@ export function DiagnosticPage() {
           {seuil && (
             <div className="card">
               <h2 className="font-display text-lg font-semibold mb-1">Seuil de rentabilité</h2>
-              <p className="text-sm text-ink/50 mb-4">
+              <p className="text-sm text-ink-3 mb-4">
                 À partir de quel chiffre d&apos;affaires l&apos;entreprise couvre ses charges — et
                 surtout de combien elle peut baisser avant de perdre de l&apos;argent.
               </p>
 
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-ink/40 mb-1">Seuil</div>
+                  <div className="text-xs uppercase tracking-wide text-ink-3 mb-1">Seuil</div>
                   <div className="font-mono text-xl font-semibold">
                     {seuil.seuilRentabilite === null
                       ? "n/d"
@@ -223,7 +221,7 @@ export function DiagnosticPage() {
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-ink/40 mb-1">
+                  <div className="text-xs uppercase tracking-wide text-ink-3 mb-1">
                     Marge de sécurité
                   </div>
                   <div
@@ -233,23 +231,23 @@ export function DiagnosticPage() {
                   >
                     {formatPart(seuil.indiceSecurite)}
                   </div>
-                  <div className="text-xs text-ink/40">
+                  <div className="text-xs text-ink-3">
                     {seuil.margeSecurite === null
                       ? ""
                       : formatCurrency(seuil.margeSecurite, currency)}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-ink/40 mb-1">Point mort</div>
+                  <div className="text-xs uppercase tracking-wide text-ink-3 mb-1">Point mort</div>
                   <div className="font-mono text-xl font-semibold">
                     {seuil.pointMortJours === null
                       ? "n/d"
                       : `J+${Math.round(seuil.pointMortJours)}`}
                   </div>
-                  <div className="text-xs text-ink/40">sur {seuil.joursPeriode} jours</div>
+                  <div className="text-xs text-ink-3">sur {seuil.joursPeriode} jours</div>
                 </div>
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-ink/40 mb-1">
+                  <div className="text-xs uppercase tracking-wide text-ink-3 mb-1">
                     Levier opérationnel
                   </div>
                   <div className="font-mono text-xl font-semibold">
@@ -257,7 +255,7 @@ export function DiagnosticPage() {
                       ? "n/d"
                       : seuil.levierOperationnel.toFixed(2)}
                   </div>
-                  <div className="text-xs text-ink/40">
+                  <div className="text-xs text-ink-3">
                     {seuil.levierOperationnel === null
                       ? ""
                       : `−10 % de CA → −${Math.abs(seuil.levierOperationnel * 10).toFixed(0)} % de résultat`}
@@ -268,7 +266,7 @@ export function DiagnosticPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm min-w-[520px]">
                   <thead>
-                    <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
+                    <tr className="text-left text-xs uppercase tracking-wide text-ink-3 border-b border-rule/10">
                       <th className="py-2">Poste de charge</th>
                       <th className="py-2 text-right">Montant</th>
                       <th className="py-2 text-right">Part variable</th>
@@ -283,7 +281,7 @@ export function DiagnosticPage() {
                         <td className="py-2 text-right font-mono">
                           {formatCurrency(ligne.montant, currency)}
                         </td>
-                        <td className="py-2 text-right font-mono text-ink/50">
+                        <td className="py-2 text-right font-mono text-ink-3">
                           {formatPart(ligne.partVariable)}
                         </td>
                         <td className="py-2 text-right font-mono">
@@ -311,7 +309,7 @@ export function DiagnosticPage() {
                 </table>
               </div>
 
-              <p className="mt-4 text-xs text-ink/40">
+              <p className="mt-4 text-xs text-ink-3">
                 La comptabilité générale ne distingue pas le fixe du variable : la ventilation
                 ci-dessus repose sur des hypothèses d&apos;activité de transformation, affichées
                 colonne par colonne. Marge sur coût variable :{" "}
@@ -325,20 +323,20 @@ export function DiagnosticPage() {
               <h2 className="font-display text-lg font-semibold mb-1">
                 Besoin en fonds de roulement
               </h2>
-              <p className="text-sm text-ink/50 mb-4">
+              <p className="text-sm text-ink-3 mb-4">
                 En euros, le besoin en fonds de roulement est un constat. En jours de chiffre
                 d&apos;affaires, c&apos;est une constante d&apos;exploitation — donc projetable.
               </p>
 
               <div className="flex gap-8 flex-wrap mb-5">
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-ink/40 mb-1">BFR</div>
+                  <div className="text-xs uppercase tracking-wide text-ink-3 mb-1">BFR</div>
                   <div className="font-mono text-2xl font-semibold">
                     {formatCurrency(bfr.bfr, currency)}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-ink/40 mb-1">
+                  <div className="text-xs uppercase tracking-wide text-ink-3 mb-1">
                     En jours de CA
                   </div>
                   <div className="font-mono text-2xl font-semibold">
@@ -355,7 +353,7 @@ export function DiagnosticPage() {
                       <td className="py-2 text-right font-mono">
                         {formatCurrency(composante.montant, currency)}
                       </td>
-                      <td className="py-2 text-right font-mono text-ink/50 w-24">
+                      <td className="py-2 text-right font-mono text-ink-3 w-24">
                         {composante.jours === null ? "—" : `${Math.round(composante.jours)} j`}
                       </td>
                     </tr>
@@ -366,7 +364,7 @@ export function DiagnosticPage() {
               {bfr.besoinCroissance.length > 0 && (
                 <>
                   <h3 className="text-sm font-semibold mb-1">Ce que coûterait la croissance</h3>
-                  <p className="text-xs text-ink/40 mb-3">
+                  <p className="text-xs text-ink-3 mb-3">
                     À structure d&apos;exploitation inchangée, le besoin suit le chiffre
                     d&apos;affaires. C&apos;est la trésorerie à immobiliser <em>avant</em>{" "}
                     d&apos;encaisser le premier euro de marge supplémentaire — le calcul que ne font
@@ -375,13 +373,13 @@ export function DiagnosticPage() {
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                     {bfr.besoinCroissance.map((hypothese) => (
                       <div key={hypothese.croissance} className="rounded-lg bg-ink/[0.03] px-3 py-2">
-                        <div className="text-xs text-ink/50">
+                        <div className="text-xs text-ink-3">
                           +{(hypothese.croissance * 100).toFixed(0)} % de CA
                         </div>
                         <div className="font-mono font-semibold">
                           {formatCurrency(hypothese.besoin, currency)}
                         </div>
-                        <div className="text-xs text-ink/40 font-mono">
+                        <div className="text-xs text-ink-3 font-mono">
                           soit {formatCurrency(hypothese.caSupplementaire, currency)} de plus
                         </div>
                       </div>

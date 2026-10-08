@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../api/client";
 import {
   useEnregistrerHypotheses,
@@ -77,7 +77,7 @@ const FAMILLES: { id: Mesure["famille"]; label: string }[] = [
 
 export function PluriannuelPage() {
   const { data: entites } = useEntities();
-  const [entityId, setEntityId] = useDossierCourant(entites);
+  const [entityId] = useDossierCourant(entites);
 
   const { data: mesuresListe } = useMesures(entityId);
   const { data: reels, isLoading } = useSeriesPluriannuelles(entityId);
@@ -88,6 +88,17 @@ export function PluriannuelPage() {
   const [edition, setEdition] = useState(false);
   const [avecPrevisionnel, setAvecPrevisionnel] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+
+  /* Le dossier se choisit dans le menu, hors de cet écran : quand il change,
+   * la configuration affichée repart de celle du nouveau dossier, au lieu de
+   * garder les blocs de l'ancien. */
+  const dossierAffiche = useRef(entityId);
+  useEffect(() => {
+    if (dossierAffiche.current === entityId) return;
+    dossierAffiche.current = entityId;
+    setBlocs(null);
+    setHypotheses(null);
+  }, [entityId]);
 
   /* L'état local naît de la réponse serveur et n'est pas réinitialisé
    * ensuite : écraser une configuration en cours d'édition à chaque
@@ -152,34 +163,18 @@ export function PluriannuelPage() {
   return (
     <div className="space-y-5">
       <EntetePage
-        titre="Pluriannuel"
+        titre="Sur plusieurs années"
         sousTitre="Plusieurs exercices côte à côte, et ce qui vient après"
       />
 
       {/*
-        Barre de contexte : le dossier, l'étendue, et les commandes. Une seule
+        Barre de contexte : l'étendue, et les commandes. Une seule
         rangée au-dessus des blocs, pour que le regard trouve toujours au même
         endroit de quoi il est en train de parler.
       */}
       <div className="card flex flex-wrap items-center gap-2">
-        <select
-          className="input w-auto min-w-[14rem]"
-          aria-label="Dossier"
-          value={entityId ?? ""}
-          onChange={(e) => {
-            setEntityId(e.target.value);
-            setBlocs(null);
-            setHypotheses(null);
-          }}
-        >
-          {entites?.map((e) => (
-            <option key={e.id} value={e.id}>
-              {e.name}
-            </option>
-          ))}
-        </select>
 
-        <span className="text-sm text-ink/45">
+        <span className="text-sm text-ink-3">
           {reels?.length
             ? `${reels.length} exercice${reels.length > 1 ? "s" : ""} · ${reels[0].label} → ${reels[reels.length - 1].label}`
             : "aucun exercice"}
@@ -208,7 +203,7 @@ export function PluriannuelPage() {
       </div>
 
       {partielMasque && (
-        <p className="text-xs text-ink/50">
+        <p className="text-xs text-ink-3">
           L&apos;exercice en cours, incomplet, est retiré de l&apos;affichage
           pendant la projection : il porte le même millésime que le premier
           exercice projeté. Fermez le prévisionnel pour le revoir.
@@ -254,7 +249,7 @@ export function PluriannuelPage() {
 
       {!isLoading && exercices.length === 0 && (
         <div className="card">
-          <p className="text-sm text-ink/60">
+          <p className="text-sm text-ink-3">
             Aucun exercice calculé pour ce dossier. Importez un FEC ou saisissez
             une période depuis l&apos;écran Import, et les exercices
             apparaîtront ici.
@@ -410,9 +405,9 @@ function Champ({
           value={valeur}
           onChange={(e) => surChangement(Number(e.target.value))}
         />
-        <span className="text-xs text-ink/45 w-8 flex-none">{unite}</span>
+        <span className="text-xs text-ink-3 w-8 flex-none">{unite}</span>
       </div>
-      {aide && <p className="text-[0.7rem] text-ink/40 mt-0.5">{aide}</p>}
+      {aide && <p className="text-[0.7rem] text-ink-3 mt-0.5">{aide}</p>}
     </div>
   );
 }
@@ -452,7 +447,7 @@ function PanneauHypotheses({
         <h2 className="font-display text-base font-semibold">
           Hypothèses du prévisionnel
         </h2>
-        <p className="text-xs text-ink/45">
+        <p className="text-xs text-ink-3">
           {depart
             ? `Projeté à partir de l'exercice ${depart}, le dernier complet.`
             : "Aucun exercice complet : rien à projeter."}
@@ -590,7 +585,7 @@ function PanneauHypotheses({
         >
           {enregistrement ? "Enregistrement…" : "Enregistrer ces hypothèses"}
         </button>
-        <span className="text-xs text-ink/40">
+        <span className="text-xs text-ink-3">
           Les modifications s&apos;appliquent à l&apos;écran immédiatement ;
           elles ne sont conservées qu&apos;une fois enregistrées.
         </span>
@@ -644,7 +639,7 @@ function EditeurBlocs({
       <h2 className="font-display text-base font-semibold">
         Composition du tableau de bord
       </h2>
-      <p className="text-sm text-ink/50">
+      <p className="text-sm text-ink-3">
         Un bloc ne mêle pas deux unités : un montant et un pourcentage sur un
         même axe demandent deux échelles, et deux échelles font dire à deux
         courbes ce qu&apos;on veut. Pour les rapprocher quand même, choisissez

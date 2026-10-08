@@ -97,7 +97,7 @@ export function Login() {
           {loginMutation.isPending ? "Connexion…" : "Se connecter"}
         </button>
       </form>
-      <p className="text-xs text-ink/50 text-center">
+      <p className="text-xs text-ink-3 text-center">
         {DEMONSTRATION && "Identifiants de démonstration pré-remplis. "}Pas de compte ?{" "}
         <Link to="/register" className="text-primary hover:underline">
           Créer une organisation

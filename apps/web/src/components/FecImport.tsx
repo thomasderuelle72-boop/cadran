@@ -22,7 +22,7 @@ function Resume({ resume }: { resume: ResumeImportFec }) {
       </div>
 
       {resume.equilibre ? (
-        <p className="text-xs text-ink/50">
+        <p className="text-xs text-ink-3">
           Débit et crédit se compensent exactement ({formatCurrency(resume.totalDebit)}) : le fichier
           est complet.
         </p>
@@ -40,7 +40,7 @@ function Resume({ resume }: { resume: ResumeImportFec }) {
             {resume.lignesIgnorees} ligne{resume.lignesIgnorees > 1 ? "s" : ""} ignorée
             {resume.lignesIgnorees > 1 ? "s" : ""}
           </span>
-          <ul className="mt-1 space-y-0.5 text-xs text-ink/60 font-mono">
+          <ul className="mt-1 space-y-0.5 text-xs text-ink-3 font-mono">
             {resume.erreurs.slice(0, 5).map((erreur) => (
               <li key={`${erreur.ligne}-${erreur.message}`}>
                 ligne {erreur.ligne} — {erreur.message}
@@ -57,11 +57,11 @@ function Resume({ resume }: { resume: ResumeImportFec }) {
             {resume.comptesNonClasses.length > 1 ? "s" : ""} non classé
             {resume.comptesNonClasses.length > 1 ? "s" : ""}
           </span>
-          <p className="text-xs text-ink/50 mt-0.5">
+          <p className="text-xs text-ink-3 mt-0.5">
             Aucun préfixe du plan comptable ne les rattache à un poste : leurs montants n&apos;entrent
             dans aucun calcul.
           </p>
-          <ul className="mt-1 space-y-0.5 text-xs text-ink/60 font-mono">
+          <ul className="mt-1 space-y-0.5 text-xs text-ink-3 font-mono">
             {resume.comptesNonClasses.slice(0, 5).map((compte) => (
               <li key={compte.accountCode}>
                 {compte.accountCode} — {compte.label} ({formatCurrency(compte.mouvement)})
@@ -108,7 +108,7 @@ export function FecImport({ entityId, entityName }: { entityId: string; entityNa
         <h2 className="font-display text-lg font-semibold">
           Importer un Fichier des Écritures Comptables
         </h2>
-        <p className="text-sm text-ink/50 mt-1">
+        <p className="text-sm text-ink-3 mt-1">
           Le FEC est le format normé que tout logiciel comptable exporte. Ses colonnes étant fixées
           par l&apos;arrêté du 29 juillet 2013, il n&apos;y a aucune correspondance à établir : un
           seul fichier remplace douze imports de balance, et il apporte le détail par compte, le
@@ -119,11 +119,11 @@ export function FecImport({ entityId, entityName }: { entityId: string; entityNa
 
       {exercices && exercices.length > 0 && (
         <div className="text-sm">
-          <span className="text-ink/50">Exercices déjà importés{entityName ? ` pour ${entityName}` : ""} : </span>
+          <span className="text-ink-3">Exercices déjà importés{entityName ? ` pour ${entityName}` : ""} : </span>
           {exercices.map((exercice) => (
             <span key={exercice.exercice} className="font-mono mr-3">
               {exercice.exercice}{" "}
-              <span className="text-ink/40">({exercice.ecritures.toLocaleString("fr-FR")} écritures)</span>
+              <span className="text-ink-3">({exercice.ecritures.toLocaleString("fr-FR")} écritures)</span>
             </span>
           ))}
         </div>
@@ -150,7 +150,7 @@ export function FecImport({ entityId, entityName }: { entityId: string; entityNa
         >
           {importFec.isPending ? "Import en cours…" : "Choisir un fichier FEC"}
         </button>
-        <span className="text-xs text-ink/40">
+        <span className="text-xs text-ink-3">
           Réimporter le même exercice le remplace intégralement, sans créer de doublon.
         </span>
       </div>

@@ -57,7 +57,7 @@ export function Confidentialite() {
             notre compte.
           </p>
         </div>
-        <p className="text-sm text-ink/55">
+        <p className="text-sm text-ink-3">
           Un contrat de sous-traitance au sens de l&apos;article 28 du RGPD est conclu avec chaque
           client professionnel. Il est annexé aux conditions générales.
         </p>
@@ -124,7 +124,7 @@ export function Confidentialite() {
             que vous avez configurées) — exécution du contrat.
           </li>
         </ul>
-        <p className="text-sm text-ink/55 mt-3">
+        <p className="text-sm text-ink-3 mt-3">
           Nous ne pratiquons ni prospection commerciale par voie électronique sans votre accord,
           ni profilage, ni décision automatisée produisant des effets juridiques à votre égard.
           Les analyses produites par le service sont des indicateurs destinés à éclairer vos
@@ -141,7 +141,7 @@ export function Confidentialite() {
                 <th className="py-2 font-medium">Durée</th>
               </tr>
             </thead>
-            <tbody className="text-ink/75">
+            <tbody className="text-ink-2">
               {[
                 ["Compte et organisation", "Durée du contrat, puis 3 mois"],
                 ["Écritures comptables importées", "Durée du contrat, puis 3 mois"],
@@ -175,7 +175,7 @@ export function Confidentialite() {
           {HEBERGEURS.map((h) => (
             <li key={h.nom} className="card">
               <p className="font-medium">{h.nom}</p>
-              <p className="text-sm text-ink/60">
+              <p className="text-sm text-ink-3">
                 {h.role} — {h.pays}
               </p>
             </li>
@@ -183,13 +183,13 @@ export function Confidentialite() {
         </ul>
         <div className="card border-rule/30 mt-4">
           <p className="font-medium text-sm">Le conseiller, quand il est activé</p>
-          <p className="text-sm text-ink/75 mt-1">
+          <p className="text-sm text-ink-2 mt-1">
             Lorsque vous posez une question au conseiller, votre question et les résultats des
             calculs nécessaires pour y répondre — qui peuvent comporter des noms de clients ou de
             fournisseurs — sont transmis à <strong>Anthropic PBC</strong>, qui exploite le modèle
             d&apos;analyse de langage.
           </p>
-          <ul className="list-disc pl-5 space-y-1 text-sm text-ink/75 mt-2">
+          <ul className="list-disc pl-5 space-y-1 text-sm text-ink-2 mt-2">
             <li>
               Rien n&apos;est transmis tant que vous ne posez pas de question : aucune analyse
               automatique n&apos;est envoyée en arrière-plan.
@@ -209,7 +209,7 @@ export function Confidentialite() {
           </ul>
         </div>
 
-        <p className="text-sm text-ink/55 mt-3">
+        <p className="text-sm text-ink-3 mt-3">
           Cette liste est tenue à jour. Tout nouveau sous-traitant y est ajouté avant sa mise en
           service, et les clients professionnels en sont informés conformément au contrat de
           sous-traitance.

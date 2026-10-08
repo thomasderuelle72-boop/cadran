@@ -40,7 +40,7 @@ const ETATS: Record<
     classe: "bg-warning-soft text-warning",
     rang: 1,
   },
-  incomplet: { libelle: "Incomplet", classe: "bg-ink/5 text-ink/60", rang: 2 },
+  incomplet: { libelle: "Incomplet", classe: "bg-ink/5 text-ink-3", rang: 2 },
   sain: { libelle: "Sain", classe: "bg-success-soft text-success", rang: 3 },
 };
 
@@ -52,7 +52,7 @@ const ETATS: Record<
  */
 const ETAT_INCONNU = {
   libelle: "État inconnu",
-  classe: "bg-ink/5 text-ink/60",
+  classe: "bg-ink/5 text-ink-3",
   rang: 4,
 };
 
@@ -270,11 +270,11 @@ export function PortefeuillePage() {
                     className={`rounded-md px-2.5 py-1 text-sm transition-colors disabled:opacity-35 disabled:cursor-default ${
                       filtre === f.id
                         ? "bg-ink/10 font-medium text-ink"
-                        : "text-ink/60 hover:bg-ink/5"
+                        : "text-ink-3 hover:bg-ink/5"
                     }`}
                   >
                     {f.libelle}
-                    <span className="ml-1.5 tabular-nums text-ink/45">
+                    <span className="ml-1.5 tabular-nums text-ink-3">
                       {comptes[f.id]}
                     </span>
                   </button>
@@ -294,7 +294,7 @@ export function PortefeuillePage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[960px]">
                 <thead>
-                  <tr className="text-left text-xs uppercase tracking-wide text-ink/45 border-b border-rule/10">
+                  <tr className="text-left text-xs uppercase tracking-wide text-ink-3 border-b border-rule/10">
                     {COLONNES.map((c) => (
                       <th
                         key={c.id}
@@ -351,7 +351,7 @@ export function PortefeuillePage() {
                             {ligne.nom}
                           </button>
                           <div
-                            className="text-xs text-ink/45 mt-0.5"
+                            className="text-xs text-ink-3 mt-0.5"
                             title={
                               ligne.dernieresDonnees
                                 ? `Dernière période importée : fin le ${new Date(ligne.dernieresDonnees).toLocaleDateString("fr-FR")}`
@@ -377,12 +377,12 @@ export function PortefeuillePage() {
                           </span>
                           {motif && (
                             <div
-                              className="text-xs text-ink/60 mt-1"
+                              className="text-xs text-ink-3 mt-1"
                               title={ligne.motifs.join(" · ")}
                             >
                               {motif}
                               {autres.length > 0 && (
-                                <span className="text-ink/40">
+                                <span className="text-ink-3">
                                   {" "}
                                   · +{autres.length}
                                 </span>
@@ -393,7 +393,7 @@ export function PortefeuillePage() {
                         <td className="px-3 py-3 text-right tabular-nums whitespace-nowrap">
                           {montant(ligne.chiffreAffaires, ligne.devise)}
                         </td>
-                        <td className="px-3 py-3 text-right tabular-nums text-ink/70 whitespace-nowrap">
+                        <td className="px-3 py-3 text-right tabular-nums text-ink-2 whitespace-nowrap">
                           {pourcentage(ligne.croissanceCa, true)}
                         </td>
                         <td className="px-3 py-3 text-right tabular-nums whitespace-nowrap">
@@ -417,7 +417,7 @@ export function PortefeuillePage() {
                     <tr>
                       <td
                         colSpan={COLONNES.length}
-                        className="px-4 py-8 text-center text-sm text-ink/50"
+                        className="px-4 py-8 text-center text-sm text-ink-3"
                       >
                         {recherche.trim()
                           ? `Aucun dossier ne correspond à « ${recherche.trim()} ».`

@@ -98,7 +98,7 @@ export function Register() {
           {registerMutation.isPending ? "Création…" : "Créer mon compte"}
         </button>
       </form>
-      <p className="text-xs text-ink/50 text-center">
+      <p className="text-xs text-ink-3 text-center">
         Déjà un compte ?{" "}
         <Link to="/login" className="text-primary hover:underline">
           Se connecter

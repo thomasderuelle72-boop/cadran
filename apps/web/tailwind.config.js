@@ -17,7 +17,16 @@ export default {
           DEFAULT: avecOpacite("--surface"),
           2: avecOpacite("--surface-2"),
         },
-        ink: avecOpacite("--ink"),
+        /*
+         * `ink` reste déclinable en opacité pour les fonds et les filets
+         * (`bg-ink/5`), mais le texte secondaire a ses propres encres pleines,
+         * au contraste mesuré : voir index.css.
+         */
+        ink: {
+          DEFAULT: avecOpacite("--ink"),
+          2: avecOpacite("--ink-2"),
+          3: avecOpacite("--ink-3"),
+        },
         rule: avecOpacite("--rule"),
         primary: {
           DEFAULT: avecOpacite("--primary"),
@@ -46,15 +55,26 @@ export default {
       },
       fontFamily: {
         /*
-         * `display` et `sans` pointent la même famille : un instrument ne
-         * change pas de caractère entre son titre et son relevé. La
-         * distinction se fait à la graisse et à la chasse, pas à la police.
-         * Les deux noms restent séparés pour que la palette Cadran puisse
-         * remettre un romain sur `display` sans toucher aux composants.
+         * Une seule famille, Inter, pour les titres, le texte et les chiffres.
+         * Elle est dessinée pour l'écran aux petites tailles, et ses chiffres
+         * tabulaires alignent les colonnes sans recourir à une police à
+         * chasse fixe. `mono` est gardé comme nom pour ne pas toucher aux
+         * cent emplois qui désignent un chiffre, pas du code.
          */
-        display: ["var(--police-titre)", "'Inter Tight'", "system-ui", "sans-serif"],
-        sans: ["'Inter Tight'", "system-ui", "sans-serif"],
-        mono: ["'IBM Plex Mono'", "monospace"],
+        display: ["'Inter Variable'", "Inter", "system-ui", "sans-serif"],
+        sans: ["'Inter Variable'", "Inter", "system-ui", "sans-serif"],
+        mono: ["'Inter Variable'", "Inter", "system-ui", "sans-serif"],
+        code: ["ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "monospace"],
+      },
+      /*
+       * Échelle relevée d'un cran : 13 px au lieu de 12 pour les mentions,
+       * 14,5 au lieu de 14 pour le texte courant. Les deux tailles portent à
+       * elles seules plus de quatre cents emplois ; les changer ici relève
+       * toute l'interface sans réécrire un écran.
+       */
+      fontSize: {
+        xs: ["0.8125rem", { lineHeight: "1.2rem" }],
+        sm: ["0.90625rem", { lineHeight: "1.4rem" }],
       },
     },
   },

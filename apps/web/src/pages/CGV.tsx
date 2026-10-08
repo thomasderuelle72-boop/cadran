@@ -46,7 +46,7 @@ export function CGV() {
           le client »). Elles sont acceptées à la création du compte et prévalent sur tout autre
           document.
         </p>
-        <p className="text-sm text-ink/55">
+        <p className="text-sm text-ink-3">
           Certaines stipulations ne s&apos;appliquent qu&apos;au client{" "}
           <strong>consommateur</strong> — personne physique agissant à des fins étrangères à son
           activité professionnelle. Elles sont signalées comme telles. Les autres valent pour
@@ -63,7 +63,7 @@ export function CGV() {
         </p>
         <div className="card border-warning/40 bg-warning-soft">
           <p className="font-medium text-sm">Ce que le service n&apos;est pas</p>
-          <p className="text-sm text-ink/75 mt-1">
+          <p className="text-sm text-ink-2 mt-1">
             Cadran n&apos;est ni un logiciel de comptabilité, ni un outil de déclaration fiscale,
             ni un conseil juridique, fiscal ou en investissement. Les analyses sont des
             indicateurs destinés à éclairer les décisions du client, qui les prend sous sa seule
@@ -110,7 +110,7 @@ export function CGV() {
                 <th className="py-2 font-medium tabular-nums">Annuel (par mois)</th>
               </tr>
             </thead>
-            <tbody className="text-ink/75">
+            <tbody className="text-ink-2">
               {FORMULES.map((formule) => (
                 <tr key={formule.id} className="border-b border-rule/10">
                   <td className="py-2 pr-4">{formule.label}</td>
@@ -127,7 +127,7 @@ export function CGV() {
             </tbody>
           </table>
         </div>
-        <p className="text-sm text-ink/55 mt-2">
+        <p className="text-sm text-ink-3 mt-2">
           L&apos;engagement annuel ouvre droit à une remise de {Math.round(REMISE_ANNUELLE * 100)} %
           et se règle en une fois à la souscription.
         </p>
@@ -150,7 +150,7 @@ export function CGV() {
           il n&apos;est suspendu qu&apos;au terme des relances, et les données restent conservées
           conformément à la politique de confidentialité.
         </p>
-        <p className="text-sm text-ink/55">
+        <p className="text-sm text-ink-3">
           Entre professionnels, tout retard de paiement entraîne de plein droit des pénalités au
           taux d&apos;intérêt légal majoré, ainsi que l&apos;indemnité forfaitaire pour frais de
           recouvrement de 40 € prévue par le code de commerce.
@@ -162,7 +162,7 @@ export function CGV() {
           L&apos;abonnement est conclu pour la durée choisie — mensuelle ou annuelle — et se
           reconduit tacitement pour une durée identique, sauf résiliation.
         </p>
-        <p className="text-sm text-ink/55">
+        <p className="text-sm text-ink-3">
           <strong>Client consommateur :</strong> conformément au code de la consommation,
           l&apos;éditeur informe le client de la possibilité de ne pas reconduire le contrat, par
           écrit, au plus tôt trois mois et au plus tard un mois avant le terme de la période de
@@ -174,7 +174,7 @@ export function CGV() {
       <Section numero={8} titre="Résiliation">
         <div className="card">
           <p className="font-medium text-sm">Résilier en ligne, en trois clics</p>
-          <p className="text-sm text-ink/75 mt-1">
+          <p className="text-sm text-ink-2 mt-1">
             La résiliation s&apos;effectue depuis votre espace, rubrique{" "}
             <strong>Abonnement</strong>, par le bouton <strong>« Résilier mon abonnement »</strong>.
             Aucune lettre, aucun appel, aucune justification ne sont exigés. La fonctionnalité est
@@ -195,7 +195,7 @@ export function CGV() {
       </Section>
 
       <Section numero={9} titre="Droit de rétractation du consommateur">
-        <p className="text-sm text-ink/55">Cet article ne concerne que le client consommateur.</p>
+        <p className="text-sm text-ink-3">Cet article ne concerne que le client consommateur.</p>
         <p>
           Le client consommateur dispose d&apos;un délai de <strong>quatorze jours</strong> à
           compter de la souscription pour se rétracter, sans avoir à se justifier ni à supporter
@@ -225,7 +225,7 @@ export function CGV() {
           programmée sont annoncées à l&apos;avance et conduites, autant que possible, en dehors
           des heures ouvrées.
         </p>
-        <p className="text-sm text-ink/55">
+        <p className="text-sm text-ink-3">
           Aucun engagement chiffré de niveau de service n&apos;est souscrit à ce jour. Un tel
           engagement, s&apos;il venait à être proposé, ferait l&apos;objet d&apos;un document
           distinct.
@@ -245,7 +245,7 @@ export function CGV() {
           L&apos;éditeur ne répond ni de l&apos;exactitude des données importées, dont le client a
           la maîtrise, ni des conséquences d&apos;une décision de gestion.
         </p>
-        <p className="text-sm text-ink/55">
+        <p className="text-sm text-ink-3">
           Ces limitations ne s&apos;appliquent ni en cas de faute lourde ou dolosive, ni en cas de
           dommage corporel, ni lorsque la loi les écarte — notamment à l&apos;égard du
           consommateur, dont les droits légaux demeurent entiers.
@@ -286,13 +286,13 @@ export function CGV() {
           </a>
           , l&apos;éditeur s&apos;engageant à y répondre sous quinze jours.
         </p>
-        <p className="text-sm text-ink/55">
+        <p className="text-sm text-ink-3">
           <strong>Client consommateur :</strong> à défaut de résolution amiable, le client peut
           recourir gratuitement à un médiateur de la consommation —{" "}
           {mention(null)} — ou à la plateforme européenne de règlement en ligne des litiges. Les
           tribunaux compétents sont ceux désignés par le code de procédure civile.
         </p>
-        <p className="text-sm text-ink/55">
+        <p className="text-sm text-ink-3">
           <strong>Client professionnel :</strong> à défaut de résolution amiable, compétence
           exclusive est attribuée aux tribunaux du ressort du siège de l&apos;éditeur.
         </p>

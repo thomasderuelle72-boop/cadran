@@ -12,10 +12,6 @@ import {
 } from "../api/hooks";
 import { KpiTile } from "../components/KpiTile";
 import { StatusBadge } from "../components/StatusBadge";
-import {
-  EntitySelector,
-  CONSOLIDATED_VALUE,
-} from "../components/EntitySelector";
 import { CourbeTemporelle } from "../components/Graphique";
 import {
   EntetePage,
@@ -83,15 +79,8 @@ export function Dashboard() {
    * dossier courant enverrait le diagnostic chercher une entité qui n'existe
    * pas.
    */
-  const [dossier, choisirDossier] = useDossierCourant(entities);
+  const [dossier] = useDossierCourant(entities);
   const [consolide, setConsolide] = useState(false);
-  const scope = consolide ? CONSOLIDATED_VALUE : dossier;
-  const setScope = (valeur: string) => {
-    setConsolide(valeur === CONSOLIDATED_VALUE);
-    if (valeur !== CONSOLIDATED_VALUE) choisirDossier(valeur);
-  };
-
-  const isConsolidated = scope === CONSOLIDATED_VALUE;
 
   return (
     <div className="space-y-6">
@@ -99,12 +88,28 @@ export function Dashboard() {
         titre="Tableau de bord"
         sousTitre="Vue synthétique de la performance financière."
       >
-        {entities && entities.length > 0 && (
-          <EntitySelector
-            value={scope}
-            onChange={setScope}
-            allowConsolidated={entities.length > 1}
-          />
+        {/* Le dossier se choisit dans le menu ; reste ici ce qui n'en est
+            pas un, la vue du groupe. */}
+        {entities && entities.length > 1 && (
+          <div className="flex gap-0.5 p-0.5 rounded-lg bg-ink/[0.06]" role="radiogroup" aria-label="Périmètre">
+            {[
+              { valeur: false, libelle: "Ce dossier" },
+              { valeur: true, libelle: "Groupe consolidé" },
+            ].map((option) => (
+              <button
+                key={option.libelle}
+                type="button"
+                role="radio"
+                aria-checked={consolide === option.valeur}
+                onClick={() => setConsolide(option.valeur)}
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                  consolide === option.valeur ? "bg-surface text-ink shadow-sm" : "text-ink-3 hover:text-ink"
+                }`}
+              >
+                {option.libelle}
+              </button>
+            ))}
+          </div>
         )}
       </EntetePage>
 
@@ -124,10 +129,10 @@ export function Dashboard() {
             Écritures Comptables ou une balance pour commencer : tout le reste
             en découle.
           </EtatVide>
-        ) : isConsolidated ? (
+        ) : consolide && entities.length > 1 ? (
           <ConsolidatedDashboard />
         ) : (
-          <EntityDashboard entityId={scope} />
+          <EntityDashboard entityId={dossier} />
         )}
       </Zone>
     </div>
@@ -205,7 +210,7 @@ function EntityDashboard({ entityId }: { entityId: string }) {
                     <h2 className="font-display text-lg font-semibold mb-1">
                       Chiffre d&apos;affaires et EBITDA
                     </h2>
-                    <p className="text-sm text-ink/50 mb-3">
+                    <p className="text-sm text-ink-3 mb-3">
                       Par période importée.
                     </p>
                     <CourbeTemporelle
@@ -278,7 +283,7 @@ function ConsolidatedDashboard() {
         <h2 className="font-display text-lg font-semibold">
           Consolidation de groupe
         </h2>
-        <p className="text-sm text-ink/70 mt-2 max-w-prose">
+        <p className="text-sm text-ink-2 mt-2 max-w-prose">
           Elle additionne les comptes de plusieurs entités sur une même période
           et recalcule les ratios sur l&apos;ensemble — pas la moyenne des
           ratios de chacune, qui ne voudrait rien dire. La formule «{" "}
@@ -308,7 +313,7 @@ function ConsolidatedDashboard() {
       ) : (
         <div className="space-y-6">
           <div className="flex items-center justify-between gap-4 flex-wrap">
-            <p className="text-xs text-ink/50">
+            <p className="text-xs text-ink-3">
               {selectedGroup &&
                 `${selectedGroup.entities.length} entité${selectedGroup.entities.length > 1 ? "s" : ""} : ${selectedGroup.entities.map((e) => e.name).join(", ")}`}
             </p>
@@ -341,7 +346,7 @@ function ConsolidatedDashboard() {
             {consolidated && (
               <div className="space-y-6">
                 <DashboardBody ratioResult={consolidated} />
-                <p className="text-xs text-ink/50">
+                <p className="text-xs text-ink-3">
                   {consolidated.growthScope
                     ? `Croissance du CA calculée à périmètre constant vs ${consolidated.growthScope.previousLabel} (${consolidated.growthScope.entities.map((e) => e.name).join(", ")}).`
                     : "Croissance du CA non disponible : aucune entité commune avec la période précédente."}
@@ -368,7 +373,7 @@ function BandeauAlertes() {
           {actives.length} alerte{actives.length > 1 ? "s" : ""} non acquittée
           {actives.length > 1 ? "s" : ""}.
         </span>{" "}
-        <span className="text-ink/70">
+        <span className="text-ink-2">
           {actives
             .slice(0, 2)
             .map((e) => e.rule.label)
@@ -399,7 +404,7 @@ function LigneRatio({
   return (
     <li className="flex items-start justify-between gap-3 text-sm py-1">
       <span className="min-w-0">
-        <span className="text-ink/70">{ratio.label}</span>
+        <span className="text-ink-2">{ratio.label}</span>
         {lien && (
           <Link
             to={lien.to}
@@ -441,7 +446,7 @@ function DashboardBody({
             <span className="font-semibold text-warning">
               Bilan déséquilibré.
             </span>{" "}
-            <span className="text-ink/70">
+            <span className="text-ink-2">
               Écart de {formatCurrency(Math.abs(ecartBilan!), currency)} entre
               l&apos;actif et le passif. Un poste est probablement mal classé à
               l&apos;import : les ratios de structure et de liquidité sont à

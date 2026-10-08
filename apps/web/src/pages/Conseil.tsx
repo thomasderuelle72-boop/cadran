@@ -52,7 +52,7 @@ function Sources({ sources }: { sources: SourceConseil[] }) {
   if (sources.length === 0) return null;
   return (
     <details className="mt-3 border-t border-rule/10 pt-2">
-      <summary className="text-xs text-ink/45 cursor-pointer hover:text-ink/70">
+      <summary className="text-xs text-ink-3 cursor-pointer hover:text-ink-2">
         Calculs consultés ({sources.length})
       </summary>
       <ul className="mt-2 flex flex-wrap gap-1.5">
@@ -62,7 +62,7 @@ function Sources({ sources }: { sources: SourceConseil[] }) {
             className={`text-xs px-2 py-1 rounded border ${
               source.erreur
                 ? "border-warning/40 text-warning bg-warning-soft"
-                : "border-rule/20 text-ink/60 bg-surface-2"
+                : "border-rule/20 text-ink-3 bg-surface-2"
             }`}
           >
             {LIBELLES[source.outil] ?? source.outil}
@@ -70,7 +70,7 @@ function Sources({ sources }: { sources: SourceConseil[] }) {
           </li>
         ))}
       </ul>
-      <p className="text-xs text-ink/40 mt-2">
+      <p className="text-xs text-ink-3 mt-2">
         Chaque chiffre cité provient de ces calculs, les mêmes que ceux des autres écrans. Le
         conseiller ne calcule rien lui-même.
       </p>
@@ -124,14 +124,14 @@ export function ConseilPage() {
     <div className="space-y-5 max-w-3xl">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold">Conseiller</h1>
-          <p className="text-sm text-ink/60 mt-1">
+          <h1 className="font-display text-[1.65rem] leading-tight font-bold">Conseiller</h1>
+          <p className="text-sm text-ink-3 mt-1">
             Posez une question sur vos chiffres. La réponse s&apos;appuie sur les calculs de
             Cadran, jamais sur une estimation.
           </p>
         </div>
         {etat && etat.disponible && (
-          <p className="text-sm text-ink/50 tabular-nums whitespace-nowrap">
+          <p className="text-sm text-ink-3 tabular-nums whitespace-nowrap">
             {etat.restantes} / {etat.incluses} questions ce mois-ci
           </p>
         )}
@@ -140,7 +140,7 @@ export function ConseilPage() {
       {etat && !etat.disponible && (
         <div className="card border-warning/40 bg-warning-soft">
           <p className="font-medium text-sm">Conseiller non activé</p>
-          <p className="text-sm text-ink/75 mt-1">
+          <p className="text-sm text-ink-2 mt-1">
             Cette fonctionnalité n&apos;est pas active sur cette instance. Les analyses restent
             accessibles depuis les autres écrans.
           </p>
@@ -150,7 +150,7 @@ export function ConseilPage() {
       {epuise && etat?.disponible && (
         <div className="card border-warning/40 bg-warning-soft">
           <p className="font-medium text-sm">Questions épuisées pour ce mois</p>
-          <p className="text-sm text-ink/75 mt-1">
+          <p className="text-sm text-ink-2 mt-1">
             Votre formule « {etat.formule} » en inclut {etat.incluses} par mois. Le compteur repart
             le 1er du mois prochain ; une{" "}
             <Link to="/abonnement" className="text-primary hover:underline">
@@ -188,7 +188,7 @@ export function ConseilPage() {
               </p>
 
               {echange.reponse === null && echange.erreur === null && (
-                <p className="text-sm text-ink/50">Consultation de vos chiffres…</p>
+                <p className="text-sm text-ink-3">Consultation de vos chiffres…</p>
               )}
 
               {echange.erreur && <p className="text-sm text-critical">{echange.erreur}</p>}
@@ -247,7 +247,7 @@ export function ConseilPage() {
             }}
           />
           <div className="flex items-center justify-between gap-3">
-            <p className="text-xs text-ink/40">
+            <p className="text-xs text-ink-3">
               Entrée pour envoyer, Maj + Entrée pour aller à la ligne.
             </p>
             <button
@@ -261,7 +261,7 @@ export function ConseilPage() {
         </form>
       )}
 
-      <p className="text-xs text-ink/40 border-t border-rule/10 pt-3">
+      <p className="text-xs text-ink-3 border-t border-rule/10 pt-3">
         Le conseiller n&apos;est ni expert-comptable, ni conseil juridique ou fiscal. Il éclaire vos
         décisions ; elles restent les vôtres. Vos questions et les chiffres consultés sont transmis
         à un modèle d&apos;analyse de langage, sous-traitant déclaré dans notre{" "}

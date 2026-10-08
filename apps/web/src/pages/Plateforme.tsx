@@ -45,9 +45,9 @@ const STATUTS: StatutAbonnement[] = [
 
 const COULEUR_STATUT: Record<StatutAbonnement, string> = {
   actif: "text-success bg-success/10",
-  essai: "text-ink/60 bg-ink/5",
+  essai: "text-ink-3 bg-ink/5",
   impaye: "text-critical bg-critical/10",
-  resilie: "text-ink/50 bg-ink/5",
+  resilie: "text-ink-3 bg-ink/5",
   incomplet: "text-warning bg-warning/10",
 };
 
@@ -91,7 +91,7 @@ export function PlateformePage() {
         <h2 className="font-display text-lg font-semibold mb-1">
           Console indisponible
         </h2>
-        <p className="text-sm text-ink/60">
+        <p className="text-sm text-ink-3">
           {user?.support
             ? "Quittez l'accès support en cours pour revenir à la console."
             : "Cette page est réservée à l'administration de la plateforme."}
@@ -148,7 +148,7 @@ export function PlateformePage() {
         <h2 className="font-display text-lg font-semibold mb-1">
           Organisations
         </h2>
-        <p className="text-sm text-ink/50 mb-4">
+        <p className="text-sm text-ink-3 mb-4">
           Les volumes suffisent à facturer et à diagnostiquer. Le contenu des
           dossiers n&apos;est pas lisible d&apos;ici : il faut ouvrir un accès
           support, que le client voit dans sa propre piste d&apos;audit.
@@ -160,7 +160,7 @@ export function PlateformePage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[860px]">
               <thead>
-                <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
+                <tr className="text-left text-xs uppercase tracking-wide text-ink-3 border-b border-rule/10">
                   <th className="py-2 pr-4">Organisation</th>
                   <th className="py-2 pr-4">Formule</th>
                   <th className="py-2 pr-4 text-right">Comptes</th>
@@ -177,7 +177,7 @@ export function PlateformePage() {
                     <tr className="border-b border-rule/5">
                       <td className="py-2.5 pr-4">
                         <div className="font-medium">{org.nom}</div>
-                        <div className="text-xs text-ink/40">
+                        <div className="text-xs text-ink-3">
                           créée le {date(org.creeeLe)}
                         </div>
                       </td>
@@ -205,7 +205,7 @@ export function PlateformePage() {
                       <td className="py-2.5 pr-6 text-right font-mono tabular-nums">
                         {nombre(org.ecritures)}
                       </td>
-                      <td className="py-2.5 pr-4 text-ink/60 whitespace-nowrap">
+                      <td className="py-2.5 pr-4 text-ink-3 whitespace-nowrap">
                         {date(org.derniereActivite)}
                       </td>
                       <td className="py-2.5 text-right whitespace-nowrap">
@@ -265,23 +265,23 @@ function ReferentielSectoriel() {
     <div className="card space-y-3">
       <div>
         <h2 className="font-display text-lg font-semibold">Référentiel sectoriel</h2>
-        <p className="text-sm text-ink/60 mt-1 max-w-prose">
+        <p className="text-sm text-ink-3 mt-1 max-w-prose">
           Les quartiles par secteur auxquels chaque dossier est comparé dans son diagnostic. Aucun
           n&apos;est livré avec Cadran.
         </p>
       </div>
 
-      <p className="rounded-md bg-warning-soft px-3 py-2 text-sm text-ink/75 max-w-prose">
+      <p className="rounded-md bg-warning-soft px-3 py-2 text-sm text-ink-2 max-w-prose">
         Les fascicules de la Banque de France interdisent leur reproduction sans son autorisation
         expresse. Ne chargez ses quartiles qu&apos;après l&apos;avoir obtenue par écrit.
       </p>
 
       {isLoading ? null : !charges || charges.length === 0 ? (
-        <p className="text-sm text-ink/50">Aucun référentiel chargé : la comparaison sectorielle reste masquée.</p>
+        <p className="text-sm text-ink-3">Aucun référentiel chargé : la comparaison sectorielle reste masquée.</p>
       ) : (
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
+            <tr className="text-left text-xs uppercase tracking-wide text-ink-3 border-b border-rule/10">
               <th className="py-2 pr-4 font-medium">Source</th>
               <th className="py-2 pr-4 font-medium">Données</th>
               <th className="py-2 pr-4 font-medium">Mise à jour</th>
@@ -332,7 +332,7 @@ function ReferentielSectoriel() {
             e.target.value = "";
           }}
         />
-        <p className="text-xs text-ink/45 mt-1">
+        <p className="text-xs text-ink-3 mt-1">
           Remplace d&apos;un bloc le référentiel de même source et de même millésime. Le format est
           décrit dans <code>apps/api/src/benchmark/import-reference.ts</code>.
         </p>
@@ -371,7 +371,7 @@ function Tuile({
       >
         {valeur}
       </div>
-      {detail && <div className="text-xs text-ink/40 mt-0.5">{detail}</div>}
+      {detail && <div className="text-xs text-ink-3 mt-0.5">{detail}</div>}
     </div>
   );
 }
@@ -472,7 +472,7 @@ function Detail({
               {changerFormule.isPending ? "Application…" : "Appliquer"}
             </button>
           </div>
-          <p className="text-xs text-ink/40">
+          <p className="text-xs text-ink-3">
             Appliqué en base seulement. Un abonnement Stripe existant continue
             de son côté : deux sources de vérité qui s&apos;écrivent
             mutuellement finissent toujours par diverger.
@@ -481,7 +481,7 @@ function Detail({
 
         <section className="space-y-3">
           <h3 className="text-sm font-medium">Accès support</h3>
-          <p className="text-xs text-ink/50">
+          <p className="text-xs text-ink-3">
             Bascule votre session sur {organisation.nom} pour une heure. Chaque
             requête, lecture comprise, est inscrite dans la piste d&apos;audit
             de ce client, qui la voit depuis son écran Paramètres.
@@ -498,7 +498,7 @@ function Detail({
 
         <section className="space-y-3">
           <h3 className="text-sm font-medium">Dossier de test</h3>
-          <p className="text-xs text-ink/50">
+          <p className="text-xs text-ink-3">
             Une entreprise fictive de quatre exercices,{" "}
             <strong>volontairement en difficulté</strong> — deux années de
             pertes, délai client qui dérive, apport du dirigeant pour tenir. Un
@@ -535,7 +535,7 @@ function Detail({
             </button>
           </div>
           {dossier.isSuccess && (
-            <p className="text-xs text-ink/60">
+            <p className="text-xs text-ink-3">
               {dossier.data.cree
                 ? `« ${dossier.data.nom} » est en place${dossier.data.supprime ? " (l'ancien a été remplacé)" : ""}.`
                 : dossier.data.supprime
@@ -558,7 +558,7 @@ function Detail({
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[600px]">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
+              <tr className="text-left text-xs uppercase tracking-wide text-ink-3 border-b border-rule/10">
                 <th className="py-1.5">Nom</th>
                 <th className="py-1.5">E-mail</th>
                 <th className="py-1.5">Rôle</th>
@@ -577,9 +577,9 @@ function Detail({
                       </span>
                     )}
                   </td>
-                  <td className="py-1.5 text-ink/60">{u.email}</td>
-                  <td className="py-1.5 text-ink/60">{u.role}</td>
-                  <td className="py-1.5 text-ink/60">
+                  <td className="py-1.5 text-ink-3">{u.email}</td>
+                  <td className="py-1.5 text-ink-3">{u.role}</td>
+                  <td className="py-1.5 text-ink-3">
                     {date(u.derniereConnexion)}
                   </td>
                   <td className="py-1.5 text-right whitespace-nowrap">
@@ -627,7 +627,7 @@ function Detail({
             <p className="font-mono text-base mt-1 select-all">
               {provisoire.motDePasse}
             </p>
-            <p className="text-xs text-ink/50 mt-1.5">
+            <p className="text-xs text-ink-3 mt-1.5">
               Affiché une seule fois — il n&apos;est stocké qu&apos;en
               condensat. Les sessions ouvertes de ce compte viennent d&apos;être
               closes.
@@ -647,7 +647,7 @@ function Detail({
         <h3 className="text-sm font-medium text-critical">
           Supprimer l&apos;organisation
         </h3>
-        <p className="text-xs text-ink/50">
+        <p className="text-xs text-ink-3">
           Efface les comptes, les entités, les périodes et le grand livre. Sans
           retour : c&apos;est ce qu&apos;exige une demande d&apos;effacement,
           qu&apos;une colonne « supprimé » ne satisferait pas. Saisissez le nom

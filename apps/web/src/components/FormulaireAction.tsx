@@ -129,9 +129,9 @@ export function FormulaireAction({
             Entité
           </label>
           {modeEdition ? (
-            <div className="text-sm py-2 text-ink/60">
+            <div className="text-sm py-2 text-ink-3">
               {nomEntite ?? "— Aucune —"}
-              <span className="block text-xs text-ink/40">non modifiable</span>
+              <span className="block text-xs text-ink-3">non modifiable</span>
             </div>
           ) : (
             <select
@@ -234,7 +234,7 @@ export function FormulaireAction({
         </div>
       </div>
 
-      <p className="text-xs text-ink/40">
+      <p className="text-xs text-ink-3">
         L&apos;indicateur suivi est relu automatiquement sur la dernière période de
         l&apos;entité : c&apos;est ce qui permet de dire au point suivant si la cible a été
         atteinte. Il demande donc de préciser une entité. Vider un champ facultatif le retire.

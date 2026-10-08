@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useEntities, usePeriods, useRatios } from "../api/hooks";
-import { EntitySelector } from "../components/EntitySelector";
 import { RatioTable } from "../components/RatioTable";
 import { EntetePage, EtatVide, SqueletteTableau, Zone } from "../components/etats";
 import type { RatioCategory } from "../api/types";
@@ -15,7 +14,7 @@ const CATEGORY_LABELS: Record<RatioCategory, string> = {
 
 export function RatiosPage() {
   const { data: entities } = useEntities();
-  const [entityId, setEntityId] = useDossierCourant(entities);
+  const [entityId] = useDossierCourant(entities);
 
 
   const { data: periods } = usePeriods(entityId || undefined);
@@ -34,7 +33,6 @@ export function RatiosPage() {
         titre="Catalogue des ratios"
         sousTitre="Les 19 ratios calculés automatiquement à chaque import."
       >
-        <EntitySelector value={entityId} onChange={setEntityId} />
         {periods && periods.length > 0 && (
           <select
             className="input w-40"

@@ -89,12 +89,11 @@ export function useCouleursGraphique(): CouleursGraphique {
 
   useEffect(() => {
     const relire = () => setCouleurs(lireCouleurs());
-    // Deux attributs portent l'apparence, et il faut les deux : data-theme
-    // pour le mode clair/sombre, data-palette pour la famille de couleurs.
+    // Le choix explicite clair/sombre s'écrit dans data-theme.
     const observateur = new MutationObserver(relire);
     observateur.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ["data-theme", "data-palette"],
+      attributeFilter: ["data-theme"],
     });
     // …et le réglage « système » n'en pose aucun : il faut écouter l'OS.
     const media = window.matchMedia("(prefers-color-scheme: dark)");
@@ -309,13 +308,13 @@ function Axes({
       <XAxis
         dataKey={cleAbscisse}
         tick={{ fontSize: 12, fill: "currentColor" }}
-        className="text-ink/50"
+        className="text-ink-3"
         stroke="currentColor"
         tickLine={false}
       />
       <YAxis
         tick={{ fontSize: 12, fill: "currentColor" }}
-        className="text-ink/50"
+        className="text-ink-3"
         stroke="currentColor"
         tickLine={false}
         axisLine={false}
@@ -353,7 +352,7 @@ function LegendeHaute({
       align="left"
       height={hauteurLegende(series.length)}
       content={() => (
-        <ul className="flex flex-wrap gap-x-4 gap-y-1 pl-1 text-[0.8rem] text-ink/70">
+        <ul className="flex flex-wrap gap-x-4 gap-y-1 pl-1 text-[0.8rem] text-ink-2">
           {series.map((serie, index) => (
             <li key={serie.cle} className="flex items-center gap-1.5">
               <span

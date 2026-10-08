@@ -48,13 +48,13 @@ export function AlertsPage() {
         <h2 className="font-display text-lg font-semibold mb-3">
           Alertes actives {activeEvents.length > 0 && `(${activeEvents.length})`}
         </h2>
-        {activeEvents.length === 0 && <p className="text-sm text-ink/50">Aucun seuil franchi actuellement.</p>}
+        {activeEvents.length === 0 && <p className="text-sm text-ink-3">Aucun seuil franchi actuellement.</p>}
         <ul className="divide-y divide-rule/5">
           {activeEvents.map((event) => (
             <li key={event.id} className="py-3 flex items-center justify-between text-sm">
               <div>
                 <span className="font-medium text-critical">{event.rule.label}</span>
-                <span className="text-ink/50">
+                <span className="text-ink-3">
                   {" "}
                   — {event.entity?.name} · {event.period?.label} · valeur {event.value.toFixed(2)}
                 </span>
@@ -67,10 +67,10 @@ export function AlertsPage() {
         </ul>
         {acknowledgedEvents.length > 0 && (
           <details className="mt-4">
-            <summary className="text-sm text-ink/50 cursor-pointer">Alertes vues ({acknowledgedEvents.length})</summary>
+            <summary className="text-sm text-ink-3 cursor-pointer">Alertes vues ({acknowledgedEvents.length})</summary>
             <ul className="divide-y divide-rule/5 mt-2">
               {acknowledgedEvents.map((event) => (
-                <li key={event.id} className="py-2 text-sm text-ink/40">
+                <li key={event.id} className="py-2 text-sm text-ink-3">
                   {event.rule.label} — {event.entity?.name} · {event.period?.label} · {formatDate(event.updatedAt)}
                 </li>
               ))}
@@ -83,7 +83,7 @@ export function AlertsPage() {
         <h2 className="font-display text-lg font-semibold mb-3">Règles configurées</h2>
         <table className="w-full text-sm mb-4">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
+            <tr className="text-left text-xs uppercase tracking-wide text-ink-3 border-b border-rule/10">
               <th className="py-2">Libellé</th>
               <th className="py-2">Condition</th>
               <th className="py-2"></th>
@@ -93,7 +93,7 @@ export function AlertsPage() {
             {rules?.map((rule) => (
               <tr key={rule.id} className="border-b border-rule/5 last:border-0">
                 <td className="py-2">{rule.label}</td>
-                <td className="py-2 font-mono text-ink/60">
+                <td className="py-2 font-mono text-ink-3">
                   {RATIO_CATALOG.find((r) => r.id === rule.ratioId)?.label ?? rule.ratioId} {OPERATOR_LABELS[rule.operator]}{" "}
                   {rule.threshold}
                 </td>

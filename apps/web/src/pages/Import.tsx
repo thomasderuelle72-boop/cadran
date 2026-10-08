@@ -65,7 +65,7 @@ function PeriodesImportees({
   return (
     <div className="card">
       <h2 className="font-display text-lg font-semibold mb-1">Périodes déjà importées</h2>
-      <p className="text-sm text-ink/50 mb-4">
+      <p className="text-sm text-ink-3 mb-4">
         Réimporter sur une période <strong>remplace</strong> ses lignes : c&apos;est la façon de
         corriger un fichier mal classé, sans créer de doublon.
       </p>
@@ -75,7 +75,7 @@ function PeriodesImportees({
       <div className="overflow-x-auto">
         <table className="w-full text-sm min-w-[560px]">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
+            <tr className="text-left text-xs uppercase tracking-wide text-ink-3 border-b border-rule/10">
               <th className="py-2">Période</th>
               <th className="py-2">Dates</th>
               <th className="py-2">Source</th>
@@ -89,19 +89,19 @@ function PeriodesImportees({
               .map((period) => (
                 <tr key={period.id} className="border-b border-rule/5 last:border-0">
                   <td className="py-2 font-medium">{period.label}</td>
-                  <td className="py-2 text-ink/60 whitespace-nowrap">
+                  <td className="py-2 text-ink-3 whitespace-nowrap">
                     {formatDate(period.startDate)} → {formatDate(period.endDate)}
                   </td>
-                  <td className="py-2 text-ink/50">
+                  <td className="py-2 text-ink-3">
                     {period.source === "FEC" ? "FEC" : "Balance"}
                   </td>
-                  <td className="py-2 text-right font-mono text-ink/60">
+                  <td className="py-2 text-right font-mono text-ink-3">
                     {period._count?.lineItems ?? "—"}
                   </td>
                   <td className="py-2 text-right whitespace-nowrap">
                     <button
                       type="button"
-                      className="text-xs text-ink/50 hover:text-primary"
+                      className="text-xs text-ink-3 hover:text-primary"
                       onClick={() => onCorriger(period.id)}
                     >
                       Réimporter
@@ -132,7 +132,7 @@ function PeriodesImportees({
                             </button>
                             <button
                               type="button"
-                              className="text-ink/40 ml-2"
+                              className="text-ink-3 ml-2"
                               onClick={() => setASupprimer(null)}
                             >
                               Non
@@ -141,7 +141,7 @@ function PeriodesImportees({
                         ) : (
                           <button
                             type="button"
-                            className="text-xs text-ink/40 hover:text-critical"
+                            className="text-xs text-ink-3 hover:text-critical"
                             onClick={() => setASupprimer(period.id)}
                           >
                             Supprimer
@@ -157,7 +157,7 @@ function PeriodesImportees({
       </div>
 
       {peutSupprimer && (
-        <p className="text-xs text-ink/40 mt-3">
+        <p className="text-xs text-ink-3 mt-3">
           Supprimer une période efface ses lignes, ses ratios et son budget. Les périodes
           postérieures sont recalculées : leur croissance se lisait contre celle-ci.
         </p>
@@ -281,8 +281,8 @@ export function ImportPage() {
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
-        <h1 className="font-display text-2xl font-semibold">Import de données</h1>
-        <p className="text-sm text-ink/50">
+        <h1 className="font-display text-[1.65rem] leading-tight font-bold">Importer des données</h1>
+        <p className="text-sm text-ink-3">
           Deux chemins : un FEC, qui apporte le détail des écritures, ou une balance de postes
           agrégés, à classifier à la main.
         </p>
@@ -290,7 +290,7 @@ export function ImportPage() {
 
       {entities && entities.length > 0 && (
         <div>
-          <label className="label">Entité</label>
+          <label className="label">Dossier</label>
           <select className="input mb-4" value={entityId} onChange={(e) => setEntityId(e.target.value)}>
             {entities.map((e) => (
               <option key={e.id} value={e.id}>
@@ -304,7 +304,7 @@ export function ImportPage() {
 
       <div className="border-t border-rule/10 pt-6">
         <h2 className="font-display text-lg font-semibold">Ou importer une balance</h2>
-        <p className="text-sm text-ink/50">
+        <p className="text-sm text-ink-3">
           Un export Excel ou CSV de postes agrégés, dont la classification reste à valider.
         </p>
       </div>
@@ -313,7 +313,7 @@ export function ImportPage() {
 
       {step === "period" && (
         <div className="card space-y-4">
-          <h2 className="font-display text-lg font-semibold">1. Choisir l'entité et la période</h2>
+          <h2 className="font-display text-lg font-semibold">1. Choisir le dossier et la période</h2>
 
           {entities && entities.length === 0 && (
             <p className="text-sm text-warning">
@@ -323,7 +323,7 @@ export function ImportPage() {
 
           {entities && entities.length > 0 && (
             <div>
-              <label className="label">Entité</label>
+              <label className="label">Dossier</label>
               <select className="input" value={entityId} onChange={(e) => setEntityId(e.target.value)}>
                 {entities.map((e) => (
                   <option key={e.id} value={e.id}>
@@ -399,7 +399,7 @@ export function ImportPage() {
       {step === "upload" && (
         <div className="card space-y-4">
           <h2 className="font-display text-lg font-semibold">2. Importer le fichier</h2>
-          <p className="text-sm text-ink/50">Formats acceptés : .csv, .xlsx, .xls.</p>
+          <p className="text-sm text-ink-3">Formats acceptés : .csv, .xlsx, .xls.</p>
           <input
             type="file"
             accept=".csv,.xlsx,.xls"
@@ -459,7 +459,7 @@ export function ImportPage() {
                 {parsed.rows.slice(0, 4).map((row, i) => (
                   <tr key={i} className="border-t border-rule/5">
                     {parsed.headers.map((h) => (
-                      <td key={h} className="px-2 py-1.5 text-ink/60">
+                      <td key={h} className="px-2 py-1.5 text-ink-3">
                         {String(row[h] ?? "")}
                       </td>
                     ))}
@@ -477,7 +477,7 @@ export function ImportPage() {
       {step === "review" && (
         <div className="card space-y-4">
           <h2 className="font-display text-lg font-semibold">4. Vérifier la classification</h2>
-          <p className="text-sm text-ink/50">
+          <p className="text-sm text-ink-3">
             Chaque compte est pré-classé selon le plan comptable général. Corrigez si besoin avant de valider — ce
             classement détermine directement le calcul des ratios.
           </p>
@@ -495,7 +495,7 @@ export function ImportPage() {
                 {groups.map((g) => (
                   <tr key={g.accountCode} className="border-t border-rule/5">
                     <td className="px-3 py-2 font-mono">{g.accountCode}</td>
-                    <td className="px-3 py-2 text-ink/60">{g.label}</td>
+                    <td className="px-3 py-2 text-ink-3">{g.label}</td>
                     <td className="px-3 py-2 text-right font-mono">{g.total.toLocaleString("fr-FR")}</td>
                     <td className="px-3 py-2">
                       <select
@@ -518,7 +518,7 @@ export function ImportPage() {
           {equilibre.applicable && !equilibre.equilibre && (
             <div className="rounded-lg border border-warning/40 bg-warning-soft/40 p-3 text-sm">
               <span className="font-semibold text-warning">Bilan déséquilibré :</span>{" "}
-              <span className="text-ink/70">
+              <span className="text-ink-2">
                 actif {formatCurrency(equilibre.totalActif)} contre passif {formatCurrency(equilibre.totalPassif)}, soit
                 un écart de {formatCurrency(Math.abs(equilibre.ecart))}. Vérifiez la classification avant de valider :
                 un poste mal classé fausse tous les ratios de structure.
@@ -528,7 +528,7 @@ export function ImportPage() {
           {equilibre.applicable && equilibre.equilibre && (
             <p className="text-sm text-success">Bilan équilibré : actif et passif concordent.</p>
           )}
-          <p className="text-xs text-ink/40">{groups.length} comptes détectés, classés en {posteLabelByCode.size} postes.</p>
+          <p className="text-xs text-ink-3">{groups.length} comptes détectés, classés en {posteLabelByCode.size} postes.</p>
           <button className="btn-primary" disabled={submitLineItems.isPending} onClick={handleSubmit}>
             {submitLineItems.isPending ? "Import en cours…" : "Valider l'import"}
           </button>

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useBudgetVariance, useEntities, useImportReference, usePeriods, useSubmitBudget } from "../api/hooks";
-import { EntitySelector } from "../components/EntitySelector";
 import { EntetePage, EtatVide, SqueletteTableau, Zone } from "../components/etats";
 import { formatCurrency } from "../lib/format";
 import type { LinePoste } from "../api/types";
@@ -22,15 +21,15 @@ const CHARGE_POSTES = new Set<LinePoste>([
 const PRODUIT_POSTES = new Set<LinePoste>(["CHIFFRE_AFFAIRES", "PRODUITS_FINANCIERS"]);
 
 function ecartColor(poste: LinePoste, ecart: number): string {
-  if (ecart === 0) return "text-ink/40";
+  if (ecart === 0) return "text-ink-3";
   if (CHARGE_POSTES.has(poste)) return ecart > 0 ? "text-critical" : "text-success";
   if (PRODUIT_POSTES.has(poste)) return ecart > 0 ? "text-success" : "text-critical";
-  return "text-ink/60";
+  return "text-ink-3";
 }
 
 export function BudgetPage() {
   const { data: entities } = useEntities();
-  const [entityId, setEntityId] = useDossierCourant(entities);
+  const [entityId] = useDossierCourant(entities);
 
 
   const { data: periods } = usePeriods(entityId || undefined);
@@ -86,7 +85,6 @@ export function BudgetPage() {
         titre="Budget vs réalisé"
         sousTitre="Saisissez le montant budgété par poste pour suivre les écarts."
       >
-        <EntitySelector value={entityId} onChange={setEntityId} />
         {periods && periods.length > 0 && (
           <select
             className="input w-40"
@@ -129,10 +127,10 @@ export function BudgetPage() {
               const s = variance.summary[key];
               return (
                 <div className="card" key={key}>
-                  <div className="text-xs uppercase tracking-wide text-ink/50 font-medium">{label}</div>
+                  <div className="text-xs uppercase tracking-wide text-ink-3 font-medium">{label}</div>
                   <div className="flex items-baseline gap-2 mt-1">
                     <span className="font-mono text-xl font-semibold">{formatCurrency(s.actual, variance.currency)}</span>
-                    <span className="text-xs text-ink/40">/ {formatCurrency(s.budgeted, variance.currency)} prévu</span>
+                    <span className="text-xs text-ink-3">/ {formatCurrency(s.budgeted, variance.currency)} prévu</span>
                   </div>
                   <div className={`text-xs mt-1 font-medium ${s.ecart >= 0 ? "text-success" : "text-critical"}`}>
                     {s.ecart >= 0 ? "+" : ""}
@@ -147,7 +145,7 @@ export function BudgetPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[600px]">
                 <thead>
-                  <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
+                  <tr className="text-left text-xs uppercase tracking-wide text-ink-3 border-b border-rule/10">
                     <th className="py-2 pr-3">Poste</th>
                     <th className="py-2 pr-3">Budgété</th>
                     <th className="py-2 pr-3">Réalisé</th>
@@ -171,7 +169,7 @@ export function BudgetPage() {
                             onChange={(e) => setDraft({ ...draft, [poste]: Number(e.target.value) || 0 })}
                           />
                         </td>
-                        <td className="py-2 pr-3 font-mono text-ink/60">{formatCurrency(actual, variance.currency)}</td>
+                        <td className="py-2 pr-3 font-mono text-ink-3">{formatCurrency(actual, variance.currency)}</td>
                         <td className={`py-2 font-mono ${ecartColor(poste, ecart)}`}>
                           {ecart >= 0 ? "+" : ""}
                           {formatCurrency(ecart, variance.currency)}

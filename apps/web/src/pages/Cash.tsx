@@ -9,7 +9,6 @@ import {
   useEntities,
   usePrefillCash,
 } from "../api/hooks";
-import { EntitySelector } from "../components/EntitySelector";
 import { abregerMontant, useCouleursGraphique } from "../components/Graphique";
 import { EntetePage, SqueletteCarte, SqueletteTuiles, Zone } from "../components/etats";
 import { KpiTile } from "../components/KpiTile";
@@ -30,7 +29,7 @@ const HORIZONS = [13, 26, 52];
 export function CashPage() {
   const couleurs = useCouleursGraphique();
   const { data: entities } = useEntities();
-  const [entityId, setEntityId] = useDossierCourant(entities);
+  const [entityId] = useDossierCourant(entities);
   const [weeks, setWeeks] = useState(13);
 
 
@@ -98,7 +97,6 @@ export function CashPage() {
         titre="Trésorerie prévisionnelle"
         sousTitre="Projection glissante du solde de trésorerie, semaine par semaine."
       >
-        <EntitySelector value={entityId} onChange={setEntityId} />
         <select
           className="input w-36"
           value={weeks}
@@ -159,7 +157,7 @@ export function CashPage() {
 
           {projection.lineCount === 0 && (
             <div className="card flex items-center justify-between gap-4">
-              <p className="text-sm text-ink/60">
+              <p className="text-sm text-ink-3">
                 Aucun flux prévisionnel saisi. Vous pouvez partir du rythme de la dernière période importée, puis ajuster.
               </p>
               <button className="btn-primary whitespace-nowrap" disabled={prefill.isPending} onClick={handlePrefill}>
@@ -189,13 +187,13 @@ export function CashPage() {
                   dataKey="label"
                   fontSize={11}
                   stroke="currentColor"
-                  className="text-ink/50"
+                  className="text-ink-3"
                   interval="preserveStartEnd"
                 />
                 <YAxis
                   fontSize={12}
                   stroke="currentColor"
-                  className="text-ink/50"
+                  className="text-ink-3"
                   tickFormatter={(v) => abregerMontant(Number(v))}
                 />
                 <Tooltip
@@ -229,7 +227,7 @@ export function CashPage() {
             <div className="overflow-x-auto max-h-96">
               <table className="w-full text-sm min-w-[640px]">
                 <thead className="sticky top-0 bg-surface">
-                  <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
+                  <tr className="text-left text-xs uppercase tracking-wide text-ink-3 border-b border-rule/10">
                     <th className="py-2 pr-3">Semaine</th>
                     <th className="py-2 pr-3 text-right">Encaissements</th>
                     <th className="py-2 pr-3 text-right">Décaissements</th>
@@ -244,7 +242,7 @@ export function CashPage() {
                       <td className="py-2 pr-3">
                         {formatDate(w.weekStart)}
                         {w.movements.length > 0 && (
-                          <span className="text-ink/40 text-xs"> · {w.movements.map((m) => m.label).join(", ")}</span>
+                          <span className="text-ink-3 text-xs"> · {w.movements.map((m) => m.label).join(", ")}</span>
                         )}
                       </td>
                       <td className="py-2 pr-3 text-right font-mono text-success">{w.inflows ? formatCurrency(w.inflows, currency) : "—"}</td>
@@ -273,12 +271,12 @@ export function CashPage() {
             </button>
           )}
         </div>
-        {lines && lines.length === 0 && <p className="text-sm text-ink/50 mb-3">Aucune ligne pour cette entité.</p>}
+        {lines && lines.length === 0 && <p className="text-sm text-ink-3 mb-3">Aucune ligne pour cette entité.</p>}
         {lines && lines.length > 0 && (
           <div className="overflow-x-auto mb-4">
           <table className="w-full text-sm min-w-[560px]">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
+              <tr className="text-left text-xs uppercase tracking-wide text-ink-3 border-b border-rule/10">
                 <th className="py-2 pr-3">Libellé</th>
                 <th className="py-2 pr-3">Catégorie</th>
                 <th className="py-2 pr-3 text-right">Montant</th>
@@ -291,14 +289,14 @@ export function CashPage() {
               {lines.map((line) => (
                 <tr key={line.id} className="border-b border-rule/5 last:border-0">
                   <td className="py-2 pr-3">{line.label}</td>
-                  <td className="py-2 pr-3 text-ink/60">
+                  <td className="py-2 pr-3 text-ink-3">
                     {categories?.find((c) => c.category === line.category)?.label ?? line.category}
                   </td>
                   <td className={`py-2 pr-3 text-right font-mono ${Number(line.amount) >= 0 ? "text-success" : "text-critical"}`}>
                     {formatCurrency(Number(line.amount), currency)}
                   </td>
-                  <td className="py-2 pr-3 text-ink/60">{formatDate(line.startDate)}</td>
-                  <td className="py-2 pr-3 text-ink/60">
+                  <td className="py-2 pr-3 text-ink-3">{formatDate(line.startDate)}</td>
+                  <td className="py-2 pr-3 text-ink-3">
                     {RECURRENCE_LABELS[line.recurrence]}
                     {line.endDate ? ` jusqu'au ${formatDate(line.endDate)}` : ""}
                   </td>

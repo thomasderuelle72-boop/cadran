@@ -110,8 +110,8 @@ export function EtatErreur({
         Impossible de charger {quoi}
         {statut ? ` (erreur ${statut})` : ""}
       </h2>
-      <p className="text-sm text-ink/70">{explication}</p>
-      <p className="text-xs text-ink/40 font-mono mt-2 break-words">{message}</p>
+      <p className="text-sm text-ink-2">{explication}</p>
+      <p className="text-xs text-ink-3 font-mono mt-2 break-words">{message}</p>
       <div className="flex gap-3 mt-4">
         {onReessayer && (
           <button type="button" className="btn-secondary" onClick={onReessayer}>
@@ -146,7 +146,7 @@ export function EtatVide({
   return (
     <div className="card">
       <h2 className="font-display text-lg font-semibold mb-1">{titre}</h2>
-      {children && <div className="text-sm text-ink/60 max-w-prose">{children}</div>}
+      {children && <div className="text-sm text-ink-3 max-w-prose">{children}</div>}
       {action && (
         <Link to={action.to} className="btn-primary inline-block mt-4">
           {action.label}
@@ -203,10 +203,10 @@ export function EntetePage({
   return (
     <div className="flex items-start justify-between gap-4 flex-wrap">
       <div className="min-w-0">
-        <h1 className="font-display text-2xl font-semibold">{titre}</h1>
-        {sousTitre && <p className="text-sm text-ink/50 mt-0.5">{sousTitre}</p>}
+        <h1 className="font-display text-[1.65rem] leading-tight font-bold">{titre}</h1>
+        {sousTitre && <p className="text-[0.95rem] text-ink-2 mt-1.5 max-w-2xl">{sousTitre}</p>}
       </div>
-      {children && <div className="flex gap-2 flex-wrap">{children}</div>}
+      {children && <div className="flex gap-2 flex-wrap items-center">{children}</div>}
     </div>
   );
 }

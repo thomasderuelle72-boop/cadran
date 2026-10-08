@@ -1,43 +1,31 @@
 import { useEffect, useState } from "react";
+import { Monitor, Moon, Sun, type LucideIcon } from "lucide-react";
 
 /**
- * Choix d'apparence : une palette et un mode, sur deux axes indépendants.
- *
- * Les croiser en un seul réglage aurait donné six valeurs (trois palettes ×
- * deux modes, plus « système »), à tenir en correspondance à chaque ajout.
- * Séparés, on choisit sa famille de couleurs sans perdre son mode, et
- * inversement.
+ * Clair, sombre, ou comme le système.
  *
  * « Système » n'est pas un défaut caché mais un choix explicite, et le plus
  * utile pour un outil qu'on garde ouvert toute la journée sur une machine qui
  * bascule seule au coucher du soleil.
  *
- * Les deux réglages s'écrivent en attributs sur la racine, que les tokens CSS
- * lisent (cf. index.css) : aucun composant n'a besoin de savoir lequel est
- * actif.
+ * Le réglage s'écrit en attribut sur la racine, que les tokens CSS lisent
+ * (cf. index.css) : aucun composant n'a besoin de savoir lequel est actif.
+ *
+ * Il y avait aussi un choix de palette, sur quatre. Il est retiré : il
+ * occupait la moitié du pied de menu, débordait de son cadre, et chaque
+ * palette devait être tenue lisible séparément.
  */
 
 type Mode = "systeme" | "clair" | "sombre";
-type Palette = "instrument" | "cadran" | "registre" | "ardoise";
 
 const CLE_MODE = "cadran.theme";
-const CLE_PALETTE = "cadran.palette";
+/** Ancienne clé de palette : effacée au démarrage, voir initialiserTheme. */
+const CLE_PALETTE_RETIREE = "cadran.palette";
 
-const MODES: Record<Mode, string> = {
-  systeme: "Système",
-  clair: "Clair",
-  sombre: "Sombre",
-};
-
-const PALETTES: Array<{ id: Palette; label: string; description: string }> = [
-  {
-    id: "instrument",
-    label: "Instrument",
-    description: "Vert de nuit et ambre : un appareil qu'on lit d'un regard.",
-  },
-  { id: "cadran", label: "Cadran", description: "Vert profond et cuivre, sur papier crème." },
-  { id: "registre", label: "Registre", description: "Encre bleue et oxblood, angles vifs." },
-  { id: "ardoise", label: "Ardoise", description: "Gris froid et indigo, formes adoucies." },
+const MODES: Array<{ id: Mode; label: string; Icone: LucideIcon }> = [
+  { id: "systeme", label: "Système", Icone: Monitor },
+  { id: "clair", label: "Clair", Icone: Sun },
+  { id: "sombre", label: "Sombre", Icone: Moon },
 ];
 
 function lireMode(): Mode {
@@ -50,102 +38,58 @@ function lireMode(): Mode {
   return "systeme";
 }
 
-function lirePalette(): Palette {
-  try {
-    const stocke = localStorage.getItem(CLE_PALETTE);
-    if (stocke === "instrument" || stocke === "cadran" || stocke === "registre" || stocke === "ardoise")
-      return stocke;
-  } catch {
-    // Idem : la palette par défaut habille la page sans stockage.
-  }
-  return "instrument";
-}
-
-function appliquer(mode: Mode, palette: Palette) {
+function appliquer(mode: Mode) {
   const racine = document.documentElement;
-
   // Aucun attribut pour « système » : les tokens laissent alors
   // prefers-color-scheme décider.
   if (mode === "systeme") racine.removeAttribute("data-theme");
   else racine.setAttribute("data-theme", mode === "sombre" ? "dark" : "light");
-
-  // Aucun attribut non plus pour la palette par défaut. Ce n'est pas un
-  // détail : les règles sombres de Cadran portent :not([data-palette]), et
-  // poser data-palette="instrument" les désactiverait — le sombre reviendrait
-  // silencieusement au clair.
-  if (palette === "instrument") racine.removeAttribute("data-palette");
-  else racine.setAttribute("data-palette", palette);
 }
 
-/** Applique les choix mémorisés avant le premier rendu, pour éviter un flash. */
+/** Applique le choix mémorisé avant le premier rendu, pour éviter un flash. */
 export function initialiserTheme() {
-  appliquer(lireMode(), lirePalette());
+  appliquer(lireMode());
+  /* Un navigateur qui avait choisi une palette garde sa clé ; plus rien ne
+   * la lit, mais autant ne pas laisser traîner un réglage sans effet. */
+  document.documentElement.removeAttribute("data-palette");
+  try {
+    localStorage.removeItem(CLE_PALETTE_RETIREE);
+  } catch {
+    // Sans stockage, il n'y a rien à effacer.
+  }
 }
 
-function Segments<T extends string>({
-  valeur,
-  options,
-  onChoisir,
-  etiquette,
-}: {
-  valeur: T;
-  options: Array<{ id: T; label: string; titre?: string }>;
-  onChoisir: (id: T) => void;
-  etiquette: string;
-}) {
-  return (
-    <div
-      className="flex gap-0.5 p-0.5 rounded-lg bg-ink/[0.05]"
-      role="radiogroup"
-      aria-label={etiquette}
-    >
-      {options.map((option) => (
-        <button
-          key={option.id}
-          type="button"
-          role="radio"
-          aria-checked={valeur === option.id}
-          title={option.titre}
-          onClick={() => onChoisir(option.id)}
-          className={`flex-1 rounded-[0.3rem] px-2 py-1 text-[0.7rem] font-medium transition ${
-            valeur === option.id ? "bg-surface text-ink shadow-sm" : "text-ink/50 hover:text-ink/80"
-          }`}
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-export function BasculeTheme() {
+export function BasculeTheme({ compact = false }: { compact?: boolean }) {
   const [mode, setMode] = useState<Mode>(lireMode);
-  const [palette, setPalette] = useState<Palette>(lirePalette);
 
   useEffect(() => {
-    appliquer(mode, palette);
+    appliquer(mode);
     try {
       localStorage.setItem(CLE_MODE, mode);
-      localStorage.setItem(CLE_PALETTE, palette);
     } catch {
-      // Les choix restent appliqués pour la session, simplement non mémorisés.
+      // Le choix reste appliqué pour la session, simplement non mémorisé.
     }
-  }, [mode, palette]);
+  }, [mode]);
 
   return (
-    <div className="space-y-1.5">
-      <Segments
-        valeur={palette}
-        etiquette="Palette de l'interface"
-        options={PALETTES.map((p) => ({ id: p.id, label: p.label, titre: p.description }))}
-        onChoisir={setPalette}
-      />
-      <Segments
-        valeur={mode}
-        etiquette="Mode clair ou sombre"
-        options={(Object.keys(MODES) as Mode[]).map((id) => ({ id, label: MODES[id] }))}
-        onChoisir={setMode}
-      />
+    <div className="flex gap-0.5 p-0.5 rounded-lg bg-ink/[0.06]" role="radiogroup" aria-label="Apparence">
+      {MODES.map(({ id, label, Icone }) => (
+        <button
+          key={id}
+          type="button"
+          role="radio"
+          aria-checked={mode === id}
+          aria-label={compact ? label : undefined}
+          title={label}
+          onClick={() => setMode(id)}
+          className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition ${
+            mode === id ? "bg-surface text-ink shadow-sm" : "text-ink-3 hover:text-ink"
+          }`}
+        >
+          <Icone size={14} strokeWidth={2} aria-hidden="true" />
+          {!compact && label}
+        </button>
+      ))}
     </div>
   );
 }

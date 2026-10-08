@@ -41,7 +41,7 @@ export function MotDePasseNouveau() {
   if (!jetonPresent) {
     return (
       <CadreAuth titre="Lien incomplet">
-        <p className="text-sm text-ink/70">
+        <p className="text-sm text-ink-2">
           Cette adresse ne contient pas de jeton de réinitialisation. Les liens reçus par courriel
           sont parfois coupés en deux par la messagerie : copiez-le entièrement, ou demandez-en un
           nouveau.
@@ -97,7 +97,7 @@ export function MotDePasseNouveau() {
             onChange={(e) => setMotDePasse(e.target.value)}
             required
           />
-          <p className="text-xs text-ink/50 mt-1">{LONGUEUR_MINIMALE} caractères au minimum.</p>
+          <p className="text-xs text-ink-3 mt-1">{LONGUEUR_MINIMALE} caractères au minimum.</p>
         </div>
         <div>
           <label className="label" htmlFor="nouveau-mdp-confirmation">
@@ -118,7 +118,7 @@ export function MotDePasseNouveau() {
           {reinitialiser.isPending ? "Enregistrement…" : "Enregistrer et se connecter"}
         </button>
       </form>
-      <p className="text-xs text-ink/50 text-center">
+      <p className="text-xs text-ink-3 text-center">
         Le lien n'est valable qu'une heure, et ne sert qu'une fois.{" "}
         <Link to="/mot-de-passe/oubli" className="text-primary hover:underline">
           En demander un autre

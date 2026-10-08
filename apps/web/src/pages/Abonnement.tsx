@@ -49,10 +49,10 @@ function Jauge({
   return (
     <div>
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-sm text-ink/70">{libelle}</span>
+        <span className="text-sm text-ink-2">{libelle}</span>
         <span className="text-sm tabular-nums font-medium">
           {actuel}
-          <span className="text-ink/40">
+          <span className="text-ink-3">
             {" "}
             / {limite === null ? "illimité" : limite}
           </span>
@@ -109,7 +109,7 @@ function CarteFormule({
           </span>
         )}
       </div>
-      <p className="text-xs text-ink/50 mt-0.5 min-h-[2rem]">
+      <p className="text-xs text-ink-3 mt-0.5 min-h-[2rem]">
         {formule.pourQui}
       </p>
 
@@ -121,17 +121,17 @@ function CarteFormule({
             <span className="font-display text-2xl font-semibold tabular-nums">
               {formule.prixMensuel} €
             </span>
-            <span className="text-sm text-ink/50"> HT / mois</span>
+            <span className="text-sm text-ink-3"> HT / mois</span>
           </>
         )}
       </p>
-      <p className="text-xs text-ink/45 min-h-[1.5rem] mb-4">
+      <p className="text-xs text-ink-3 min-h-[1.5rem] mb-4">
         {formule.prixMensuel === null
           ? "14 jours"
           : `ou ${prixAnnualise(formule.prixMensuel)} € HT/mois à l'année`}
       </p>
 
-      <ul className="mt-3 space-y-1.5 text-sm text-ink/70">
+      <ul className="mt-3 space-y-1.5 text-sm text-ink-2">
         {formule.arguments.map((argument) => (
           <li key={argument} className="flex gap-2">
             <span className="text-primary mt-0.5 flex-none" aria-hidden="true">
@@ -225,7 +225,7 @@ export function AbonnementPage() {
         <h1 className="font-display text-lg font-semibold">
           Abonnement indisponible
         </h1>
-        <p className="text-sm text-ink/70 mt-1">
+        <p className="text-sm text-ink-2 mt-1">
           {error instanceof ApiError
             ? error.message
             : "Nous n'avons pas pu lire l'état de votre abonnement."}
@@ -240,8 +240,8 @@ export function AbonnementPage() {
   return (
     <div className="space-y-6 max-w-5xl">
       <div>
-        <h1 className="font-display text-2xl font-semibold">Abonnement</h1>
-        <p className="text-sm text-ink/60 mt-1">
+        <h1 className="font-display text-[1.65rem] leading-tight font-bold">Abonnement</h1>
+        <p className="text-sm text-ink-3 mt-1">
           Votre formule, ce qu&apos;elle autorise, et comment en changer ou la
           résilier.
         </p>
@@ -250,7 +250,7 @@ export function AbonnementPage() {
       {retourPaiement === "succes" && (
         <div className="card border-success/40 bg-success-soft">
           <p className="font-medium text-sm">Paiement accepté</p>
-          <p className="text-sm text-ink/75 mt-1">
+          <p className="text-sm text-ink-2 mt-1">
             Nous attendons la confirmation de notre prestataire — quelques
             secondes. Votre formule se met à jour ci-dessous dès qu&apos;elle
             nous parvient.
@@ -260,7 +260,7 @@ export function AbonnementPage() {
       {retourPaiement === "annule" && (
         <div className="card">
           <p className="font-medium text-sm">Paiement abandonné</p>
-          <p className="text-sm text-ink/75 mt-1">
+          <p className="text-sm text-ink-2 mt-1">
             Rien n&apos;a été prélevé et votre formule n&apos;a pas changé.{" "}
             <button
               type="button"
@@ -281,14 +281,14 @@ export function AbonnementPage() {
             <p className="font-display text-xl font-semibold mt-0.5">
               {etat.plan.label}
             </p>
-            <p className="text-sm text-ink/60 mt-0.5">{etat.plan.promesse}</p>
+            <p className="text-sm text-ink-3 mt-0.5">{etat.plan.promesse}</p>
           </div>
           <div className="min-w-0 sm:text-right">
             <p className="label">État</p>
             <p className="font-medium mt-0.5">{lecture.titre}</p>
           </div>
         </div>
-        <p className="text-sm text-ink/70 mt-3">{lecture.explication}</p>
+        <p className="text-sm text-ink-2 mt-3">{lecture.explication}</p>
         {!etat.accesOuvert && (
           <p className="text-sm text-critical mt-2">
             L&apos;accès aux analyses est suspendu. Vos données restent
@@ -314,7 +314,7 @@ export function AbonnementPage() {
             limite={etat.plan.quotas.utilisateurs}
           />
         </div>
-        <div className="flex flex-wrap gap-x-6 gap-y-1 mt-4 text-sm text-ink/60">
+        <div className="flex flex-wrap gap-x-6 gap-y-1 mt-4 text-sm text-ink-3">
           <span>
             Import FEC :{" "}
             <span className="text-ink">
@@ -343,7 +343,7 @@ export function AbonnementPage() {
           <p className="font-medium text-sm">
             Souscription momentanément indisponible
           </p>
-          <p className="text-sm text-ink/75 mt-1">
+          <p className="text-sm text-ink-2 mt-1">
             Le paiement en ligne n&apos;est pas actif sur cette instance. Aucun
             changement de formule ne peut aboutir pour l&apos;instant — nous
             écrire reste le moyen le plus rapide.
@@ -352,7 +352,7 @@ export function AbonnementPage() {
       )}
       {!estAdmin && (
         <div className="card">
-          <p className="text-sm text-ink/70">
+          <p className="text-sm text-ink-2">
             Seul un administrateur de votre organisation peut changer de formule
             ou résilier. Vous pouvez consulter cet écran librement.
           </p>
@@ -374,7 +374,7 @@ export function AbonnementPage() {
           <h2 className="font-display text-lg font-semibold">
             Formule interne
           </h2>
-          <p className="text-sm text-ink/70 mt-2">
+          <p className="text-sm text-ink-2 mt-2">
             Ce compte est celui de l&apos;exploitant de la plateforme : accès
             complet, aucune limite de dossiers, d&apos;utilisateurs ni de
             périodes, et aucune facturation. Elle ne s&apos;obtient ni ne se
@@ -402,7 +402,7 @@ export function AbonnementPage() {
               />
             ))}
           </div>
-          <p className="text-xs text-ink/45 mt-3">
+          <p className="text-xs text-ink-3 mt-3">
             Les montants sont hors taxes. Un changement en cours de période est
             calculé au prorata par notre prestataire de paiement. Conditions
             complètes dans les{" "}
@@ -427,7 +427,7 @@ export function AbonnementPage() {
         </h2>
         {resiliation.possible ? (
           <>
-            <p className="text-sm text-ink/70 mt-1">
+            <p className="text-sm text-ink-2 mt-1">
               Sans justification à fournir. Votre accès reste entier
               jusqu&apos;au terme de la période déjà payée, et vos données sont
               conservées trois mois ensuite.
@@ -442,13 +442,13 @@ export function AbonnementPage() {
             >
               Résilier mon abonnement
             </button>
-            <p className="text-xs text-ink/45 mt-2">
+            <p className="text-xs text-ink-3 mt-2">
               Vous pourrez aussi, depuis le même écran, changer de carte et
               retrouver vos factures.
             </p>
           </>
         ) : (
-          <p className="text-sm text-ink/70 mt-1">{resiliation.motif}</p>
+          <p className="text-sm text-ink-2 mt-1">{resiliation.motif}</p>
         )}
       </section>
     </div>

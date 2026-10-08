@@ -44,7 +44,7 @@ export function MentionsLegales() {
             ["Téléphone", mention(EDITEUR.telephone)],
           ].map(([cle, valeur]) => (
             <div key={cle} className="contents">
-              <dt className="text-ink/50 text-sm">{cle}</dt>
+              <dt className="text-ink-3 text-sm">{cle}</dt>
               <dd className="text-ink mb-1 sm:mb-0">{valeur}</dd>
             </div>
           ))}
@@ -73,8 +73,8 @@ export function MentionsLegales() {
             <li key={h.nom} className="card">
               <p className="label">{h.role}</p>
               <p className="font-medium mt-1">{h.nom}</p>
-              <p className="text-sm text-ink/60">{h.adresse}</p>
-              <p className="text-sm text-ink/60">{h.pays}</p>
+              <p className="text-sm text-ink-3">{h.adresse}</p>
+              <p className="text-sm text-ink-3">{h.pays}</p>
             </li>
           ))}
         </ul>

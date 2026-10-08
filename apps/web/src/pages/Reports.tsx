@@ -44,7 +44,7 @@ export function ReportsPage() {
         <div className="card overflow-x-auto">
           <table className="w-full text-sm min-w-[560px]">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
+              <tr className="text-left text-xs uppercase tracking-wide text-ink-3 border-b border-rule/10">
                 <th className="py-2">Entité</th>
                 <th className="py-2">Période</th>
                 <th className="py-2">Dates</th>
@@ -55,12 +55,12 @@ export function ReportsPage() {
             <tbody>
               {periods.map((p) => (
                 <tr key={p.id} className="border-b border-rule/5 last:border-0">
-                  <td className="py-2.5 text-ink/60">{p.entity?.name ?? "—"}</td>
+                  <td className="py-2.5 text-ink-3">{p.entity?.name ?? "—"}</td>
                   <td className="py-2.5 font-medium">{p.label}</td>
-                  <td className="py-2.5 text-ink/60">
+                  <td className="py-2.5 text-ink-3">
                     {formatDate(p.startDate)} — {formatDate(p.endDate)}
                   </td>
-                  <td className="py-2.5 text-ink/60">{p._count?.lineItems ?? 0}</td>
+                  <td className="py-2.5 text-ink-3">{p._count?.lineItems ?? 0}</td>
                   <td className="py-2.5 text-right space-x-2">
                     <button
                       className="btn-secondary"

@@ -49,7 +49,7 @@ function Ecritures({ entityId, compte }: { entityId: string; compte: string }) {
 
   if (!interrogeable) {
     return (
-      <p className="text-xs text-ink/50 py-2">
+      <p className="text-xs text-ink-3 py-2">
         Ce compte est identifié par un seul caractère : trop large pour retrouver ses écritures.
       </p>
     );
@@ -77,7 +77,7 @@ function Ecritures({ entityId, compte }: { entityId: string; compte: string }) {
 
   if (data.total === 0) {
     return (
-      <p className="text-xs text-ink/50 py-2">
+      <p className="text-xs text-ink-3 py-2">
         Aucune écriture pour ce compte. Le solde vient d&apos;une balance saisie ou importée en
         CSV : seul un import FEC apporte le détail des pièces.
       </p>
@@ -86,7 +86,7 @@ function Ecritures({ entityId, compte }: { entityId: string; compte: string }) {
 
   return (
     <div className="py-2">
-      <div className="flex items-baseline justify-between gap-3 mb-2 text-xs text-ink/50">
+      <div className="flex items-baseline justify-between gap-3 mb-2 text-xs text-ink-3">
         <span>
           {data.affichees < data.total
             ? `${data.affichees} écritures les plus récentes sur ${data.total}`
@@ -108,7 +108,7 @@ function Ecritures({ entityId, compte }: { entityId: string; compte: string }) {
       <div className="overflow-auto max-h-80 rounded-lg border border-rule/[0.07]">
         <table className="w-full text-xs min-w-[620px]">
           <thead className="sticky top-0 bg-surface-2">
-            <tr className="text-left text-ink/40 border-b border-rule/10">
+            <tr className="text-left text-ink-3 border-b border-rule/10">
               <th className="py-1.5 font-medium">Date</th>
               <th className="py-1.5 font-medium">Journal</th>
               <th className="py-1.5 font-medium">Pièce</th>
@@ -120,22 +120,22 @@ function Ecritures({ entityId, compte }: { entityId: string; compte: string }) {
           <tbody>
             {data.ecritures.map((e) => (
               <tr key={e.id} className="border-b border-rule/5 last:border-0">
-                <td className="py-1.5 whitespace-nowrap font-mono text-ink/70">
+                <td className="py-1.5 whitespace-nowrap font-mono text-ink-2">
                   {formatDate(e.entryDate)}
                 </td>
-                <td className="py-1.5 font-mono text-ink/50">{e.journalCode}</td>
-                <td className="py-1.5 font-mono text-ink/50">{e.pieceRef ?? "—"}</td>
+                <td className="py-1.5 font-mono text-ink-3">{e.journalCode}</td>
+                <td className="py-1.5 font-mono text-ink-3">{e.pieceRef ?? "—"}</td>
                 <td className="py-1.5">
                   {e.label}
                   {e.auxAccountLabel && (
-                    <span className="block text-ink/40">{e.auxAccountLabel}</span>
+                    <span className="block text-ink-3">{e.auxAccountLabel}</span>
                   )}
                 </td>
                 <td className="py-1.5 text-right font-mono">
-                  {e.debit === 0 ? <span className="text-ink/25">—</span> : formatCurrency(e.debit, data.currency)}
+                  {e.debit === 0 ? <span className="text-ink-3">—</span> : formatCurrency(e.debit, data.currency)}
                 </td>
                 <td className="py-1.5 text-right font-mono">
-                  {e.credit === 0 ? <span className="text-ink/25">—</span> : formatCurrency(e.credit, data.currency)}
+                  {e.credit === 0 ? <span className="text-ink-3">—</span> : formatCurrency(e.credit, data.currency)}
                 </td>
               </tr>
             ))}
@@ -173,13 +173,13 @@ function LigneCompte({
             aria-expanded={ouvert}
             className="text-left hover:text-primary transition"
           >
-            <span className="font-mono text-ink/50 mr-2">{item.accountCode}</span>
+            <span className="font-mono text-ink-3 mr-2">{item.accountCode}</span>
             {item.label}
-            <span className="ml-2 text-xs text-ink/35">{ouvert ? "▾" : "▸"}</span>
+            <span className="ml-2 text-xs text-ink-3">{ouvert ? "▾" : "▸"}</span>
           </button>
         </td>
         <td className="py-1.5 text-right font-mono">{formatCurrency(montant(item), currency)}</td>
-        <td className="py-1.5 text-right font-mono text-ink/45">
+        <td className="py-1.5 text-right font-mono text-ink-3">
           {part === null ? "—" : `${(part * 100).toFixed(1)} %`}
         </td>
       </tr>
@@ -225,7 +225,7 @@ function GroupePoste({
             className="text-left font-semibold hover:text-primary transition"
           >
             {libelle}
-            <span className="ml-2 text-xs font-normal text-ink/40">
+            <span className="ml-2 text-xs font-normal text-ink-3">
               {items.length} compte{items.length > 1 ? "s" : ""} {deplie ? "▾" : "▸"}
             </span>
           </button>
@@ -314,7 +314,7 @@ export function DetailComptes({
           onChange={(e) => setRecherche(e.target.value)}
         />
       </div>
-      <p className="text-sm text-ink/50 mb-4">
+      <p className="text-sm text-ink-3 mb-4">
         Chaque poste se déplie en comptes, et chaque compte en écritures : de quoi vérifier un
         chiffre sans quitter l&apos;analyse.
       </p>
@@ -340,7 +340,7 @@ export function DetailComptes({
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[480px]">
               <thead>
-                <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
+                <tr className="text-left text-xs uppercase tracking-wide text-ink-3 border-b border-rule/10">
                   <th className="py-2">Poste et comptes</th>
                   <th className="py-2 text-right">Montant</th>
                   <th className="py-2 text-right">Part du poste</th>

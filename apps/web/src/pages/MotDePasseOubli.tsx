@@ -34,11 +34,11 @@ export function MotDePasseOubli() {
   if (envoye) {
     return (
       <CadreAuth titre="Vérifiez votre messagerie">
-        <p className="text-sm text-ink/70">
+        <p className="text-sm text-ink-2">
           Si un compte est associé à <span className="font-medium text-ink">{email}</span>, un lien
           de réinitialisation vient d'y être envoyé. Il est valable une heure, et une seule fois.
         </p>
-        <p className="text-sm text-ink/70">
+        <p className="text-sm text-ink-2">
           Rien reçu au bout de quelques minutes ? Vérifiez les indésirables, puis{" "}
           <button
             type="button"
@@ -58,7 +58,7 @@ export function MotDePasseOubli() {
 
   return (
     <CadreAuth titre="Mot de passe oublié">
-      <p className="text-sm text-ink/70">
+      <p className="text-sm text-ink-2">
         Indiquez l'adresse de votre compte. Nous vous enverrons un lien pour choisir un nouveau mot
         de passe.
       </p>
@@ -82,7 +82,7 @@ export function MotDePasseOubli() {
           {demande.isPending ? "Envoi…" : "Envoyer le lien"}
         </button>
       </form>
-      <p className="text-xs text-ink/50 text-center">
+      <p className="text-xs text-ink-3 text-center">
         <Link to="/login" className="text-primary hover:underline">
           Revenir à la connexion
         </Link>
