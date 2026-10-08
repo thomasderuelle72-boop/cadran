@@ -713,3 +713,26 @@ export interface Previsionnel {
   /** Millésime du dernier exercice complet, point de départ de la projection. */
   depart: number | null;
 }
+
+/** État d'un dossier dans le portefeuille ; les motifs disent pourquoi. */
+export type EtatDossier = "critique" | "a_surveiller" | "sain" | "incomplet";
+
+export interface LignePortefeuille {
+  id: string;
+  nom: string;
+  nafCode: string | null;
+  devise: string;
+  etat: EtatDossier;
+  motifs: string[];
+  dernieresDonnees: string | null;
+  moisDepuisDernieresDonnees: number | null;
+  exercice: string | null;
+  chiffreAffaires: number | null;
+  croissanceCa: number | null;
+  margeEbitda: number | null;
+  resultatNet: number | null;
+  tresorerieNette: number | null;
+  dso: number | null;
+  alertesOuvertes: number;
+  actionsEnRetard: number;
+}

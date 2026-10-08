@@ -4,6 +4,7 @@ import { Layout } from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { PlateformePage } from "./pages/Plateforme";
 import { PluriannuelPage } from "./pages/Pluriannuel";
+import { PortefeuillePage } from "./pages/Portefeuille";
 import { Accueil } from "./pages/Accueil";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
@@ -77,6 +78,7 @@ export default function App() {
         <Route path="/conseil" element={<ConseilPage />} />
         <Route path="/abonnement" element={<AbonnementPage />} />
         <Route path="/pluriannuel" element={<PluriannuelPage />} />
+        <Route path="/portefeuille" element={<PortefeuillePage />} />
         <Route path="/plateforme" element={<PlateformePage />} />
       </Route>
     </Routes>

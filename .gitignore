@@ -6,3 +6,12 @@ apps/web/dist/
 *.log
 *.tsbuildinfo
 .DS_Store
+
+# Variables d'environnement propres à un poste (`.env.local`, `.env.*.local`) :
+# elles valent pour une machine et n'ont rien à faire dans le dépôt. Restent
+# versionnés le modèle (`.env.example`) et l'adresse publique de l'API pour la
+# construction de production (`apps/web/.env.production`), qui n'est pas un
+# secret et que Vite fait primer sur `.env.local`.
+.env.*
+!.env.example
+!.env.production

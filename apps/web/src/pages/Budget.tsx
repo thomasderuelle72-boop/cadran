@@ -5,6 +5,7 @@ import { EntetePage, EtatVide, SqueletteTableau, Zone } from "../components/etat
 import { formatCurrency } from "../lib/format";
 import type { LinePoste } from "../api/types";
 import { ApiError } from "../api/client";
+import { useDossierCourant } from "../lib/dossierCourant";
 
 // L'écart n'a un sens "bon/mauvais" que sur les postes de compte de résultat :
 // dépasser le budget est défavorable pour une charge, favorable pour un
@@ -29,11 +30,8 @@ function ecartColor(poste: LinePoste, ecart: number): string {
 
 export function BudgetPage() {
   const { data: entities } = useEntities();
-  const [entityId, setEntityId] = useState("");
+  const [entityId, setEntityId] = useDossierCourant(entities);
 
-  useEffect(() => {
-    if (!entityId && entities && entities.length > 0) setEntityId(entities[0].id);
-  }, [entities, entityId]);
 
   const { data: periods } = usePeriods(entityId || undefined);
   const [periodId, setPeriodId] = useState<string | null>(null);

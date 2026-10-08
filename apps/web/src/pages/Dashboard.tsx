@@ -30,6 +30,7 @@ import type {
   RatioResultPayload,
   RatioValue,
 } from "../api/types";
+import { useDossierCourant } from "../lib/dossierCourant";
 
 const CATEGORY_LABELS: Record<RatioCategory, string> = {
   RENTABILITE: "Rentabilité",
@@ -76,11 +77,19 @@ const OU_COMPRENDRE: Record<string, { to: string; libelle: string }> = {
 
 export function Dashboard() {
   const { data: entities, isLoading, error, refetch } = useEntities();
-  const [scope, setScope] = useState<string>("");
-
-  useEffect(() => {
-    if (!scope && entities && entities.length > 0) setScope(entities[0].id);
-  }, [entities, scope]);
+  /*
+   * Le dossier est celui de tous les écrans ; la vue consolidée, elle, n'est
+   * pas un dossier et reste propre au tableau de bord. La mémoriser comme
+   * dossier courant enverrait le diagnostic chercher une entité qui n'existe
+   * pas.
+   */
+  const [dossier, choisirDossier] = useDossierCourant(entities);
+  const [consolide, setConsolide] = useState(false);
+  const scope = consolide ? CONSOLIDATED_VALUE : dossier;
+  const setScope = (valeur: string) => {
+    setConsolide(valeur === CONSOLIDATED_VALUE);
+    if (valeur !== CONSOLIDATED_VALUE) choisirDossier(valeur);
+  };
 
   const isConsolidated = scope === CONSOLIDATED_VALUE;
 

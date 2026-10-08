@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { BasculeTheme } from "./BasculeTheme";
 import { BandeauSupport } from "./BandeauSupport";
 import type { Role } from "../api/types";
+import { useEntities } from "../api/hooks";
 
 interface Entree {
   to: string;
@@ -12,6 +13,12 @@ interface Entree {
   roles?: Role[];
   /** Réservé aux administrateurs de la plateforme. */
   plateforme?: boolean;
+  /**
+   * Affichée seulement à partir de deux dossiers. Un dirigeant qui suit sa
+   * seule entreprise n'a pas de portefeuille : lui en montrer un d'une ligne
+   * ajouterait un écran sans rien lui apprendre.
+   */
+  plusieursDossiers?: boolean;
 }
 
 /**
@@ -27,6 +34,7 @@ const FAMILLES: Array<{ titre: string; entrees: Entree[] }> = [
   {
     titre: "Piloter",
     entrees: [
+      { to: "/portefeuille", label: "Portefeuille", plusieursDossiers: true },
       { to: "/tableau-de-bord", label: "Tableau de bord" },
       { to: "/pluriannuel", label: "Pluriannuel" },
       { to: "/ratios", label: "Ratios" },
@@ -113,10 +121,12 @@ function IconeMenu({ ouvert }: { ouvert: boolean }) {
 function Navigation({
   role,
   plateforme,
+  plusieursDossiers,
   onNavigate,
 }: {
   role: Role | undefined;
   plateforme: boolean;
+  plusieursDossiers: boolean;
   onNavigate?: () => void;
 }) {
   return (
@@ -125,7 +135,8 @@ function Navigation({
         const visibles = famille.entrees.filter(
           (entree) =>
             (!entree.roles || (role && entree.roles.includes(role))) &&
-            (!entree.plateforme || plateforme)
+            (!entree.plateforme || plateforme) &&
+            (!entree.plusieursDossiers || plusieursDossiers)
         );
         if (visibles.length === 0) return null;
 
@@ -167,6 +178,8 @@ export function Layout() {
    * plateforme depuis le dossier d'un client, et le garde du serveur refuse
    * d'ailleurs ces requêtes. */
   const estExploitant = user?.administrateurPlateforme === true && user.support === false;
+  const { data: entites } = useEntities();
+  const plusieursDossiers = (entites?.length ?? 0) > 1;
   const { pathname } = useLocation();
 
   // Un changement de page referme le tiroir : sur téléphone, il recouvre le
@@ -218,7 +231,7 @@ export function Layout() {
           <Marque />
           <div className="text-xs text-ink/50 mt-1.5">{user?.organizationName}</div>
         </div>
-        <Navigation role={user?.role} plateforme={estExploitant} />
+        <Navigation plusieursDossiers={plusieursDossiers} role={user?.role} plateforme={estExploitant} />
         {pied}
       </aside>
 
@@ -245,7 +258,7 @@ export function Layout() {
                 <IconeMenu ouvert />
               </button>
             </div>
-            <Navigation
+            <Navigation plusieursDossiers={plusieursDossiers}
               role={user?.role}
               plateforme={estExploitant}
               onNavigate={() => setTiroirOuvert(false)}

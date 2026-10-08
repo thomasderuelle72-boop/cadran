@@ -4,6 +4,7 @@ import { EntitySelector } from "../components/EntitySelector";
 import { RatioTable } from "../components/RatioTable";
 import { EntetePage, EtatVide, SqueletteTableau, Zone } from "../components/etats";
 import type { RatioCategory } from "../api/types";
+import { useDossierCourant } from "../lib/dossierCourant";
 
 const CATEGORY_LABELS: Record<RatioCategory, string> = {
   RENTABILITE: "Rentabilité",
@@ -14,11 +15,8 @@ const CATEGORY_LABELS: Record<RatioCategory, string> = {
 
 export function RatiosPage() {
   const { data: entities } = useEntities();
-  const [entityId, setEntityId] = useState<string>("");
+  const [entityId, setEntityId] = useDossierCourant(entities);
 
-  useEffect(() => {
-    if (!entityId && entities && entities.length > 0) setEntityId(entities[0].id);
-  }, [entities, entityId]);
 
   const { data: periods } = usePeriods(entityId || undefined);
   const [periodId, setPeriodId] = useState<string | null>(null);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import {
   useCashCategories,
@@ -17,6 +17,7 @@ import { StatusBadge } from "../components/StatusBadge";
 import { formatCurrency, formatDate } from "../lib/format";
 import type { CashCategory, CashRecurrence } from "../api/types";
 import { ApiError } from "../api/client";
+import { useDossierCourant } from "../lib/dossierCourant";
 
 const RECURRENCE_LABELS: Record<CashRecurrence, string> = {
   NONE: "Ponctuel",
@@ -29,12 +30,9 @@ const HORIZONS = [13, 26, 52];
 export function CashPage() {
   const couleurs = useCouleursGraphique();
   const { data: entities } = useEntities();
-  const [entityId, setEntityId] = useState("");
+  const [entityId, setEntityId] = useDossierCourant(entities);
   const [weeks, setWeeks] = useState(13);
 
-  useEffect(() => {
-    if (!entityId && entities && entities.length > 0) setEntityId(entities[0].id);
-  }, [entities, entityId]);
 
   const {
     data: projection,

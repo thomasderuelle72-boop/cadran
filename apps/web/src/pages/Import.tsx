@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import {
   useCreatePeriod,
@@ -15,6 +15,7 @@ import { formatCurrency, formatDate } from "../lib/format";
 import type { LinePoste, Period } from "../api/types";
 import { ApiError } from "../api/client";
 import { FecImport } from "../components/FecImport";
+import { useDossierCourant } from "../lib/dossierCourant";
 
 type Step = "period" | "upload" | "mapColumns" | "review";
 
@@ -169,15 +170,12 @@ export function ImportPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { data: entities } = useEntities();
-  const [entityId, setEntityId] = useState<string>("");
+  const [entityId, setEntityId] = useDossierCourant(entities);
   const { data: periods } = usePeriods(entityId || undefined);
   const { data: reference } = useImportReference();
   const createPeriod = useCreatePeriod();
   const submitLineItems = useSubmitLineItems();
 
-  useEffect(() => {
-    if (!entityId && entities && entities.length > 0) setEntityId(entities[0].id);
-  }, [entities, entityId]);
 
   const [step, setStep] = useState<Step>("period");
   const [periodId, setPeriodId] = useState<string>("");

@@ -47,6 +47,7 @@ import type {
   Period,
   RatioResultPayload,
   TrendPoint,
+  LignePortefeuille,
 } from "./types";
 
 export function useMe(enabled: boolean) {
@@ -212,6 +213,14 @@ export function useDeletePeriod() {
       queryClient.invalidateQueries({ queryKey: ["trend"] });
       queryClient.invalidateQueries({ queryKey: ["alerts"] });
     },
+  });
+}
+
+/** Tous les dossiers de l'organisation, une ligne chacun. */
+export function usePortefeuille() {
+  return useQuery<LignePortefeuille[]>({
+    queryKey: ["portefeuille"],
+    queryFn: () => api.get("/portefeuille"),
   });
 }
 

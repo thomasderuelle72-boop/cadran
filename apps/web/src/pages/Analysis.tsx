@@ -5,6 +5,7 @@ import { EntitySelector } from "../components/EntitySelector";
 import { EntetePage, EtatVide, SqueletteCarte, SqueletteTableau, Zone } from "../components/etats";
 import { formatCurrency } from "../lib/format";
 import type { LigneFlux, SoldeIntermediaire } from "../api/types";
+import { useDossierCourant } from "../lib/dossierCourant";
 
 function formatPart(part: number | null): string {
   return part === null ? "—" : `${(part * 100).toFixed(1)} %`;
@@ -70,12 +71,9 @@ function LigneDeFlux({ ligne, currency }: { ligne: LigneFlux; currency: string }
 
 export function AnalysisPage() {
   const { data: entities } = useEntities();
-  const [entityId, setEntityId] = useState("");
+  const [entityId, setEntityId] = useDossierCourant(entities);
   const [periodId, setPeriodId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!entityId && entities && entities.length > 0) setEntityId(entities[0].id);
-  }, [entities, entityId]);
 
   const { data: periods } = usePeriods(entityId || undefined);
 

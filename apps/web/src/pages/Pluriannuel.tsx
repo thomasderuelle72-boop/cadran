@@ -24,6 +24,7 @@ import {
 } from "../components/Graphique";
 import { BlocTableau, BlocTuile } from "../components/BlocTableau";
 import { EntetePage, SqueletteCarte } from "../components/etats";
+import { useDossierCourant } from "../lib/dossierCourant";
 
 /**
  * Tableau de bord pluriannuel et prévisionnel.
@@ -76,10 +77,7 @@ const FAMILLES: { id: Mesure["famille"]; label: string }[] = [
 
 export function PluriannuelPage() {
   const { data: entites } = useEntities();
-  const [entityId, setEntityId] = useState<string | null>(null);
-  useEffect(() => {
-    if (!entityId && entites?.length) setEntityId(entites[0].id);
-  }, [entites, entityId]);
+  const [entityId, setEntityId] = useDossierCourant(entites);
 
   const { data: mesuresListe } = useMesures(entityId);
   const { data: reels, isLoading } = useSeriesPluriannuelles(entityId);

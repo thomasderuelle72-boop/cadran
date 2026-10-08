@@ -5,6 +5,7 @@ import { EntitySelector } from "../components/EntitySelector";
 import { EntetePage, EtatVide, SqueletteCarte, SqueletteTuiles, Zone } from "../components/etats";
 import { formatCurrency } from "../lib/format";
 import type { ScoreRisque, ZoneScore } from "../api/types";
+import { useDossierCourant } from "../lib/dossierCourant";
 
 const LIBELLE_ZONE: Record<ZoneScore, string> = {
   sain: "Zone saine",
@@ -113,12 +114,9 @@ function CarteScore({ score }: { score: ScoreRisque }) {
 
 export function DiagnosticPage() {
   const { data: entities } = useEntities();
-  const [entityId, setEntityId] = useState("");
+  const [entityId, setEntityId] = useDossierCourant(entities);
   const [periodId, setPeriodId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!entityId && entities && entities.length > 0) setEntityId(entities[0].id);
-  }, [entities, entityId]);
 
   const { data: periods } = usePeriods(entityId || undefined);
 

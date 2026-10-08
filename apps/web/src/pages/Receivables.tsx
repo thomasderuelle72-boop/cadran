@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useBalanceAgee, useConcentration, useEntities } from "../api/hooks";
 import { EntitySelector } from "../components/EntitySelector";
 import { EntetePage, EtatVide, SqueletteTableau, SqueletteTuiles, Zone } from "../components/etats";
 import { formatCurrency } from "../lib/format";
 import type { SensTiers } from "../api/types";
+import { useDossierCourant } from "../lib/dossierCourant";
 
 const DELAIS = [
   { valeur: 30, label: "30 jours (délai légal supplétif)" },
@@ -35,13 +36,10 @@ function Jauge({ part }: { part: number | null }) {
 
 export function ReceivablesPage() {
   const { data: entities } = useEntities();
-  const [entityId, setEntityId] = useState("");
+  const [entityId, setEntityId] = useDossierCourant(entities);
   const [sens, setSens] = useState<SensTiers>("CLIENT");
   const [delai, setDelai] = useState(30);
 
-  useEffect(() => {
-    if (!entityId && entities && entities.length > 0) setEntityId(entities[0].id);
-  }, [entities, entityId]);
 
   const { data: balance, isLoading, error, refetch } = useBalanceAgee(entityId || null, sens, delai);
   const { data: concentration } = useConcentration(entityId || null, sens);
