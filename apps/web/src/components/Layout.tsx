@@ -27,9 +27,9 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { BasculeTheme } from "./BasculeTheme";
 import { BandeauSupport } from "./BandeauSupport";
+import { SelecteurDossier } from "./SelecteurDossier";
 import type { Role } from "../api/types";
 import { useAlertEvents, useEntities } from "../api/hooks";
-import { useDossierCourant } from "../lib/dossierCourant";
 
 interface Entree {
   to: string;
@@ -181,47 +181,6 @@ function Marque() {
         aria-hidden="true"
       />
       <span className="font-display font-bold text-lg leading-none tracking-tight">Cadran</span>
-    </div>
-  );
-}
-
-/**
- * Le dossier courant, en tête de menu.
- *
- * Il était choisi en haut de chaque écran, dans un menu déroulant qui
- * changeait de place d'une page à l'autre. Le choix étant de toute façon
- * partagé entre les écrans, il a sa place ici, une fois : on voit toujours
- * de quel dossier on lit les chiffres, et on en change sans chercher.
- */
-function SelecteurDossier() {
-  const { data: entites } = useEntities();
-  const [dossier, choisir] = useDossierCourant(entites);
-
-  if (!entites || entites.length === 0) return null;
-
-  return (
-    <div className="px-3 pt-3">
-      <label htmlFor="dossier-courant" className="block px-1 mb-1 text-xs font-semibold text-ink-3">
-        Dossier
-      </label>
-      {entites.length === 1 ? (
-        <div className="px-3 py-2 rounded-lg bg-surface-2 text-sm font-semibold truncate" id="dossier-courant">
-          {entites[0].name}
-        </div>
-      ) : (
-        <select
-          id="dossier-courant"
-          className="input font-semibold bg-surface-2"
-          value={dossier}
-          onChange={(e) => choisir(e.target.value)}
-        >
-          {entites.map((entite) => (
-            <option key={entite.id} value={entite.id}>
-              {entite.name}
-            </option>
-          ))}
-        </select>
-      )}
     </div>
   );
 }
@@ -414,9 +373,7 @@ function EnTeteMenu() {
 export function Layout() {
   const [tiroirOuvert, setTiroirOuvert] = useState(false);
   const { pathname } = useLocation();
-  const { data: entites } = useEntities();
-  const [dossier] = useDossierCourant(entites);
-  const nomDossier = entites?.find((e) => e.id === dossier)?.name;
+  const { user } = useAuth();
 
   // Un changement de page referme le tiroir : sur téléphone, il recouvre le
   // contenu qu'on vient d'aller chercher.
@@ -446,15 +403,14 @@ export function Layout() {
           <Menu size={22} aria-hidden="true" />
         </button>
         <Marque />
-        {nomDossier && (
-          <span className="ml-auto text-sm font-medium text-ink-2 truncate max-w-[45%]">{nomDossier}</span>
-        )}
+        <div className="ml-auto min-w-0 max-w-[55%]">
+          <SelecteurDossier compact />
+        </div>
       </header>
 
       {/* Latérale fixe à partir de lg. */}
       <aside className="hidden lg:flex w-64 flex-none border-r border-rule/10 bg-surface flex-col h-screen sticky top-0">
         <EnTeteMenu />
-        <SelecteurDossier />
         <Navigation />
       </aside>
 
@@ -474,7 +430,6 @@ export function Layout() {
                 <X size={20} aria-hidden="true" />
               </button>
             </div>
-            <SelecteurDossier />
             <Navigation onNavigate={() => setTiroirOuvert(false)} />
           </div>
         </div>
@@ -486,9 +441,25 @@ export function Layout() {
         dans son propre cadre.
       */}
       <div className="flex-1 min-w-0 flex flex-col">
-        {/* Hors du <main> et collant en haut : il doit rester visible quand on
-            fait défiler un tableau de deux cents lignes. */}
-        <BandeauSupport />
+        {/*
+          Hors du <main> et collants en haut, ensemble : le bandeau d'accès
+          support doit rester visible quand on fait défiler un tableau de deux
+          cents lignes, et la barre de contexte dit de quelle organisation et
+          de quel dossier on lit les chiffres — c'est aussi là qu'on change de
+          dossier. Collés séparément, l'un glissait sous l'autre.
+        */}
+        <div className="sticky top-0 z-30">
+          <BandeauSupport />
+          <div className="hidden lg:flex items-center gap-2 h-14 px-10 border-b border-rule/10 bg-surface">
+            <span className="text-sm text-ink-3 truncate max-w-[16rem]" title={user?.organizationName}>
+              {user?.organizationName}
+            </span>
+            <span className="text-ink-3" aria-hidden="true">
+              /
+            </span>
+            <SelecteurDossier />
+          </div>
+        </div>
         <main className="px-4 sm:px-6 lg:px-10 py-6 lg:py-8">
           <div className="max-w-[1320px] mx-auto">
             <Outlet />
