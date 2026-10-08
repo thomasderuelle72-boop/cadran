@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, memoriserCsrf, uploadFile } from "./client";
+import { choisirDossier } from "../lib/dossierCourant";
 import type { EtatAbonnement, PlanId } from "../lib/abonnement";
 import type {
   Bloc,
@@ -294,6 +295,32 @@ export function useCreateEntity() {
       headcount?: number;
     }) => api.post<Entity>("/entities", input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["entities"] }),
+  });
+}
+
+/**
+ * Charge le dossier de démonstration — ou le recharge, pour repartir de
+ * zéro — et en fait le dossier courant : on le charge pour le regarder.
+ */
+export function useDossierDemonstration() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<{ id: string; nom: string; remplace: boolean }>("/entities/demonstration"),
+    onSuccess: (reponse) => {
+      choisirDossier(reponse.id);
+      // Tout peut en dépendre : liste des dossiers, portefeuille, alertes.
+      return queryClient.invalidateQueries();
+    },
+  });
+}
+
+/** Supprime un dossier ; le nom exact est exigé en confirmation par l'API. */
+export function useSupprimerEntite() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, nom }: { id: string; nom: string }) =>
+      api.deleteAvecCorps<{ supprime: string }>(`/entities/${id}`, { nom }),
+    onSuccess: () => queryClient.invalidateQueries(),
   });
 }
 

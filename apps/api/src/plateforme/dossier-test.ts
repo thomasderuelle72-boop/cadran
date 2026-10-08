@@ -1,4 +1,4 @@
-import { LinePoste, Prisma } from "@prisma/client";
+import { LinePoste, Prisma, PrismaClient } from "@prisma/client";
 import { computeAggregates, computeDerived, computeRatios, Aggregates } from "../ratios/engine";
 
 /**
@@ -356,4 +356,25 @@ export async function construireDossierTest(
     );
   }
 
+}
+
+/**
+ * Pose le dossier de test dans une organisation, en remplaçant celui qui y
+ * serait déjà : on le recharge pour repartir de zéro après l'avoir modifié.
+ *
+ * Partagé par la console d'exploitation et par le bouton que voit
+ * l'administrateur d'une organisation, pour qu'il n'existe qu'une façon de le
+ * construire.
+ */
+export async function poserDossierTest(prisma: PrismaClient, organizationId: string) {
+  const existant = await prisma.entity.findFirst({ where: { organizationId, name: NOM_DOSSIER } });
+  await prisma.$transaction(
+    async (tx) => {
+      if (existant) await tx.entity.delete({ where: { id: existant.id } });
+      await construireDossierTest(tx, organizationId);
+    },
+    { timeout: 60000 }
+  );
+  const cree = await prisma.entity.findFirstOrThrow({ where: { organizationId, name: NOM_DOSSIER } });
+  return { id: cree.id, nom: NOM_DOSSIER, remplace: Boolean(existant) };
 }

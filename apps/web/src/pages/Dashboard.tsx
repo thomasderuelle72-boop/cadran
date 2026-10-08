@@ -11,6 +11,7 @@ import {
   useTrend,
 } from "../api/hooks";
 import { KpiTile } from "../components/KpiTile";
+import { BoutonDemonstration } from "../components/BoutonDemonstration";
 import { StatusBadge } from "../components/StatusBadge";
 import { CourbeTemporelle } from "../components/Graphique";
 import {
@@ -124,10 +125,12 @@ export function Dashboard() {
           <EtatVide
             titre="Bienvenue sur Cadran"
             action={{ to: "/import", label: "Importer des données" }}
+            secondaire={<BoutonDemonstration />}
           >
-            Aucune entité n&apos;a encore été créée. Importez un Fichier des
-            Écritures Comptables ou une balance pour commencer : tout le reste
-            en découle.
+            Aucun dossier n&apos;a encore été créé. Importez un Fichier des
+            Écritures Comptables ou une balance pour commencer — ou chargez le
+            dossier de démonstration pour essayer Cadran sur des chiffres
+            complets.
           </EtatVide>
         ) : consolide && entities.length > 1 ? (
           <ConsolidatedDashboard />
@@ -169,8 +172,11 @@ function EntityDashboard({ entityId }: { entityId: string }) {
         <EtatVide
           titre="Aucune période importée"
           action={{ to: "/import", label: "Importer des données" }}
+          secondaire={<BoutonDemonstration />}
         >
-          Cette entité n&apos;a encore aucune donnée comptable.
+          Ce dossier n&apos;a encore aucune donnée comptable. Importez son FEC
+          ou sa balance — ou chargez le dossier de démonstration pour essayer
+          Cadran sur des chiffres complets.
         </EtatVide>
       ) : (
         <div className="space-y-6">

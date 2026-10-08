@@ -138,19 +138,27 @@ export function EtatVide({
   titre,
   children,
   action,
+  secondaire,
 }: {
   titre: string;
   children?: ReactNode;
   action?: { to: string; label: string };
+  /** Une seconde issue, à côté de l'action principale. */
+  secondaire?: ReactNode;
 }) {
   return (
     <div className="card">
       <h2 className="font-display text-lg font-semibold mb-1">{titre}</h2>
-      {children && <div className="text-sm text-ink-3 max-w-prose">{children}</div>}
-      {action && (
-        <Link to={action.to} className="btn-primary inline-block mt-4">
-          {action.label}
-        </Link>
+      {children && <div className="text-sm text-ink-2 max-w-prose">{children}</div>}
+      {(action || secondaire) && (
+        <div className="flex flex-wrap items-start gap-3 mt-4">
+          {action && (
+            <Link to={action.to} className="btn-primary">
+              {action.label}
+            </Link>
+          )}
+          {secondaire}
+        </div>
       )}
     </div>
   );

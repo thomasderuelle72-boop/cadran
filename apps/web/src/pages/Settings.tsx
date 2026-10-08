@@ -1,10 +1,18 @@
-import { useState } from "react";
-import { useAuditLogs, useCreateEntity, useCreateOrgUser, useEntities, useOrgUsers } from "../api/hooks";
+import { Fragment, useState } from "react";
+import {
+  useAuditLogs,
+  useCreateEntity,
+  useCreateOrgUser,
+  useEntities,
+  useOrgUsers,
+  useSupprimerEntite,
+} from "../api/hooks";
 import { ApiError } from "../api/client";
 import type { Role } from "../api/types";
 import { useAuth } from "../context/AuthContext";
 import { EntetePage } from "../components/etats";
 import { MarqueDocuments } from "../components/MarqueDocuments";
+import { BoutonDemonstration } from "../components/BoutonDemonstration";
 
 const ROLE_LABELS: Record<Role, string> = {
   ADMIN: "Administrateur",
@@ -36,6 +44,37 @@ export function SettingsPage() {
     headcount: "",
   });
   const [entityError, setEntityError] = useState<string | null>(null);
+
+  /*
+   * Suppression d'un dossier : réservée à l'administrateur, et confirmée en
+   * recopiant le nom — l'API le vérifie de son côté. Un seul dossier à la
+   * fois en cours de confirmation, sous sa propre ligne, pour qu'on voie
+   * lequel on s'apprête à effacer.
+   */
+  const peutSupprimer = user?.role === "ADMIN";
+  const supprimerEntite = useSupprimerEntite();
+  const [aSupprimer, setASupprimer] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState("");
+  const [supprime, setSupprime] = useState<string | null>(null);
+
+  function demanderSuppression(id: string) {
+    setASupprimer(id);
+    setConfirmation("");
+    setSupprime(null);
+    supprimerEntite.reset();
+  }
+
+  function confirmerSuppression(id: string, nom: string) {
+    supprimerEntite.mutate(
+      { id, nom: confirmation },
+      {
+        onSuccess: () => {
+          setASupprimer(null);
+          setSupprime(nom);
+        },
+      },
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -73,7 +112,21 @@ export function SettingsPage() {
       <EntetePage titre="Paramètres" sousTitre={`Organisation : ${user?.organizationName ?? ""}`} />
 
       <div className="card">
-        <h2 className="font-display text-lg font-semibold mb-3">Entités du groupe</h2>
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+          <div>
+            <h2 className="font-display text-lg font-semibold">Dossiers</h2>
+            <p className="text-sm text-ink-3 mt-0.5 max-w-prose">
+              Les entreprises suivies par l&apos;organisation. Le dossier de démonstration est une entreprise
+              fictive complète, pour essayer l&apos;outil ; il ne compte pas dans votre formule.
+            </p>
+          </div>
+          <BoutonDemonstration />
+        </div>
+        {supprime && (
+          <p role="status" className="text-sm text-success mb-3">
+            Dossier « {supprime} » supprimé.
+          </p>
+        )}
         <div className="overflow-x-auto">
         <table className="w-full text-sm mb-4 min-w-[560px]">
           <thead>
@@ -84,18 +137,82 @@ export function SettingsPage() {
               <th className="py-2">Taux vers devise groupe</th>
               <th className="py-2">Code NAF</th>
               <th className="py-2">Effectif</th>
+              {peutSupprimer && (
+                <th className="py-2">
+                  <span className="sr-only">Actions</span>
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
             {entities?.map((entity) => (
-              <tr key={entity.id} className="border-b border-rule/5 last:border-0">
-                <td className="py-2 font-medium">{entity.name}</td>
-                <td className="py-2 text-ink-3">{entity.country ?? "—"}</td>
-                <td className="py-2 text-ink-3">{entity.currency}</td>
-                <td className="py-2 font-mono text-ink-3">{entity.fxRateToOrgCurrency}</td>
-                <td className="py-2 font-mono text-ink-3">{entity.nafCode ?? "—"}</td>
-                <td className="py-2 font-mono text-ink-3">{entity.headcount ?? "—"}</td>
-              </tr>
+              <Fragment key={entity.id}>
+                <tr className="border-b border-rule/5 last:border-0">
+                  <td className="py-2 font-medium">{entity.name}</td>
+                  <td className="py-2 text-ink-3">{entity.country ?? "—"}</td>
+                  <td className="py-2 text-ink-3">{entity.currency}</td>
+                  <td className="py-2 font-mono text-ink-3">{entity.fxRateToOrgCurrency}</td>
+                  <td className="py-2 font-mono text-ink-3">{entity.nafCode ?? "—"}</td>
+                  <td className="py-2 font-mono text-ink-3">{entity.headcount ?? "—"}</td>
+                  {peutSupprimer && (
+                    <td className="py-2 text-right">
+                      <button
+                        type="button"
+                        onClick={() => demanderSuppression(entity.id)}
+                        className="rounded-md px-2 py-1 text-sm font-medium text-critical hover:bg-critical-soft"
+                      >
+                        Supprimer
+                      </button>
+                    </td>
+                  )}
+                </tr>
+                {aSupprimer === entity.id && (
+                  <tr>
+                    <td colSpan={7} className="pb-4">
+                      <div className="rounded-lg border border-critical/30 bg-critical-soft p-4 space-y-3">
+                        <p className="text-sm">
+                          <strong>Supprimer « {entity.name} » ?</strong> Ses périodes, écritures, ratios, budget,
+                          prévisions de trésorerie et plan d&apos;action seront effacés définitivement.
+                        </p>
+                        <div>
+                          <label htmlFor="confirmation-suppression" className="label">
+                            Recopiez le nom du dossier pour confirmer
+                          </label>
+                          <input
+                            id="confirmation-suppression"
+                            className="input max-w-sm"
+                            autoComplete="off"
+                            autoFocus
+                            value={confirmation}
+                            placeholder={entity.name}
+                            onChange={(e) => setConfirmation(e.target.value)}
+                          />
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            className="btn-primary bg-critical"
+                            disabled={confirmation.trim() !== entity.name || supprimerEntite.isPending}
+                            onClick={() => confirmerSuppression(entity.id, entity.name)}
+                          >
+                            {supprimerEntite.isPending ? "Suppression…" : "Supprimer définitivement"}
+                          </button>
+                          <button type="button" className="btn-secondary" onClick={() => setASupprimer(null)}>
+                            Annuler
+                          </button>
+                        </div>
+                        {supprimerEntite.isError && (
+                          <p role="alert" className="text-sm text-critical">
+                            {supprimerEntite.error instanceof ApiError
+                              ? supprimerEntite.error.message
+                              : "La suppression a échoué."}
+                          </p>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             ))}
           </tbody>
         </table>
@@ -165,7 +282,7 @@ export function SettingsPage() {
               </p>
               {entityError && <p className="text-critical text-sm mb-2">{entityError}</p>}
               <button type="submit" className="btn-secondary" disabled={createEntity.isPending}>
-                {createEntity.isPending ? "Création…" : "Ajouter une entité"}
+                {createEntity.isPending ? "Création…" : "Ajouter un dossier"}
               </button>
             </div>
           </form>

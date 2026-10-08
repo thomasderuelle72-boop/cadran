@@ -4,7 +4,7 @@ import { PlanId, Role, StatutAbonnement } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 import { PrismaService } from "../prisma/prisma.service";
 import { PLANS } from "../billing/plans";
-import { NOM_DOSSIER, construireDossierTest } from "./dossier-test";
+import { NOM_DOSSIER, poserDossierTest } from "./dossier-test";
 import { genererMotDePasse } from "./motdepasse";
 
 /**
@@ -303,15 +303,8 @@ export class PlateformeService {
       return { cree: false, supprime: true, nom: NOM_DOSSIER };
     }
 
-    await this.prisma.$transaction(
-      async (tx) => {
-        if (existant) await tx.entity.delete({ where: { id: existant.id } });
-        await construireDossierTest(tx, organizationId);
-      },
-      { timeout: 60000 }
-    );
-
-    return { cree: true, supprime: Boolean(existant), nom: NOM_DOSSIER };
+    const pose = await poserDossierTest(this.prisma, organizationId);
+    return { cree: true, supprime: pose.remplace, nom: NOM_DOSSIER };
   }
 
   async sante() {
