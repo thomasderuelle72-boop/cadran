@@ -2,16 +2,24 @@ import { useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router";
 import { useLogin } from "../api/hooks";
 import { useAuth } from "../context/AuthContext";
-import { ApiError, cookiesRefuses } from "../api/client";
+import { ApiError, MESSAGE_COOKIE_REFUSE } from "../api/client";
 import { CadreAuth } from "../components/CadreAuth";
+
+/*
+ * Le compte de démonstration n'existe que dans la base de développement, que
+ * remplit le script d'amorçage. En production, pré-remplir ses identifiants
+ * proposait à chaque visiteur, sur chaque poste, un compte qui n'existe pas —
+ * et masquait ceux que le navigateur avait mémorisés.
+ */
+const DEMONSTRATION = import.meta.env.DEV;
 
 export function Login() {
   const { isAuthenticated, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const loginMutation = useLogin();
-  const [email, setEmail] = useState("demo@cadran.fr");
-  const [password, setPassword] = useState("CadranDemo123!");
+  const [email, setEmail] = useState(DEMONSTRATION ? "demo@cadran.fr" : "");
+  const [password, setPassword] = useState(DEMONSTRATION ? "CadranDemo123!" : "");
   const [error, setError] = useState<string | null>(null);
 
   /* Posé par l'écran de nouveau mot de passe : sans ce retour, la
@@ -33,16 +41,10 @@ export function Login() {
        * écran sans un mot d'explication — il conclut que son mot de passe est
        * faux.
        */
-      if (await cookiesRefuses()) {
-        setError(
-          "Votre navigateur a refusé le cookie de session. Safari et les navigateurs "
-            + "en navigation privée bloquent les cookies dits tiers ; Cadran servant "
-            + "son interface et son API depuis deux domaines, le nôtre en est un. "
-            + "Autorisez les cookies pour ce site, ou utilisez Chrome ou Firefox."
-        );
+      if (!(await login())) {
+        setError(MESSAGE_COOKIE_REFUSE);
         return;
       }
-      login();
       navigate("/tableau-de-bord");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Connexion impossible.");
@@ -96,7 +98,7 @@ export function Login() {
         </button>
       </form>
       <p className="text-xs text-ink/50 text-center">
-        Identifiants de démonstration pré-remplis. Pas de compte ?{" "}
+        {DEMONSTRATION && "Identifiants de démonstration pré-remplis. "}Pas de compte ?{" "}
         <Link to="/register" className="text-primary hover:underline">
           Créer une organisation
         </Link>

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router";
 import { useRegister } from "../api/hooks";
 import { useAuth } from "../context/AuthContext";
-import { ApiError, cookiesRefuses } from "../api/client";
+import { ApiError, MESSAGE_COOKIE_REFUSE } from "../api/client";
 import { CadreAuth } from "../components/CadreAuth";
 
 export function Register() {
@@ -25,16 +25,10 @@ export function Register() {
        * écran sans un mot d'explication — il conclut que son mot de passe est
        * faux.
        */
-      if (await cookiesRefuses()) {
-        setError(
-          "Votre navigateur a refusé le cookie de session. Safari et les navigateurs "
-            + "en navigation privée bloquent les cookies dits tiers ; Cadran servant "
-            + "son interface et son API depuis deux domaines, le nôtre en est un. "
-            + "Autorisez les cookies pour ce site, ou utilisez Chrome ou Firefox."
-        );
+      if (!(await login())) {
+        setError(MESSAGE_COOKIE_REFUSE);
         return;
       }
-      login();
       navigate("/import");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Inscription impossible.");

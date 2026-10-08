@@ -1,15 +1,19 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { marquerSessionOuverte, oublierSession, sessionProbable } from "../api/client";
-import { useDeconnexion, useMe } from "../api/hooks";
+import { ApiError, marquerSessionOuverte, oublierSession, sessionProbable } from "../api/client";
+import { requeteMoi, useDeconnexion, useMe } from "../api/hooks";
 import type { AuthUser } from "../api/types";
 
 interface AuthContextValue {
   user: AuthUser | undefined;
   isLoading: boolean;
   isAuthenticated: boolean;
-  /** Plus de jeton en paramètre : il est arrivé en cookie, hors de portée. */
-  login: () => void;
+  /**
+   * À appeler une fois la connexion acceptée par l'API. Relit l'identité
+   * auprès du serveur et répond `false` si la session n'est pas reconnue —
+   * c'est-à-dire si le navigateur a refusé le cookie qu'on vient de poser.
+   */
+  login: () => Promise<boolean>;
   logout: () => void;
   /**
    * Relit l'identité depuis le serveur, et vide le reste du cache.
@@ -33,22 +37,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * réponse de /auth/me le dit.
    */
   const [sessionOuverte, setSessionOuverte] = useState(sessionProbable);
-  const { data: user, isLoading, refetch } = useMe(sessionOuverte);
+  const { data: user, isLoading, error, refetch } = useMe(sessionOuverte);
   const deconnexion = useDeconnexion();
   const queryClient = useQueryClient();
+
+  /*
+   * Le serveur dit que la session n'existe plus (cookie expiré, effacé) : on
+   * retire la marque. Restée en place, elle faisait croire à chaque visite
+   * qu'une session était ouverte, et c'est ce qui bloquait la connexion
+   * suivante — voir login.
+   */
+  useEffect(() => {
+    if (error instanceof ApiError && error.status === 401) {
+      oublierSession();
+      setSessionOuverte(false);
+    }
+  }, [error]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       isLoading: sessionOuverte && isLoading,
       isAuthenticated: sessionOuverte && !!user,
-      login: () => {
-        /* La marque remplace l'ancien indice tiré d'un cookie lisible, que
-         * ce domaine ne voyait jamais : tout le monde paraissait déconnecté
-         * au rechargement, et l'application repartait sur l'écran de
-         * connexion alors que la session était bien ouverte. */
+      login: async () => {
+        /*
+         * L'identité est relue ici, explicitement, et non laissée à useMe.
+         *
+         * Quand la marque de session survivait à un cookie expiré, useMe
+         * interrogeait /auth/me dès l'ouverture de la page, recevait un 401
+         * et le gardait : il ne relance pas une requête en échec. La
+         * connexion réussissait, mais l'identité en cache restait « inconnu »,
+         * l'application renvoyait sur l'écran de connexion — et l'utilisateur
+         * concluait que son mot de passe était faux. Relire ici remplace ce
+         * 401 par la bonne réponse, quel que soit l'état précédent.
+         *
+         * La marque, elle, remplace l'ancien indice tiré d'un cookie lisible,
+         * que ce domaine ne voyait jamais.
+         */
         marquerSessionOuverte();
+        try {
+          await queryClient.fetchQuery(requeteMoi);
+        } catch (erreur) {
+          if (erreur instanceof ApiError && erreur.status === 401) {
+            oublierSession();
+            setSessionOuverte(false);
+            return false;
+          }
+          throw erreur;
+        }
         setSessionOuverte(true);
+        return true;
       },
       logout: () => {
         /*

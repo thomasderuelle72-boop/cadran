@@ -52,13 +52,22 @@ import type {
   ReferentielCharge,
 } from "./types";
 
+/**
+ * La requête d'identité, partagée entre useMe et l'ouverture de session.
+ *
+ * L'ouverture de session doit pouvoir la relancer elle-même : useMe ne se
+ * relance pas seul après un échec (ni nouvel essai, ni relecture au retour
+ * sur l'onglet), et un 401 reçu avant la connexion restait sinon la réponse
+ * en cache après elle.
+ */
+export const requeteMoi = {
+  queryKey: ["me"],
+  queryFn: () => api.get<AuthUser>("/auth/me"),
+  retry: false,
+} as const;
+
 export function useMe(enabled: boolean) {
-  return useQuery<AuthUser>({
-    queryKey: ["me"],
-    queryFn: () => api.get("/auth/me"),
-    enabled,
-    retry: false,
-  });
+  return useQuery<AuthUser>({ ...requeteMoi, enabled });
 }
 
 export function useLogin() {

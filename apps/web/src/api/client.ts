@@ -245,27 +245,17 @@ export async function urlImage(path: string): Promise<string> {
 }
 
 /**
- * Le navigateur a-t-il accepté le cookie de session ?
+ * Le message à afficher quand la session n'est pas reconnue juste après une
+ * connexion acceptée : le cookie n'est pas reparti avec la requête suivante.
  *
- * On ne peut pas le lire — il est `httpOnly`, et posé sur le domaine de
- * l'API. On ne peut donc que lui demander de servir : si `/auth/me` répond
- * 401 juste après une connexion réussie, c'est que le cookie n'est pas
- * reparti. C'est le cas de Safari et de la navigation privée, qui écartent
- * les cookies dits tiers — et les nôtres en sont, l'interface et l'API étant
- * sur deux domaines.
- *
- * La version précédente déduisait la réponse de la présence d'un cookie
- * lisible. Elle ne pouvait que se tromper : ce cookie n'est jamais visible
- * d'ici, et tout le monde paraissait donc refusé. Celle-ci éprouve ce qu'elle
- * affirme.
+ * On ne peut pas lire ce cookie — il est `httpOnly`, et posé sur le domaine
+ * de l'API. On ne peut que lui demander de servir, ce que fait `login` dans
+ * AuthContext en relisant `/auth/me`. C'est le cas de Safari et de la
+ * navigation privée, qui écartent les cookies dits tiers — et les nôtres en
+ * sont, l'interface et l'API étant sur deux domaines.
  */
-export async function cookiesRefuses(): Promise<boolean> {
-  try {
-    const reponse = await fetch(`${API_URL}/auth/me`, { credentials: "include" });
-    return reponse.status === 401;
-  } catch {
-    // Panne réseau : ce n'est pas un refus de cookie, et le dire serait
-    // envoyer l'utilisateur chercher dans la mauvaise direction.
-    return false;
-  }
-}
+export const MESSAGE_COOKIE_REFUSE =
+  "Votre navigateur a refusé le cookie de session. Safari et les navigateurs "
+  + "en navigation privée bloquent les cookies dits tiers ; Cadran servant "
+  + "son interface et son API depuis deux domaines, le nôtre en est un. "
+  + "Autorisez les cookies pour ce site, ou utilisez Chrome ou Firefox.";
