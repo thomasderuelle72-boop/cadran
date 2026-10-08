@@ -572,3 +572,29 @@ model ActionPlan {
   @@index([organizationId, statut])
   @@index([entityId])
 }
+
+// Quartiles sectoriels d'une source publique (fascicules de la Banque de
+// France), importés d'un bloc par source et millésime depuis la console
+// d'administration. Aucune donnée n'est livrée avec Cadran : la réutilisation
+// des fascicules est soumise à l'autorisation écrite de la Banque de France.
+// Le format d'import et sa validation sont dans benchmark/import-reference.ts.
+model ReferenceSectorielle {
+  id                String   @id @default(cuid())
+  source            String
+  /// Année des comptes décrits, pas année de publication.
+  millesime         Int
+  /// Date de mise à jour de la source, qu'elle impose d'afficher avec elle.
+  miseAJour         DateTime
+  /// Division NAF (« 25 ») ou section (« C »).
+  codeSecteur       String
+  libelleSecteur    String
+  ratioId           String
+  q1                Float
+  q2                Float
+  q3                Float
+  nombreEntreprises Int?
+  importeLe         DateTime @default(now())
+
+  @@unique([source, millesime, codeSecteur, ratioId])
+  @@index([source, codeSecteur])
+}

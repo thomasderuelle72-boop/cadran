@@ -6,6 +6,7 @@ import { EntetePage, EtatVide, SqueletteCarte, SqueletteTuiles, Zone } from "../
 import { formatCurrency } from "../lib/format";
 import type { ScoreRisque, ZoneScore } from "../api/types";
 import { useDossierCourant } from "../lib/dossierCourant";
+import { ComparaisonSectorielle } from "../components/ComparaisonSectorielle";
 
 const LIBELLE_ZONE: Record<ZoneScore, string> = {
   sain: "Zone saine",
@@ -394,6 +395,11 @@ export function DiagnosticPage() {
       )}
         </Zone>
       )}
+
+      {/* Sur le dernier exercice complet du dossier, et non sur la période
+          choisie plus haut : une année partielle ne se compare pas à des
+          quartiles annuels. La carte le dit dans son sous-titre. */}
+      {entityId && <ComparaisonSectorielle entityId={entityId} />}
     </div>
   );
 }

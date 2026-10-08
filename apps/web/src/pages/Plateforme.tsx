@@ -4,6 +4,9 @@ import { ApiError } from "../api/client";
 import {
   useChangerFormulePlateforme,
   useDossierTest,
+  useImporterReferentiel,
+  useReferentielsSectoriels,
+  useSupprimerReferentiel,
   useDroitPlateforme,
   useMotDePasseProvisoire,
   useOrganisationsPlateforme,
@@ -233,6 +236,116 @@ export function PlateformePage() {
               </tbody>
             </table>
           </div>
+        )}
+      </div>
+
+      <ReferentielSectoriel />
+    </div>
+  );
+}
+
+/**
+ * Le référentiel sectoriel : ce qui est chargé, et de quoi le charger.
+ *
+ * Commun à toutes les organisations — c'est une donnée publique, pas une
+ * donnée client — d'où sa place au niveau de la console et non dans le
+ * panneau d'une organisation.
+ *
+ * L'avertissement en tête n'est pas une formule : les fascicules de la Banque
+ * de France portent une mention interdisant leur reproduction sans
+ * autorisation expresse. Charger le référentiel avant de l'avoir obtenue
+ * engage l'éditeur, et c'est ici que la décision se prend.
+ */
+function ReferentielSectoriel() {
+  const { data: charges, isLoading } = useReferentielsSectoriels(true);
+  const importer = useImporterReferentiel();
+  const supprimer = useSupprimerReferentiel();
+
+  return (
+    <div className="card space-y-3">
+      <div>
+        <h2 className="font-display text-lg font-semibold">Référentiel sectoriel</h2>
+        <p className="text-sm text-ink/60 mt-1 max-w-prose">
+          Les quartiles par secteur auxquels chaque dossier est comparé dans son diagnostic. Aucun
+          n&apos;est livré avec Cadran.
+        </p>
+      </div>
+
+      <p className="rounded-md bg-warning-soft px-3 py-2 text-sm text-ink/75 max-w-prose">
+        Les fascicules de la Banque de France interdisent leur reproduction sans son autorisation
+        expresse. Ne chargez ses quartiles qu&apos;après l&apos;avoir obtenue par écrit.
+      </p>
+
+      {isLoading ? null : !charges || charges.length === 0 ? (
+        <p className="text-sm text-ink/50">Aucun référentiel chargé : la comparaison sectorielle reste masquée.</p>
+      ) : (
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-xs uppercase tracking-wide text-ink/40 border-b border-rule/10">
+              <th className="py-2 pr-4 font-medium">Source</th>
+              <th className="py-2 pr-4 font-medium">Données</th>
+              <th className="py-2 pr-4 font-medium">Mise à jour</th>
+              <th className="py-2 pr-4 font-medium text-right">Secteurs</th>
+              <th className="py-2 pr-4 font-medium text-right">Valeurs</th>
+              <th className="py-2 font-medium">
+                <span className="sr-only">Actions</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {charges.map((r) => (
+              <tr key={`${r.source}-${r.millesime}`} className="border-b border-rule/5 last:border-0">
+                <td className="py-2 pr-4">{r.source === "BANQUE_DE_FRANCE" ? "Banque de France" : r.source}</td>
+                <td className="py-2 pr-4 tabular-nums">{r.millesime}</td>
+                <td className="py-2 pr-4">{new Date(r.miseAJour).toLocaleDateString("fr-FR", { timeZone: "UTC" })}</td>
+                <td className="py-2 pr-4 text-right tabular-nums">{r.secteurs}</td>
+                <td className="py-2 pr-4 text-right tabular-nums">{r.lignes}</td>
+                <td className="py-2 text-right">
+                  <button
+                    type="button"
+                    className="btn-secondary text-xs px-2 py-1"
+                    disabled={supprimer.isPending}
+                    onClick={() => supprimer.mutate({ source: r.source, millesime: r.millesime })}
+                  >
+                    Retirer
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      <div>
+        <label htmlFor="fichier-referentiel" className="label">
+          Charger un référentiel (JSON)
+        </label>
+        <input
+          id="fichier-referentiel"
+          type="file"
+          accept="application/json,.json"
+          className="block mt-1 text-sm"
+          disabled={importer.isPending}
+          onChange={(e) => {
+            const fichier = e.target.files?.[0];
+            if (fichier) importer.mutate(fichier);
+            e.target.value = "";
+          }}
+        />
+        <p className="text-xs text-ink/45 mt-1">
+          Remplace d&apos;un bloc le référentiel de même source et de même millésime. Le format est
+          décrit dans <code>apps/api/src/benchmark/import-reference.ts</code>.
+        </p>
+        {importer.isSuccess && (
+          <p role="status" className="text-xs text-success mt-1">
+            Référentiel chargé : {importer.data.secteurs} secteurs ({importer.data.lignes} valeurs), données{" "}
+            {importer.data.millesime}.
+          </p>
+        )}
+        {importer.isError && (
+          <p role="alert" className="text-xs text-critical mt-1">
+            {importer.error instanceof Error ? importer.error.message : "Import refusé."}
+          </p>
         )}
       </div>
     </div>

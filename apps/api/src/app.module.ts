@@ -24,6 +24,7 @@ import { MarqueModule } from "./marque/marque.module";
 import { PlateformeModule } from "./plateforme/plateforme.module";
 import { PluriannuelModule } from "./pluriannuel/pluriannuel.module";
 import { PortefeuilleModule } from "./portefeuille/portefeuille.module";
+import { BenchmarkModule } from "./benchmark/benchmark.module";
 import { EmailModule } from "./email/email.module";
 
 @Module({
@@ -67,6 +68,7 @@ import { EmailModule } from "./email/email.module";
     PlateformeModule,
     PluriannuelModule,
     PortefeuilleModule,
+    BenchmarkModule,
   ],
   /*
    * Deux gardes globaux. Le limiteur de débit d'abord : il est inutile de

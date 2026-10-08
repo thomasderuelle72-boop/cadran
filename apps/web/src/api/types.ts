@@ -736,3 +736,44 @@ export interface LignePortefeuille {
   alertesOuvertes: number;
   actionsEnRetard: number;
 }
+
+/** Comparaison d'un dossier aux quartiles de son secteur. */
+export type LectureSectorielle = "favorable" | "defavorable" | "intermediaire" | "neutre";
+
+export interface RatioSectoriel {
+  id: string;
+  libelle: string;
+  unite: "pourcentage" | "jours" | "milliers_euros";
+  sens: "haut_favorable" | "bas_favorable" | "neutre";
+  comparabilite: "exacte" | "approchee";
+  definition: string;
+  ecart: string | null;
+  valeur: number | null;
+  quartiles: { q1: number; q2: number; q3: number } | null;
+  nombreEntreprises: number | null;
+  position: { quart: 1 | 2 | 3 | 4; lecture: LectureSectorielle; phrase: string } | null;
+}
+
+export type ComparaisonSectorielle =
+  | {
+      disponible: true;
+      exercice: string;
+      secteur: { code: string; libelle: string; niveau: "division" | "section" };
+      source: { nom: string; publication: string; millesime: number; miseAJour: string; mention: string };
+      avertissements: string[];
+      ratios: RatioSectoriel[];
+    }
+  | {
+      disponible: false;
+      raison: "referentiel_absent" | "naf_absent" | "secteur_absent" | "exercice_absent";
+      codeNaf?: string | null;
+    };
+
+export interface ReferentielCharge {
+  source: string;
+  millesime: number;
+  miseAJour: string;
+  secteurs: number;
+  lignes: number;
+  importeLe: string | null;
+}

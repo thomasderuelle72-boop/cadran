@@ -1,20 +1,26 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
   HttpCode,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
 import type { Response } from "express";
 import { JwtAuthGuard } from "../common/jwt-auth.guard";
 import { CurrentUser, AuthUser } from "../common/current-user.decorator";
 import { PlateformeGuard } from "./plateforme.guard";
 import { PlateformeService } from "./plateforme.service";
+import { BenchmarkService } from "../benchmark/benchmark.service";
 import { estProduction } from "../config/environnement";
 import { ChangerFormuleDto, DroitPlateformeDto, SupprimerOrganisationDto } from "./dto";
 import {
@@ -37,7 +43,10 @@ import {
 @Controller("plateforme")
 @UseGuards(JwtAuthGuard, PlateformeGuard)
 export class PlateformeController {
-  constructor(private plateforme: PlateformeService) {}
+  constructor(
+    private plateforme: PlateformeService,
+    private benchmark: BenchmarkService,
+  ) {}
 
   private get production(): boolean {
     return estProduction();
@@ -109,6 +118,40 @@ export class PlateformeController {
   @Delete("organisations/:id/dossier-test")
   supprimerDossierTest(@Param("id") id: string) {
     return this.plateforme.dossierTest(id, "supprimer");
+  }
+
+  /**
+   * Référentiel sectoriel : ce qui est chargé, l'import d'un fichier, le
+   * retrait d'un millésime.
+   *
+   * L'import se fait par fichier et non par corps JSON : le référentiel complet
+   * dépasse les 100 Ko qu'Express accepte par défaut, et relever cette limite
+   * pour toutes les routes élargirait d'autant la surface d'attaque de chacune.
+   * Le plafond est posé ici, sur cette seule route.
+   *
+   * Aucune donnée n'est livrée avec Cadran. La réutilisation des fascicules de
+   * la Banque de France est soumise à son autorisation écrite : ce chargement
+   * n'a lieu qu'une fois celle-ci obtenue.
+   */
+  @Get("references-sectorielles")
+  referentiels() {
+    return this.benchmark.referentiels();
+  }
+
+  @Post("references-sectorielles")
+  @HttpCode(200)
+  @UseInterceptors(FileInterceptor("fichier", { limits: { fileSize: 5 * 1024 * 1024 } }))
+  importerReferentiel(@UploadedFile() fichier?: { buffer: Buffer }) {
+    if (!fichier) throw new BadRequestException("Aucun fichier reçu.");
+    return this.benchmark.importer(fichier.buffer);
+  }
+
+  @Delete("references-sectorielles/:source/:millesime")
+  supprimerReferentiel(
+    @Param("source") source: string,
+    @Param("millesime", ParseIntPipe) millesime: number,
+  ) {
+    return this.benchmark.supprimer(source, millesime);
   }
 
   @Post("organisations/:id/acces")

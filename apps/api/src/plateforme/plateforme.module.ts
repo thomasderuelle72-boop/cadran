@@ -4,12 +4,13 @@ import { PlateformeController } from "./plateforme.controller";
 import { PlateformeService } from "./plateforme.service";
 import { AmorcagePlateforme } from "./amorcage";
 import { getJwtSecret } from "../auth/jwt-secret";
+import { BenchmarkModule } from "../benchmark/benchmark.module";
 
 @Module({
   /* Le même secret que les sessions ordinaires : un accès support est une
    * session, pas un canal parallèle. Ce qui le distingue est dans sa charge
    * utile, vérifiée à chaque requête. */
-  imports: [JwtModule.register({ secret: getJwtSecret() })],
+  imports: [JwtModule.register({ secret: getJwtSecret() }), BenchmarkModule],
   controllers: [PlateformeController],
   providers: [PlateformeService, AmorcagePlateforme],
 })

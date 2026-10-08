@@ -48,6 +48,8 @@ import type {
   RatioResultPayload,
   TrendPoint,
   LignePortefeuille,
+  ComparaisonSectorielle,
+  ReferentielCharge,
 } from "./types";
 
 export function useMe(enabled: boolean) {
@@ -213,6 +215,46 @@ export function useDeletePeriod() {
       queryClient.invalidateQueries({ queryKey: ["trend"] });
       queryClient.invalidateQueries({ queryKey: ["alerts"] });
     },
+  });
+}
+
+/** Le dossier comparé aux quartiles de son secteur, sur son dernier exercice complet. */
+export function useComparaisonSectorielle(entityId: string) {
+  return useQuery<ComparaisonSectorielle>({
+    queryKey: ["comparaison-sectorielle", entityId],
+    queryFn: () => api.get(`/entities/${entityId}/comparaison-sectorielle`),
+    enabled: Boolean(entityId),
+  });
+}
+
+/** Référentiels sectoriels chargés — console d'administration. */
+export function useReferentielsSectoriels(actif: boolean) {
+  return useQuery<ReferentielCharge[]>({
+    queryKey: ["plateforme", "references-sectorielles"],
+    queryFn: () => api.get("/plateforme/references-sectorielles"),
+    enabled: actif,
+  });
+}
+
+export function useImporterReferentiel() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (fichier: File) =>
+      uploadFile<{ source: string; millesime: number; secteurs: number; lignes: number }>(
+        "/plateforme/references-sectorielles",
+        fichier,
+        "fichier",
+      ),
+    onSuccess: () => queryClient.invalidateQueries(),
+  });
+}
+
+export function useSupprimerReferentiel() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ source, millesime }: { source: string; millesime: number }) =>
+      api.delete<{ supprimees: number }>(`/plateforme/references-sectorielles/${source}/${millesime}`),
+    onSuccess: () => queryClient.invalidateQueries(),
   });
 }
 
