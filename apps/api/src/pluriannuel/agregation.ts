@@ -42,6 +42,7 @@ export const POSTES_FLUX = [
   "chargesFinancieres",
   "produitsFinanciers",
   "resultatExceptionnel",
+  "resultatCessions",
   "impotSocietes",
 ] as const satisfies readonly (keyof Aggregates)[];
 

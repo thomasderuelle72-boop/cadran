@@ -52,6 +52,7 @@ export const SENS_POSTE: Record<LinePoste, "DEBIT" | "CREDIT"> = {
   // porteur d'information.
   AUTRES_PRODUITS_CHARGES_EXPLOITATION: "CREDIT",
   RESULTAT_EXCEPTIONNEL: "CREDIT",
+  RESULTAT_CESSIONS: "CREDIT",
   // Actif : débiteur. Les comptes d'amortissement et de dépréciation, rangés
   // sous le même poste que le brut, sont créditeurs : le solde obtenu est
   // donc la valeur nette, ce qui est exactement ce qu'on veut au bilan.
@@ -83,6 +84,7 @@ export const POSTES_RESULTAT: ReadonlySet<LinePoste> = new Set<LinePoste>([
   LinePoste.CHARGES_FINANCIERES,
   LinePoste.PRODUITS_FINANCIERS,
   LinePoste.RESULTAT_EXCEPTIONNEL,
+  LinePoste.RESULTAT_CESSIONS,
   LinePoste.IMPOT_SOCIETES,
 ]);
 
@@ -181,6 +183,7 @@ function agregatsVides(): Aggregates {
     chargesFinancieres: 0,
     produitsFinanciers: 0,
     resultatExceptionnel: 0,
+    resultatCessions: 0,
     impotSocietes: 0,
     stocks: 0,
     creancesClients: 0,
@@ -205,6 +208,7 @@ const CLE_AGREGAT: Record<LinePoste, keyof Aggregates> = {
   CHARGES_FINANCIERES: "chargesFinancieres",
   PRODUITS_FINANCIERS: "produitsFinanciers",
   RESULTAT_EXCEPTIONNEL: "resultatExceptionnel",
+  RESULTAT_CESSIONS: "resultatCessions",
   IMPOT_SOCIETES: "impotSocietes",
   STOCKS: "stocks",
   CREANCES_CLIENTS: "creancesClients",

@@ -70,14 +70,20 @@ export function computeSig(a: Aggregates): Sig {
   const resultatCourantAvantImpots = resultatExploitation + resultatFinancier;
   const resultatNet = derived.resultatNet;
 
-  // CAF, méthode additive : on repart du résultat net et on neutralise la
-  // seule charge non décaissable que la nomenclature isole, les dotations.
+  // CAF, méthode additive : on repart du résultat net, on neutralise les
+  // dotations nettes de reprises — charges calculées, non décaissées — et on
+  // retire la plus ou moins-value de cession.
   //
-  // Limite connue : les plus et moins-values de cession d'actif (675 / 775)
-  // sont comprises dans le résultat exceptionnel et devraient en être
-  // retirées. Au niveau d'agrégat actuel, elles ne sont pas séparables — la
-  // CAF est donc juste à une cession près.
-  const capaciteAutofinancement = resultatNet + a.dotationsAmortissements;
+  // Ce dernier retrait manquait : les cessions n'étaient pas séparables du
+  // résultat exceptionnel, et la CAF était « juste à une cession près ». Une
+  // PME qui revendait un local voyait sa capacité d'autofinancement gonfler
+  // du montant de la plus-value, comme si elle pouvait la refaire chaque
+  // année. Le poste RESULTAT_CESSIONS existe désormais pour cela, et la
+  // réforme du PCG, qui a fait passer les cessions en exploitation, le
+  // rendait indispensable. Le prix encaissé figure au tableau des flux, en
+  // investissement — là où il se rattache.
+  const capaciteAutofinancement =
+    resultatNet + a.dotationsAmortissements - a.resultatCessions;
 
   const soldes: SoldeIntermediaire[] = [
     {
@@ -161,6 +167,14 @@ export function computeSig(a: Aggregates): Sig {
       majeur: true,
     },
     {
+      id: "resultat_cessions",
+      label: "Résultat de cession d'actifs",
+      valeur: a.resultatCessions,
+      formule: "Prix de cession − valeur nette comptable des immobilisations cédées",
+      partDuCa: part(a.resultatCessions, a.chiffreAffaires),
+      majeur: false,
+    },
+    {
       id: "resultat_exceptionnel",
       label: "Résultat exceptionnel",
       valeur: a.resultatExceptionnel,
@@ -180,7 +194,7 @@ export function computeSig(a: Aggregates): Sig {
       id: "resultat_net",
       label: "Résultat net",
       valeur: resultatNet,
-      formule: "Résultat courant + résultat exceptionnel − impôt sur les sociétés",
+      formule: "Résultat courant + cessions + résultat exceptionnel − impôt sur les sociétés",
       partDuCa: part(resultatNet, a.chiffreAffaires),
       majeur: true,
     },
@@ -188,7 +202,7 @@ export function computeSig(a: Aggregates): Sig {
       id: "caf",
       label: "Capacité d'autofinancement",
       valeur: capaciteAutofinancement,
-      formule: "Résultat net + dotations aux amortissements",
+      formule: "Résultat net + dotations nettes − résultat de cession",
       partDuCa: part(capaciteAutofinancement, a.chiffreAffaires),
       majeur: true,
     },

@@ -224,6 +224,7 @@ function projeterUnExercice(
     chargesFinancieres: arrondir(chargesFinancieres),
     produitsFinanciers: 0,
     resultatExceptionnel: 0,
+    resultatCessions: 0,
     impotSocietes: arrondir(impotSocietes),
     disponibilites,
     ...bilan,

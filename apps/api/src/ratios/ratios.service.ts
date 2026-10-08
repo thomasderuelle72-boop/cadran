@@ -1,7 +1,15 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
-import { Aggregates, computeAggregates, computeDerived, computeRatios, Derived, RatioValue } from "./engine";
+import {
+  Aggregates,
+  computeAggregates,
+  computeDerived,
+  computeRatios,
+  Derived,
+  lireAgregats,
+  RatioValue,
+} from "./engine";
 import { joursEntreDates } from "../analysis/structure";
 
 export interface RatioResultPayload {
@@ -93,7 +101,7 @@ export class RatiosService {
     return {
       periodId,
       currency: period.entity.currency,
-      aggregates: period.ratioResult.aggregates as unknown as Aggregates,
+      aggregates: lireAgregats(period.ratioResult.aggregates),
       derived: period.ratioResult.derived as unknown as Derived,
       ratios: period.ratioResult.ratios as unknown as RatioValue[],
       computedAt: period.ratioResult.computedAt,
@@ -112,7 +120,7 @@ export class RatiosService {
       .map((p) => {
         const ratios = p.ratioResult!.ratios as unknown as RatioValue[];
         const derived = p.ratioResult!.derived as unknown as Derived;
-        const aggregates = p.ratioResult!.aggregates as unknown as Aggregates;
+        const aggregates = lireAgregats(p.ratioResult!.aggregates);
         const byId = (id: string) => ratios.find((r) => r.id === id)?.value ?? null;
         return {
           periodId: p.id,

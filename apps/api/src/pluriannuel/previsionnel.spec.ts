@@ -18,6 +18,7 @@ function depart(valeurs: Partial<Aggregates> = {}): Aggregates {
     chargesFinancieres: 8_000,
     produitsFinanciers: 0,
     resultatExceptionnel: 0,
+    resultatCessions: 0,
     impotSocietes: 23_000,
     stocks: 33_000,
     creancesClients: 123_000,

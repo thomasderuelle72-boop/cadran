@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { EntitiesService } from "../entities/entities.service";
-import { Aggregates, Derived, RatioValue } from "../ratios/engine";
+import { Aggregates, Derived, RatioValue, lireAgregats } from "../ratios/engine";
 import { Exercice, PeriodeSource, construireExercices } from "./agregation";
 import { MESURES } from "./mesures";
 import { Bloc, TABLEAU_PAR_DEFAUT, validerBlocs } from "./blocs";
@@ -63,7 +63,7 @@ export class PluriannuelService {
         label: periode.label,
         debut: periode.startDate,
         fin: periode.endDate,
-        aggregates: periode.ratioResult!.aggregates as unknown as Aggregates,
+        aggregates: lireAgregats(periode.ratioResult!.aggregates),
       }));
   }
 

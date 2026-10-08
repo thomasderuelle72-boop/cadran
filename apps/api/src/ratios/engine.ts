@@ -14,8 +14,9 @@ export interface LineItemInput {
  * CHARGES_EXTERNES, CHARGES_PERSONNEL, IMPOTS_TAXES,
  * DOTATIONS_AMORTISSEMENTS, CHARGES_FINANCIERES, IMPOT_SOCIETES) sont
  * saisis en valeur positive et explicitement soustraits dans les formules
- * ci-dessous. AUTRES_PRODUITS_CHARGES_EXPLOITATION et RESULTAT_EXCEPTIONNEL
- * sont des soldes nets (produits moins charges), saisis avec leur signe.
+ * ci-dessous. AUTRES_PRODUITS_CHARGES_EXPLOITATION, RESULTAT_EXCEPTIONNEL et
+ * RESULTAT_CESSIONS sont des soldes nets (produits moins charges), saisis avec
+ * leur signe.
  */
 export interface Aggregates {
   chiffreAffaires: number;
@@ -28,6 +29,13 @@ export interface Aggregates {
   chargesFinancieres: number;
   produitsFinanciers: number;
   resultatExceptionnel: number;
+  /**
+   * Plus ou moins-value de cession d'immobilisations (757 − 657 depuis la
+   * réforme du PCG, 775 − 675 avant). Comprise dans le résultat net, exclue
+   * de l'EBITDA et retranchée de la CAF : une cession n'est ni une
+   * performance d'exploitation ni une ressource récurrente.
+   */
+  resultatCessions: number;
   impotSocietes: number;
   stocks: number;
   creancesClients: number;
@@ -51,6 +59,7 @@ export const AGGREGATE_KEY_BY_POSTE: Record<LinePoste, keyof Aggregates> = {
   CHARGES_FINANCIERES: "chargesFinancieres",
   PRODUITS_FINANCIERS: "produitsFinanciers",
   RESULTAT_EXCEPTIONNEL: "resultatExceptionnel",
+  RESULTAT_CESSIONS: "resultatCessions",
   IMPOT_SOCIETES: "impotSocietes",
   STOCKS: "stocks",
   CREANCES_CLIENTS: "creancesClients",
@@ -62,6 +71,32 @@ export const AGGREGATE_KEY_BY_POSTE: Record<LinePoste, keyof Aggregates> = {
   AUTRES_DETTES: "autresDettes",
   IMMOBILISATIONS: "immobilisations",
 };
+
+/**
+ * Relit des agrégats stockés en base, en complétant les postes manquants.
+ *
+ * Les agrégats sont enregistrés en JSON au moment du calcul. Un poste ajouté
+ * depuis — RESULTAT_CESSIONS, introduit avec la réforme du PCG — n'existe pas
+ * dans les enregistrements antérieurs, et relu tel quel il vaut `undefined` :
+ * la moindre addition donne alors NaN, et c'est tout le résultat net d'un
+ * dossier qui s'affiche « NaN € ». Toute lecture depuis la base passe donc par
+ * ici, qui part d'agrégats nuls et n'y recopie que des nombres finis.
+ *
+ * Un poste absent vaut zéro, ce qui est exact : un enregistrement antérieur
+ * au poste n'y a rien rangé. Ses cessions sont restées où l'ancienne table les
+ * avait mises, jusqu'à ce que le dossier soit réimporté.
+ */
+export function lireAgregats(stockes: unknown): Aggregates {
+  const complets = computeAggregates([]);
+  if (stockes && typeof stockes === "object") {
+    const source = stockes as Record<string, unknown>;
+    for (const cle of Object.keys(complets) as (keyof Aggregates)[]) {
+      const valeur = source[cle];
+      if (typeof valeur === "number" && Number.isFinite(valeur)) complets[cle] = valeur;
+    }
+  }
+  return complets;
+}
 
 export function computeAggregates(lineItems: LineItemInput[]): Aggregates {
   const aggregates: Aggregates = {
@@ -75,6 +110,7 @@ export function computeAggregates(lineItems: LineItemInput[]): Aggregates {
     chargesFinancieres: 0,
     produitsFinanciers: 0,
     resultatExceptionnel: 0,
+    resultatCessions: 0,
     impotSocietes: 0,
     stocks: 0,
     creancesClients: 0,
@@ -133,7 +169,8 @@ export function computeDerived(a: Aggregates): Derived {
     a.autresProduitsChargesExploitation;
   const ebit = ebitda - a.dotationsAmortissements;
   const resultatFinancier = a.produitsFinanciers - a.chargesFinancieres;
-  const resultatNet = ebit + resultatFinancier + a.resultatExceptionnel - a.impotSocietes;
+  const resultatNet =
+    ebit + resultatFinancier + a.resultatCessions + a.resultatExceptionnel - a.impotSocietes;
 
   const actifCirculant = a.stocks + a.creancesClients + a.autresCreances + a.disponibilites;
   const passifCirculant = a.dettesFournisseurs + a.autresDettes;

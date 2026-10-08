@@ -75,7 +75,12 @@ export function computeTableauFlux(ouverture: Aggregates, cloture: Aggregates): 
 
   const resultatNet = derivedCloture.resultatNet;
   const dotations = cloture.dotationsAmortissements;
-  const caf = resultatNet + dotations;
+  // Même définition qu'aux soldes intermédiaires : la plus-value de cession
+  // n'est pas un flux d'exploitation. Elle est retirée ici et réapparaît en
+  // investissement, si bien que la variation de trésorerie totale ne bouge pas
+  // d'un centime — seule son attribution change.
+  const resultatCessions = cloture.resultatCessions;
+  const caf = resultatNet + dotations - resultatCessions;
 
   const variationBfr = bfrComplet(cloture) - bfrComplet(ouverture);
   const fluxExploitation = caf - variationBfr;
@@ -84,7 +89,10 @@ export function computeTableauFlux(ouverture: Aggregates, cloture: Aggregates): 
   // par l'amortissement doit être neutralisée pour retrouver ce qui a
   // réellement été décaissé en investissement.
   const acquisitionsNettes = cloture.immobilisations - ouverture.immobilisations + dotations;
-  const fluxInvestissement = -acquisitionsNettes;
+  // Une cession fait sortir la valeur comptable du bilan — déjà comprise dans
+  // la variation des immobilisations — et encaisse un prix qui la dépasse de
+  // la plus-value : c'est cet écart qui manque pour retrouver le prix reçu.
+  const fluxInvestissement = -acquisitionsNettes + resultatCessions;
 
   const variationDettesFinancieres = cloture.dettesFinancieres - ouverture.dettesFinancieres;
   // Mouvements de capitaux propres hors résultat de la période : apports,
@@ -105,7 +113,8 @@ export function computeTableauFlux(ouverture: Aggregates, cloture: Aggregates): 
           id: "caf",
           label: "Capacité d'autofinancement",
           montant: arrondi(caf),
-          explication: "Résultat net augmenté des dotations, qui ne sont pas décaissées.",
+          explication:
+            "Résultat net augmenté des dotations, qui ne sont pas décaissées, hors résultat de cession.",
         },
         {
           id: "variation_bfr",
@@ -130,6 +139,20 @@ export function computeTableauFlux(ouverture: Aggregates, cloture: Aggregates): 
           explication:
             "Variation des immobilisations nettes, corrigée des dotations de la période.",
         },
+        ...(resultatCessions !== 0
+          ? [
+              {
+                id: "plus_value_cession",
+                label:
+                  resultatCessions > 0
+                    ? "Plus-value de cession encaissée"
+                    : "Moins-value de cession",
+                montant: arrondi(resultatCessions),
+                explication:
+                  "Écart entre le prix de cession et la valeur comptable sortie du bilan. Retiré de la capacité d'autofinancement, il se rattache ici à l'investissement.",
+              },
+            ]
+          : []),
       ],
     },
     {

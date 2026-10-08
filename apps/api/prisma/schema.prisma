@@ -40,6 +40,11 @@ enum LinePoste {
   CHARGES_FINANCIERES
   PRODUITS_FINANCIERS
   RESULTAT_EXCEPTIONNEL
+  // Plus ou moins-values de cession d'immobilisations : prix de cession moins
+  // valeur nette comptable. Isolé parce que ni l'EBITDA ni la CAF ne doivent
+  // le contenir, et que la réforme du PCG l'a fait passer de l'exceptionnel à
+  // l'exploitation — sans poste à lui, 2024 et 2025 ne se comparent plus.
+  RESULTAT_CESSIONS
   IMPOT_SOCIETES
   STOCKS
   CREANCES_CLIENTS

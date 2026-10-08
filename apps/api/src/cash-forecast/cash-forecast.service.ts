@@ -3,7 +3,7 @@ import { CashCategory, CashRecurrence } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { EntitiesService } from "../entities/entities.service";
 import { RatiosService } from "../ratios/ratios.service";
-import { Aggregates } from "../ratios/engine";
+import { lireAgregats } from "../ratios/engine";
 import { projectCashFlow } from "./engine";
 import { CreateCashLineDto } from "./dto/create-cash-line.dto";
 
@@ -67,7 +67,7 @@ export class CashForecastService {
       include: { ratioResult: true },
     });
     if (!latest?.ratioResult) return { balance: 0, source: null as null | { periodId: string; label: string; endDate: Date } };
-    const aggregates = latest.ratioResult.aggregates as unknown as Aggregates;
+    const aggregates = lireAgregats(latest.ratioResult.aggregates);
     return {
       balance: aggregates.disponibilites,
       source: { periodId: latest.id, label: latest.label, endDate: latest.endDate },
@@ -113,7 +113,7 @@ export class CashForecastService {
     });
     if (!latest?.ratioResult) throw new NotFoundException("Aucune période importée : impossible de pré-remplir.");
 
-    const a = latest.ratioResult.aggregates as unknown as Aggregates;
+    const a = lireAgregats(latest.ratioResult.aggregates);
     const days = Math.max(1, Math.round((latest.endDate.getTime() - latest.startDate.getTime()) / 86400000) + 1);
     const perMonth = (amount: number) => Math.round((amount / days) * 30.4);
 

@@ -50,6 +50,7 @@ const LABELS_AGGREGATS: Record<keyof Aggregates, { label: string; famille: Famil
   chargesFinancieres: { label: "Charges financières", famille: "resultat" },
   produitsFinanciers: { label: "Produits financiers", famille: "resultat" },
   resultatExceptionnel: { label: "Résultat exceptionnel", famille: "resultat" },
+  resultatCessions: { label: "Résultat de cession d'actifs", famille: "resultat" },
   impotSocietes: { label: "Impôt sur les sociétés", famille: "resultat" },
   stocks: { label: "Stocks", famille: "bilan" },
   creancesClients: { label: "Créances clients", famille: "bilan" },
