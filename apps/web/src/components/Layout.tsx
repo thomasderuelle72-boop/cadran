@@ -298,7 +298,11 @@ function Navigation({ onNavigate }: { onNavigate?: () => void }) {
    * n'administre pas la plateforme depuis le dossier d'un client, et le garde
    * du serveur refuse d'ailleurs ces requêtes. */
   const estExploitant = user?.administrateurPlateforme === true && user.support === false;
-  const aTraiter = alertes?.filter((a) => !a.acknowledged).length ?? 0;
+  // Une règle franchie sur plusieurs périodes d'un même dossier compte pour
+  // une alerte, comme sur la page Alertes.
+  const aTraiter = new Set(
+    alertes?.filter((a) => !a.acknowledged).map((a) => `${a.entity?.id ?? "-"}|${a.rule.id}`),
+  ).size;
 
   const visible = (entree: Entree) =>
     (!entree.roles || (user?.role !== undefined && entree.roles.includes(user.role))) &&

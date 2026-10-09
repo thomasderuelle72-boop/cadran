@@ -170,7 +170,7 @@ export function ImportPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { data: entities } = useEntities();
-  const [entityId, setEntityId] = useDossierCourant(entities);
+  const [entityId] = useDossierCourant(entities);
   const { data: periods } = usePeriods(entityId || undefined);
   const { data: reference } = useImportReference();
   const createPeriod = useCreatePeriod();
@@ -290,14 +290,13 @@ export function ImportPage() {
 
       {entities && entities.length > 0 && (
         <div>
-          <label className="label">Dossier</label>
-          <select className="input mb-4" value={entityId} onChange={(e) => setEntityId(e.target.value)}>
-            {entities.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.name}
-              </option>
-            ))}
-          </select>
+          {/* Un seul choix de dossier dans toute l'application : celui de la
+              barre du haut. L'écran le rappelle au lieu de le redemander —
+              deux fois, autrefois. */}
+          <p className="mb-4 rounded-lg bg-ink/[0.04] px-3 py-2 text-sm text-ink-2">
+            Import dans le dossier <strong className="text-ink">{entities.find((e) => e.id === entityId)?.name}</strong>.
+            Pour importer dans un autre dossier, changez-le en haut de l&apos;écran.
+          </p>
           <FecImport entityId={entityId} entityName={entities.find((e) => e.id === entityId)?.name} />
         </div>
       )}
@@ -313,7 +312,7 @@ export function ImportPage() {
 
       {step === "period" && (
         <div className="card space-y-4">
-          <h2 className="font-display text-lg font-semibold">1. Choisir le dossier et la période</h2>
+          <h2 className="font-display text-lg font-semibold">1. Choisir la période</h2>
 
           {entities && entities.length === 0 && (
             <p className="text-sm text-warning">
@@ -321,18 +320,6 @@ export function ImportPage() {
             </p>
           )}
 
-          {entities && entities.length > 0 && (
-            <div>
-              <label className="label">Dossier</label>
-              <select className="input" value={entityId} onChange={(e) => setEntityId(e.target.value)}>
-                {entities.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
 
           {periods && periods.length > 0 && (
             <div className="flex items-end gap-3">
