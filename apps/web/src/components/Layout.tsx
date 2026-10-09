@@ -17,6 +17,7 @@ import {
   Menu,
   MessageCircleQuestion,
   Settings,
+  Scale,
   ShieldCheck,
   Stethoscope,
   Target,
@@ -124,7 +125,13 @@ const DOSSIER: Famille[] = [
         to: "/analysis",
         label: "Activité et résultat",
         Icone: ChartColumn,
-        aide: "Du chiffre d'affaires au résultat, et les flux de trésorerie",
+        aide: "Du chiffre d'affaires au résultat net, et le partage de la valeur ajoutée",
+      },
+      {
+        to: "/bilan",
+        label: "Bilan et trésorerie",
+        Icone: Scale,
+        aide: "Le bilan en grandes masses, d'où vient la trésorerie, le besoin en fonds de roulement, les flux",
       },
       {
         to: "/evolution",
@@ -136,7 +143,7 @@ const DOSSIER: Famille[] = [
         to: "/diagnostic",
         label: "Diagnostic",
         Icone: Stethoscope,
-        aide: "Indicateurs, seuil de rentabilité, besoin en fonds de roulement, secteur, scores",
+        aide: "Les indicateurs, le seuil de rentabilité, la comparaison au secteur, les scores",
       },
       {
         to: "/receivables",
@@ -226,7 +233,7 @@ function Lien({ entree, compteur, onNavigate }: { entree: Entree; compteur?: num
       onClick={onNavigate}
       title={entree.aide}
       className={({ isActive }) =>
-        `flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition ${
+        `flex items-center gap-3 rounded-lg px-3 py-[5px] text-sm transition ${
           isActive
             ? "bg-primary-soft text-primary font-semibold"
             : "text-ink-2 font-medium hover:bg-ink/[0.05] hover:text-ink"
@@ -301,7 +308,7 @@ function Navigation({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <>
-      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-4" aria-label="Navigation principale">
+      <nav className="flex-1 overflow-y-auto px-3 py-2.5 space-y-3" aria-label="Navigation principale">
         {/* Un dirigeant qui suit sa seule entreprise n'a pas de cabinet : le
             même groupe s'appelle alors « Suivi ». */}
         <Groupe
@@ -312,7 +319,7 @@ function Navigation({ onNavigate }: { onNavigate?: () => void }) {
         />
 
         {/* Le dossier choisi en haut, et tout ce qui parle de lui. */}
-        <div className="rounded-xl bg-ink/[0.035] p-1.5 space-y-3" aria-label={dossier ? `Dossier ${dossier.name}` : "Dossier"}>
+        <div className="rounded-xl bg-ink/[0.035] p-1.5 space-y-2.5" aria-label={dossier ? `Dossier ${dossier.name}` : "Dossier"}>
           <div className="px-2 pt-1">
             <div className="text-[0.7rem] font-semibold uppercase tracking-wide text-ink-3">Dossier</div>
             <div className="text-sm font-bold truncate" title={dossier?.name}>

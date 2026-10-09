@@ -100,7 +100,7 @@ export function FormulaireAction({
         <input
           id={`${p}-constat`}
           className="input"
-          placeholder="Le DSO est à 83 jours, contre 45 dans le secteur"
+          placeholder="Les clients paient à 83 jours, contre 45 dans le secteur"
           value={form.constat}
           onChange={(e) => setForm({ ...form, constat: e.target.value })}
           required

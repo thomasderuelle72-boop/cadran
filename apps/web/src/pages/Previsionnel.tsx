@@ -346,7 +346,7 @@ function PanneauHypotheses({
   surChangement: (h: Hypotheses) => void;
 }) {
   return (
-    <section className="card space-y-5 xl:sticky xl:top-24" aria-labelledby="titre-hypotheses">
+    <section className="card space-y-5" aria-labelledby="titre-hypotheses">
       <div>
         <h2 id="titre-hypotheses" className="text-lg font-bold">
           Hypothèses

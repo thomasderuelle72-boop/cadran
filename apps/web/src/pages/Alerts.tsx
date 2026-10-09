@@ -112,7 +112,7 @@ export function AlertsPage() {
             <label className="label">Libellé</label>
             <input
               className="input"
-              placeholder="Ex : DSO au-delà de 60 jours"
+              placeholder="Ex : clients payés au-delà de 60 jours"
               value={form.label}
               onChange={(e) => setForm({ ...form, label: e.target.value })}
               required

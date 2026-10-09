@@ -51,6 +51,7 @@ export default {
         serie: {
           1: avecOpacite("--serie-1"),
           2: avecOpacite("--serie-2"),
+          3: avecOpacite("--serie-3"),
         },
       },
       fontFamily: {

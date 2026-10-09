@@ -190,7 +190,7 @@ export function Accueil() {
                 numero="4"
                 titre="Agir"
                 texte="Chaque recommandation devient un objet suivi : constat, action, impact chiffré, échéance. L'indicateur est relu tout seul à la période suivante."
-                exemple="DSO 83 → 65 jours · 84 000 € · échéance 31/12"
+                exemple="Délai clients 83 → 65 jours · 84 000 € · échéance 31/12"
               />
             </div>
           </div>

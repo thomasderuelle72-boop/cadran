@@ -43,12 +43,12 @@ import { useDossierCourant } from "../lib/dossierCourant";
 const OU_COMPRENDRE: Record<string, { to: string; libelle: string }> = {
   dso: { to: "/receivables", libelle: "Voir qui doit quoi" },
   dpo: { to: "/receivables", libelle: "Voir les dettes fournisseurs" },
-  dio: { to: "/diagnostic", libelle: "Voir le besoin de financement" },
+  dio: { to: "/bilan", libelle: "Voir le besoin en fonds de roulement" },
   cycle_conversion_cash: {
-    to: "/diagnostic",
-    libelle: "Voir le besoin de financement",
+    to: "/bilan",
+    libelle: "Voir le besoin en fonds de roulement",
   },
-  bfr: { to: "/diagnostic", libelle: "Voir le BFR en jours" },
+  bfr: { to: "/bilan", libelle: "Voir le BFR en jours" },
   tresorerie_nette: { to: "/cash", libelle: "Voir la projection" },
   marge_brute: { to: "/analysis", libelle: "Voir les soldes de gestion" },
   marge_ebitda: { to: "/analysis", libelle: "Voir les soldes de gestion" },

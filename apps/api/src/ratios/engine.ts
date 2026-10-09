@@ -352,7 +352,7 @@ export function computeRatios(
     },
     {
       id: "roe",
-      label: "ROE",
+      label: "Rentabilité des capitaux propres",
       category: "RENTABILITE",
       formula: "Résultat net / Capitaux propres",
       unit: "pourcentage",
@@ -362,7 +362,7 @@ export function computeRatios(
     },
     {
       id: "roce",
-      label: "ROCE",
+      label: "Rentabilité des capitaux employés",
       category: "RENTABILITE",
       formula: "EBIT / (Capitaux propres + Dettes financières)",
       unit: "pourcentage",
@@ -372,7 +372,7 @@ export function computeRatios(
     },
     {
       id: "liquidite_generale",
-      label: "Ratio de liquidité générale",
+      label: "Liquidité générale",
       category: "LIQUIDITE",
       formula: "Actif circulant / Passif circulant",
       unit: "ratio",
@@ -382,7 +382,7 @@ export function computeRatios(
     },
     {
       id: "quick_ratio",
-      label: "Quick ratio",
+      label: "Liquidité réduite (hors stocks)",
       category: "LIQUIDITE",
       formula: "(Actif circulant − Stocks) / Passif circulant",
       unit: "ratio",
@@ -422,7 +422,7 @@ export function computeRatios(
     },
     {
       id: "gearing",
-      label: "Ratio d'endettement (gearing)",
+      label: "Endettement (dettes financières / capitaux propres)",
       category: "SOLVABILITE",
       formula: "Dettes financières / Capitaux propres",
       unit: "ratio",
@@ -462,7 +462,7 @@ export function computeRatios(
     },
     {
       id: "dso",
-      label: "DSO — délai clients",
+      label: "Délai de paiement des clients",
       category: "ACTIVITE",
       formula: `(Créances clients / CA) × ${jours} jours de période`,
       unit: "jours",
@@ -472,7 +472,7 @@ export function computeRatios(
     },
     {
       id: "dpo",
-      label: "DPO — délai fournisseurs",
+      label: "Délai de paiement des fournisseurs",
       category: "ACTIVITE",
       formula: `(Dettes fournisseurs / Achats) × ${jours} jours de période`,
       unit: "jours",
@@ -482,7 +482,7 @@ export function computeRatios(
     },
     {
       id: "dio",
-      label: "DIO — rotation des stocks",
+      label: "Durée de stockage",
       category: "ACTIVITE",
       formula: `(Stocks / Achats) × ${jours} jours de période`,
       unit: "jours",
@@ -492,9 +492,9 @@ export function computeRatios(
     },
     {
       id: "cycle_conversion_cash",
-      label: "Cycle de conversion cash",
+      label: "Cycle de trésorerie",
       category: "ACTIVITE",
-      formula: "DSO + DIO − DPO",
+      formula: "Délai clients + durée de stockage − délai fournisseurs",
       unit: "jours",
       value: cycleConversionCash,
       status: statusFromThreshold(cycleConversionCash, 30, 60, "lower-better"),
@@ -502,7 +502,7 @@ export function computeRatios(
     },
     {
       id: "croissance_ca",
-      label: "Croissance du CA",
+      label: "Croissance du chiffre d'affaires",
       category: "ACTIVITE",
       formula: "(CA n − CA n-1) / CA n-1",
       unit: "pourcentage",
