@@ -25,6 +25,7 @@ import { PlateformeModule } from "./plateforme/plateforme.module";
 import { PluriannuelModule } from "./pluriannuel/pluriannuel.module";
 import { PortefeuilleModule } from "./portefeuille/portefeuille.module";
 import { OpportunitesModule } from "./opportunites/opportunites.module";
+import { ValeurModule } from "./valeur/valeur.module";
 import { BenchmarkModule } from "./benchmark/benchmark.module";
 import { EmailModule } from "./email/email.module";
 
@@ -70,6 +71,7 @@ import { EmailModule } from "./email/email.module";
     PluriannuelModule,
     PortefeuilleModule,
     OpportunitesModule,
+    ValeurModule,
     BenchmarkModule,
   ],
   /*

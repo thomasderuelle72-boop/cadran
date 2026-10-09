@@ -36,5 +36,10 @@ export function donneesMiseAJour(dto: UpdateActionPlanDto): Prisma.ActionPlanUpd
     data.echeance = dto.echeance === null ? null : new Date(dto.echeance);
   }
 
+  if (dto.gainRetenu !== undefined) {
+    data.gainRetenu = dto.gainRetenu === null ? null : new Prisma.Decimal(dto.gainRetenu);
+  }
+  if (dto.exclureDeLaValeur !== undefined) data.exclureDeLaValeur = dto.exclureDeLaValeur;
+
   return data;
 }

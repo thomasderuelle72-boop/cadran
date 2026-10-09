@@ -56,4 +56,13 @@ describe("donneesMiseAJour", () => {
     expect(data.impactEstime).toEqual(new Prisma.Decimal(0));
     expect(data.valeurCible).toBe(0);
   });
+
+  it("écrit, efface ou laisse le gain retenu de la valeur créée", () => {
+    expect(donneesMiseAJour({ gainRetenu: 12_500 }).gainRetenu).toEqual(new Prisma.Decimal(12_500));
+    // null rend la main au calcul ; un gain nul est une saisie, pas un effacement.
+    expect(donneesMiseAJour({ gainRetenu: null }).gainRetenu).toBeNull();
+    expect(donneesMiseAJour({ gainRetenu: 0 }).gainRetenu).toEqual(new Prisma.Decimal(0));
+    expect(donneesMiseAJour({ exclureDeLaValeur: true }).exclureDeLaValeur).toBe(true);
+    expect(donneesMiseAJour({ statut: "FAITE" })).not.toHaveProperty("gainRetenu");
+  });
 });

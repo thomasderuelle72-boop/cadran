@@ -6,6 +6,7 @@ import { PlateformePage } from "./pages/Plateforme";
 import { PluriannuelPage } from "./pages/Pluriannuel";
 import { PortefeuillePage } from "./pages/Portefeuille";
 import { OpportunitesPage } from "./pages/Opportunites";
+import { ValeurCreeePage } from "./pages/ValeurCreee";
 import { Accueil } from "./pages/Accueil";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
@@ -81,6 +82,7 @@ export default function App() {
         <Route path="/pluriannuel" element={<PluriannuelPage />} />
         <Route path="/portefeuille" element={<PortefeuillePage />} />
         <Route path="/opportunites" element={<OpportunitesPage />} />
+        <Route path="/valeur-creee" element={<ValeurCreeePage />} />
         <Route path="/plateforme" element={<PlateformePage />} />
       </Route>
     </Routes>

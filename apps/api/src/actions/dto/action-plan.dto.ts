@@ -1,5 +1,6 @@
 import { ActionStatus } from "@prisma/client";
 import {
+  IsBoolean,
   IsDateString,
   IsEnum,
   IsIn,
@@ -111,4 +112,15 @@ export class UpdateActionPlanDto {
   @IsOptional()
   @IsEnum(ActionStatus)
   statut?: ActionStatus;
+
+  /** Valeur créée : gain retenu par le cabinet ; `null` rend la main au calcul. */
+  @IsOptional()
+  @ValidateIf((_, valeur) => valeur !== null)
+  @IsNumber()
+  gainRetenu?: number | null;
+
+  /** Valeur créée : écarte l'action du bilan. */
+  @IsOptional()
+  @IsBoolean()
+  exclureDeLaValeur?: boolean;
 }

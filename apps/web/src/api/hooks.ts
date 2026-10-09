@@ -3,6 +3,7 @@ import { api, memoriserCsrf, uploadFile } from "./client";
 import { choisirDossier } from "../lib/dossierCourant";
 import type { EtatAbonnement, PlanId } from "../lib/abonnement";
 import type {
+  BilanValeur,
   Bloc,
   DossierOpportunites,
   Hypotheses,
@@ -1025,11 +1026,17 @@ interface ModificationAction {
   responsable?: string | null;
   echeance?: string | null;
   statut?: ActionStatus;
+  /** Valeur créée : `null` rend la main au calcul. */
+  gainRetenu?: number | null;
+  exclureDeLaValeur?: boolean;
 }
 
 function invaliderActions(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: ["actions"] });
   queryClient.invalidateQueries({ queryKey: ["actions-synthese"] });
+  // La valeur créée et les missions lisent les actions : elles suivent.
+  queryClient.invalidateQueries({ queryKey: ["valeur-creee"] });
+  queryClient.invalidateQueries({ queryKey: ["opportunites"] });
 }
 
 export function useCreateAction() {
@@ -1072,5 +1079,25 @@ export function useOpportunitesDossier(entityId: string | null) {
     queryKey: ["opportunites", entityId],
     queryFn: () => api.get(`/entities/${entityId}/opportunites`),
     enabled: Boolean(entityId),
+  });
+}
+
+export interface FiltreValeur {
+  /** AAAA-MM-JJ ; absent, depuis le début. */
+  depuis?: string;
+  statuts: ActionStatus[];
+  entityId?: string;
+}
+
+/** Le bilan de valeur créée, selon la période, les statuts et le dossier choisis. */
+export function useValeurCreee(filtre: FiltreValeur) {
+  const parametres = new URLSearchParams();
+  if (filtre.depuis) parametres.set("depuis", filtre.depuis);
+  parametres.set("statuts", filtre.statuts.join(","));
+  if (filtre.entityId) parametres.set("entityId", filtre.entityId);
+  return useQuery<BilanValeur>({
+    queryKey: ["valeur-creee", filtre],
+    queryFn: () => api.get(`/valeur-creee?${parametres.toString()}`),
+    enabled: filtre.statuts.length > 0,
   });
 }

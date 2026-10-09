@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router";
 import {
+  Award,
   Bell,
   BriefcaseBusiness,
   CalendarRange,
@@ -87,6 +88,12 @@ const FAMILLES: Array<{ titre: string; entrees: Entree[] }> = [
         label: "Missions à proposer",
         Icone: Lightbulb,
         aide: "Ce que les chiffres de chaque dossier appellent, chiffré en euros",
+      },
+      {
+        to: "/valeur-creee",
+        label: "Valeur créée",
+        Icone: Award,
+        aide: "Ce que les actions menées ont rapporté aux clients",
       },
       {
         to: "/alerts",

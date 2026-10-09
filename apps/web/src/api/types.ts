@@ -803,3 +803,39 @@ export interface DossierOpportunites {
   exerciceCompare: string | null;
   opportunites: Opportunite[];
 }
+
+/** Valeur créée (voir apps/api/src/valeur). */
+export interface LigneValeur {
+  actionId: string;
+  entityId: string | null;
+  dossier: string | null;
+  devise: string;
+  constat: string;
+  action: string;
+  statut: ActionStatus;
+  creeeLe: string;
+  ratioId: string | null;
+  ratioLibelle: string | null;
+  unite: RatioUnit | null;
+  valeurInitiale: number | null;
+  valeurActuelle: number | null;
+  valeurCible: number | null;
+  periodeLue: string | null;
+  gainCalcule: number | null;
+  gainRetenu: number | null;
+  gainCorrige: boolean;
+  nature: "tresorerie" | "resultat" | null;
+  explication: string;
+  exclue: boolean;
+}
+
+export interface BilanValeur {
+  lignes: LigneValeur[];
+  totaux: {
+    tresorerie: number;
+    resultat: number;
+    autres: number;
+    actionsComptees: number;
+    dossiers: number;
+  };
+}

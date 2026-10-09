@@ -564,6 +564,13 @@ model ActionPlan {
   responsable    String?
   echeance       DateTime?
   statut         ActionStatus @default(A_FAIRE)
+  /// Valeur créée : gain saisi par le cabinet, qui remplace le gain calculé
+  /// quand il en sait plus que les chiffres (un encaissement exceptionnel,
+  /// une remise négociée). Vide, c'est le calcul qui fait foi.
+  gainRetenu        Decimal?   @db.Decimal(14, 2)
+  /// Écartée du bilan de valeur créée : action sans lien avec le résultat
+  /// mesuré, ou dont l'effet ne doit pas être revendiqué.
+  exclureDeLaValeur Boolean    @default(false)
   /// Auteur de la recommandation, recopié pour rester lisible si le compte part.
   auteurEmail    String
   createdAt      DateTime     @default(now())
