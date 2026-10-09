@@ -10,6 +10,7 @@ import {
   FileText,
   HandCoins,
   LayoutDashboard,
+  Lightbulb,
   ListChecks,
   LogOut,
   Menu,
@@ -80,6 +81,12 @@ const FAMILLES: Array<{ titre: string; entrees: Entree[] }> = [
         label: "Tableau de bord",
         Icone: LayoutDashboard,
         aide: "Les chiffres clés et les ratios de la période",
+      },
+      {
+        to: "/opportunites",
+        label: "Missions à proposer",
+        Icone: Lightbulb,
+        aide: "Ce que les chiffres de chaque dossier appellent, chiffré en euros",
       },
       {
         to: "/alerts",

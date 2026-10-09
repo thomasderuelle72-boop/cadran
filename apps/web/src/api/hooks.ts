@@ -4,6 +4,7 @@ import { choisirDossier } from "../lib/dossierCourant";
 import type { EtatAbonnement, PlanId } from "../lib/abonnement";
 import type {
   Bloc,
+  DossierOpportunites,
   Hypotheses,
   Mesure,
   Previsionnel,
@@ -1054,5 +1055,22 @@ export function useDeleteAction() {
   return useMutation({
     mutationFn: (id: string) => api.delete<void>(`/actions/${id}`),
     onSuccess: () => invaliderActions(queryClient),
+  });
+}
+
+/** Les missions à proposer, pour tout le portefeuille. */
+export function useOpportunites() {
+  return useQuery<DossierOpportunites[]>({
+    queryKey: ["opportunites"],
+    queryFn: () => api.get("/opportunites"),
+  });
+}
+
+/** Les missions à proposer pour un dossier. */
+export function useOpportunitesDossier(entityId: string | null) {
+  return useQuery<DossierOpportunites>({
+    queryKey: ["opportunites", entityId],
+    queryFn: () => api.get(`/entities/${entityId}/opportunites`),
+    enabled: Boolean(entityId),
   });
 }

@@ -777,3 +777,29 @@ export interface ReferentielCharge {
   lignes: number;
   importeLe: string | null;
 }
+
+/** Une mission que les chiffres d'un dossier appellent, chiffrée (voir apps/api/src/opportunites/regles.ts). */
+export type PrioriteOpportunite = "urgente" | "haute" | "normale";
+export type NatureEnjeu = "tresorerie" | "resultat" | "financement" | "obligation";
+
+export interface Opportunite {
+  type: string;
+  mission: string;
+  constat: string;
+  action: string;
+  enjeu: number;
+  natureEnjeu: NatureEnjeu;
+  priorite: PrioriteOpportunite;
+  arguments: string[];
+  suivi?: { ratioId: string; valeurInitiale: number; valeurCible: number };
+  dansLePlan: boolean;
+}
+
+export interface DossierOpportunites {
+  entityId: string;
+  nom: string;
+  devise: string;
+  exercice: string | null;
+  exerciceCompare: string | null;
+  opportunites: Opportunite[];
+}

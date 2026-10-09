@@ -7,6 +7,7 @@ import {
   useConsolidationGroups,
   useEtatAbonnement,
   useEntities,
+  useOpportunitesDossier,
   usePeriods,
   useRatios,
   useTrend,
@@ -19,6 +20,7 @@ import { Cascade } from "../components/tableau/Cascade";
 import { EquationTresorerie } from "../components/tableau/EquationTresorerie";
 import { Delais } from "../components/tableau/Delais";
 import { FAMILLES, FamilleIndicateurs } from "../components/tableau/FamilleIndicateurs";
+import { CarteOpportunite } from "../components/opportunites/CarteOpportunite";
 import {
   EntetePage,
   EtatVide,
@@ -223,7 +225,13 @@ function EntityDashboard({ entityId }: { entityId: string }) {
               </div>
             }
           >
-            {ratioResult && <DashboardBody ratioResult={ratioResult} contexte={contexte} />}
+            {ratioResult && (
+              <DashboardBody
+                ratioResult={ratioResult}
+                contexte={contexte}
+                missions={<MissionsDossier entityId={entityId} />}
+              />
+            )}
           </Zone>
         </div>
       )}
@@ -430,12 +438,45 @@ function Bloc({
  * Chaque graphique répond à une question écrite au-dessus de lui : un
  * graphique sans question laisse le lecteur deviner ce qu'il doit y voir.
  */
+/**
+ * Les missions que ce dossier appelle, juste sous ses chiffres clés : c'est
+ * là que le constat devient une proposition. Rien ne s'affiche quand il n'y
+ * en a pas — un bloc vide « aucune mission » n'apprendrait rien.
+ */
+function MissionsDossier({ entityId }: { entityId: string }) {
+  const { data } = useOpportunitesDossier(entityId);
+  if (!data || data.opportunites.length === 0) return null;
+  const affichees = data.opportunites.slice(0, 3);
+  return (
+    <section className="apparition" style={{ animationDelay: "320ms" }}>
+      <div className="flex flex-wrap items-baseline justify-between gap-2 mb-1">
+        <h2 className="text-lg font-bold">Missions à proposer</h2>
+        <Link to="/opportunites" className="text-sm font-medium text-primary hover:underline">
+          Tout le portefeuille →
+        </Link>
+      </div>
+      <p className="text-sm text-ink-3 mb-4">
+        Ce que les chiffres de l&apos;exercice {data.exercice}
+        {data.exerciceCompare ? `, comparés à ${data.exerciceCompare},` : ""} appellent — chiffré en ordre de grandeur.
+      </p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {affichees.map((o) => (
+          <CarteOpportunite key={o.type} opportunite={o} entityId={entityId} devise={data.devise} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function DashboardBody({
   ratioResult,
   contexte,
+  missions,
 }: {
   ratioResult: Pick<RatioResultPayload, "currency" | "aggregates" | "derived" | "ratios">;
   contexte?: ContexteTemporel;
+  /** Le bloc des missions du dossier ; absent de la vue consolidée. */
+  missions?: ReactNode;
 }) {
   const { currency, aggregates, derived, ratios } = ratioResult;
   const ecartBilan = derived.ecartBilan;
@@ -518,6 +559,8 @@ function DashboardBody({
           </div>
         ))}
       </div>
+
+      {missions}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <Bloc
