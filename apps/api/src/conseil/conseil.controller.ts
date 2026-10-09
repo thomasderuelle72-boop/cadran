@@ -30,7 +30,7 @@ export class ConseilController {
   @Get("etat")
   async etat(@CurrentUser() user: AuthUser) {
     const compteur = await this.usage.etat(user.organizationId, user.administrateurPlateforme);
-    return { disponible: this.conseil.configure, ...compteur };
+    return { disponible: this.conseil.configure, modele: this.conseil.description, ...compteur };
   }
 
   /**

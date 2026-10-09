@@ -264,7 +264,13 @@ export function ConseilPage() {
       <p className="text-xs text-ink-3 border-t border-rule/10 pt-3">
         Le conseiller n&apos;est ni expert-comptable, ni conseil juridique ou fiscal. Il éclaire vos
         décisions ; elles restent les vôtres. Vos questions et les chiffres consultés sont transmis
-        à un modèle d&apos;analyse de langage, sous-traitant déclaré dans notre{" "}
+        à un modèle d&apos;analyse de langage
+        {etat?.modele
+          ? ` (${etat.modele.modele}, par ${etat.modele.fournisseur}${
+              etat.modele.fournisseur === "OpenRouter" ? ", chez un hébergeur qui ne conserve rien" : ""
+            })`
+          : ""}
+        , sous-traitant déclaré dans notre{" "}
         <Link to="/confidentialite" className="text-primary hover:underline">
           politique de confidentialité
         </Link>

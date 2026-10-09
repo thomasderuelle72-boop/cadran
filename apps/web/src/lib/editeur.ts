@@ -138,4 +138,4 @@ export function champsManquants(editeur: IdentiteEditeur = EDITEUR): string[] {
 
 /** Date de dernière mise à jour des textes légaux, affichée en pied de page.
  *  Une politique de confidentialité sans date ne dit pas si elle est à jour. */
-export const DERNIERE_MISE_A_JOUR = "2 octobre 2026";
+export const DERNIERE_MISE_A_JOUR = "9 octobre 2026";

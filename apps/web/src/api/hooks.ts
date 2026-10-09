@@ -148,6 +148,8 @@ export function useOuvrirPortail() {
  */
 export interface EtatConseil {
   disponible: boolean;
+  /** À qui partent les questions : affiché sous le champ de saisie. */
+  modele: { fournisseur: string; modele: string } | null;
   posees: number;
   incluses: number;
   restantes: number;

@@ -186,8 +186,11 @@ export function Confidentialite() {
           <p className="text-sm text-ink-2 mt-1">
             Lorsque vous posez une question au conseiller, votre question et les résultats des
             calculs nécessaires pour y répondre — qui peuvent comporter des noms de clients ou de
-            fournisseurs — sont transmis à <strong>Anthropic PBC</strong>, qui exploite le modèle
-            d&apos;analyse de langage.
+            fournisseurs — sont transmis au modèle d&apos;analyse de langage, selon la configuration
+            du service : soit par <strong>OpenRouter, Inc.</strong>, qui achemine la requête vers un
+            hébergeur du modèle (par exemple Amazon Web Services ou Google Cloud pour les modèles
+            Claude), soit directement à <strong>Anthropic PBC</strong>. L&apos;écran du conseiller
+            indique le modèle et le prestataire utilisés.
           </p>
           <ul className="list-disc pl-5 space-y-1 text-sm text-ink-2 mt-2">
             <li>
@@ -195,8 +198,11 @@ export function Confidentialite() {
               automatique n&apos;est envoyée en arrière-plan.
             </li>
             <li>
-              Vos données ne servent pas à entraîner de modèle. C&apos;est une obligation
-              contractuelle du prestataire, pas une simple intention.
+              Vos données ne servent pas à entraîner de modèle et ne sont pas conservées par
+              l&apos;hébergeur. Par OpenRouter, chaque requête l&apos;exige (« zéro conservation »,
+              « aucune collecte ») et n&apos;est acheminée que vers un hébergeur qui s&apos;y engage ;
+              à défaut, elle n&apos;est pas envoyée. En direct, c&apos;est une obligation
+              contractuelle d&apos;Anthropic.
             </li>
             <li>
               Nous ne conservons ni vos questions ni les réponses : seul un compteur mensuel,

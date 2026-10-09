@@ -9,7 +9,17 @@ import { ExecuteurOutils } from "./executeur";
 import { CONSIGNE_STABLE, contexteSession } from "./consigne";
 import { OUTILS, TOURS_MAX } from "./outils";
 import { boucleConseil } from "./boucle";
-import { lireEnv } from "../config/environnement";
+import { lireEnv, lireEnvOuDefaut } from "../config/environnement";
+import {
+  ErreurOpenRouter,
+  MODELE_OPENROUTER_PAR_DEFAUT,
+  appelerOpenRouter,
+  corpsRequete,
+  lireTour,
+  messageAssistant,
+  type MessageOR,
+  type ReponseOR,
+} from "./openrouter";
 
 /**
  * Le conseiller : une boucle d'appels d'outils autour du modèle.
@@ -41,34 +51,60 @@ export interface Reponse {
  * qualité du raisonnement est exactement ce qu'on vend. */
 const MODELE = "claude-opus-5-5";
 
+/**
+ * Qui répond. OpenRouter passe devant quand sa clé est posée : c'est le
+ * chemin le moins cher, et le choix du modèle se fait par une variable
+ * (OPENROUTER_MODELE) sans toucher au code. Sinon Anthropic en direct.
+ */
+type Fournisseur =
+  | { type: "openrouter"; cle: string; modele: string }
+  | { type: "anthropic"; client: Anthropic };
+
+const MESSAGE_MAL_CONFIGURE =
+  "Le conseiller est momentanément indisponible. Nous sommes prévenus ; les autres écrans restent accessibles.";
+
 @Injectable()
 export class ConseilService {
   private readonly logger = new Logger(ConseilService.name);
-  private readonly client: Anthropic | null;
+  private readonly fournisseur: Fournisseur | null;
 
   constructor(private executeur: ExecuteurOutils) {
+    const cleOpenRouter = lireEnv("OPENROUTER_API_KEY");
+    if (cleOpenRouter) {
+      const modele = lireEnvOuDefaut("OPENROUTER_MODELE", MODELE_OPENROUTER_PAR_DEFAUT);
+      this.logger.log(`Conseiller par OpenRouter, modèle ${modele}, sans conservation des données.`);
+      this.fournisseur = { type: "openrouter", cle: cleOpenRouter, modele };
+      return;
+    }
     const cle = lireEnv("ANTHROPIC_API_KEY");
     if (!cle) {
       this.logger.warn(
-        "ANTHROPIC_API_KEY absente : le conseiller est désactivé sur cette instance."
+        "Ni OPENROUTER_API_KEY ni ANTHROPIC_API_KEY : le conseiller est désactivé sur cette instance."
       );
-      this.client = null;
+      this.fournisseur = null;
       return;
     }
-    this.client = new Anthropic({ apiKey: cle });
+    this.fournisseur = { type: "anthropic", client: new Anthropic({ apiKey: cle }) };
   }
 
   get configure(): boolean {
-    return this.client !== null;
+    return this.fournisseur !== null;
+  }
+
+  /** Ce que l'écran affiche pour dire à qui partent les questions. */
+  get description(): { fournisseur: string; modele: string } | null {
+    if (!this.fournisseur) return null;
+    return this.fournisseur.type === "openrouter"
+      ? { fournisseur: "OpenRouter", modele: this.fournisseur.modele }
+      : { fournisseur: "Anthropic", modele: MODELE };
   }
 
   async repondre(organizationId: string, question: string): Promise<Reponse> {
-    if (!this.client) {
+    if (!this.fournisseur) {
       throw new ServiceUnavailableException(
         "Le conseiller n'est pas activé sur cette instance. Écrivez-nous si vous souhaitez y accéder."
       );
     }
-    const client = this.client;
 
     const entites = await this.executeur.entites(organizationId);
     const contexte = contexteSession({
@@ -76,10 +112,106 @@ export class ConseilService {
       entites: entites.map((e) => ({ id: e.id, nom: e.name, devise: e.currency })),
     });
 
+    const issue =
+      this.fournisseur.type === "openrouter"
+        ? await this.boucleOpenRouter(this.fournisseur, organizationId, question, contexte)
+        : await this.boucleAnthropic(this.fournisseur.client, organizationId, question, contexte);
+
+    if (issue.tronquee) {
+      this.logger.warn(`Borne de ${TOURS_MAX} tours atteinte sans réponse finale.`);
+    }
+
+    return {
+      texte: issue.texte,
+      sources: issue.sources,
+      consommation: issue.consommation,
+      tronquee: issue.tronquee,
+    };
+  }
+
+  /**
+   * La boucle par OpenRouter. Même boucle, même borne, mêmes outils : seul
+   * change le format des messages. La consigne et le contexte de session
+   * forment le message système.
+   */
+  private boucleOpenRouter(
+    fournisseur: { cle: string; modele: string },
+    organizationId: string,
+    question: string,
+    contexte: string
+  ) {
+    const messages: MessageOR[] = [
+      { role: "system", content: `${CONSIGNE_STABLE}\n\n${contexte}` },
+      { role: "user", content: question },
+    ];
+    let derniere: ReponseOR | null = null;
+
+    return boucleConseil({
+      interroger: async () => {
+        derniere = await this.interrogerOpenRouter(
+          fournisseur,
+          corpsRequete({ modele: fournisseur.modele, messages, outils: OUTILS, maxJetons: 4000 })
+        );
+        return lireTour(derniere);
+      },
+      memoriser: () => {
+        if (derniere) messages.push(messageAssistant(derniere));
+      },
+      remettreResultats: (resultats) => {
+        for (const r of resultats) {
+          messages.push({ role: "tool", tool_call_id: r.id, content: JSON.stringify(r.contenu) });
+        }
+      },
+      executer: (demande) => this.executeur.executer(organizationId, demande.nom, demande.arguments),
+    });
+  }
+
+  private async interrogerOpenRouter(
+    fournisseur: { cle: string; modele: string },
+    corps: unknown
+  ): Promise<ReponseOR> {
+    try {
+      return await appelerOpenRouter({ cle: fournisseur.cle, corps });
+    } catch (erreur) {
+      if (erreur instanceof ErreurOpenRouter) {
+        if (erreur.statut === 401 || erreur.statut === 403) {
+          this.logger.error("Clé OpenRouter refusée : le conseiller est mal configuré.");
+          throw new ServiceUnavailableException(MESSAGE_MAL_CONFIGURE);
+        }
+        if (erreur.statut === 402) {
+          this.logger.error(`Crédit OpenRouter épuisé : ${erreur.message}`);
+          throw new ServiceUnavailableException(MESSAGE_MAL_CONFIGURE);
+        }
+        if (erreur.statut === 429) {
+          throw new ServiceUnavailableException("Trop de questions en même temps. Réessayez dans une minute.");
+        }
+        if (erreur.statut === 400 || erreur.statut === 404) {
+          /* Modèle inconnu, ou aucun hébergeur de ce modèle ne s'engage à
+           * ne rien conserver : c'est à corriger dans OPENROUTER_MODELE. */
+          this.logger.error(
+            `OpenRouter refuse le modèle « ${fournisseur.modele} » (${erreur.statut}) : ${erreur.message}`
+          );
+          throw new ServiceUnavailableException(MESSAGE_MAL_CONFIGURE);
+        }
+        this.logger.error(`Erreur OpenRouter (${erreur.statut}) : ${erreur.message}`);
+        throw new BadGatewayException(
+          "Le conseiller n'a pas pu répondre. Réessayez ; si cela persiste, écrivez-nous."
+        );
+      }
+      if (erreur instanceof Error && (erreur.name === "TimeoutError" || erreur.name === "AbortError" || erreur instanceof TypeError)) {
+        throw new ServiceUnavailableException(
+          "Le conseiller n'est pas joignable pour l'instant. Réessayez dans un instant."
+        );
+      }
+      throw erreur;
+    }
+  }
+
+  private boucleAnthropic(client: Anthropic, organizationId: string, question: string, contexte: string) {
     const messages: Anthropic.MessageParam[] = [{ role: "user", content: question }];
     const parId = new Map<string, Anthropic.ToolUseBlock>();
 
-    const issue = await boucleConseil({
+    return boucleConseil({
       interroger: async () => {
         const reponse = await this.interrogerModele(client, {
           model: MODELE,
@@ -156,18 +288,8 @@ export class ConseilService {
 
       executer: (demande) => this.executeur.executer(organizationId, demande.nom, demande.arguments),
     });
-
-    if (issue.tronquee) {
-      this.logger.warn(`Borne de ${TOURS_MAX} tours atteinte sans réponse finale.`);
-    }
-
-    return {
-      texte: issue.texte,
-      sources: issue.sources,
-      consommation: issue.consommation,
-      tronquee: issue.tronquee,
-    };
   }
+
   /**
    * Un appel au modèle, dont les pannes sont traduites.
    *
@@ -188,10 +310,7 @@ export class ConseilService {
         /* Mauvaise configuration de notre côté, pas une erreur du client :
          * il ne peut rien y faire, et il doit pouvoir nous le signaler. */
         this.logger.error("Clé du modèle refusée : le conseiller est mal configuré.");
-        throw new ServiceUnavailableException(
-          "Le conseiller est momentanément indisponible. Nous sommes prévenus ; " +
-            "les autres écrans restent accessibles."
-        );
+        throw new ServiceUnavailableException(MESSAGE_MAL_CONFIGURE);
       }
       if (erreur instanceof Anthropic.RateLimitError) {
         throw new ServiceUnavailableException(
