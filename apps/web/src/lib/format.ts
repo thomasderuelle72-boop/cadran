@@ -10,7 +10,10 @@ export function formatRatioValue(value: number | null, unit: RatioUnit, currency
     case "jours":
       return `${decimal(value, 0)} j`;
     case "annees":
-      return `${decimal(value, 1)} ans`;
+      // « 0,6 an », « 2,6 ans » : le pluriel commence à deux.
+      return `${decimal(value, 1)} ${Math.abs(value) >= 2 ? "ans" : "an"}`;
+    case "indice":
+      return decimal(value, 0);
     case "devise":
       return formatCurrency(value, currency);
     default:

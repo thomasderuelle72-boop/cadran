@@ -1,11 +1,23 @@
 import { useEffect, useState } from "react";
-import { useDiagnostic, useEntities, usePeriods } from "../api/hooks";
+import { useDiagnostic, useEntities, usePeriods, useRatios } from "../api/hooks";
+import { RatioTable } from "../components/RatioTable";
 import { CadranScore } from "../components/CadranScore";
 import { EntetePage, EtatVide, SqueletteCarte, SqueletteTuiles, Zone } from "../components/etats";
 import { formatCurrency } from "../lib/format";
-import type { ScoreRisque, ZoneScore } from "../api/types";
+import type { RatioCategory, ScoreRisque, ZoneScore } from "../api/types";
 import { useDossierCourant } from "../lib/dossierCourant";
 import { ComparaisonSectorielle } from "../components/ComparaisonSectorielle";
+
+const CATEGORIES: RatioCategory[] = ["RENTABILITE", "LIQUIDITE", "SOLVABILITE", "ACTIVITE"];
+
+/** Le sommaire de la page : elle est longue, on doit pouvoir y sauter. */
+const SOMMAIRE = [
+  { id: "indicateurs", libelle: "Indicateurs" },
+  { id: "seuil", libelle: "Seuil de rentabilité" },
+  { id: "bfr", libelle: "Besoin en fonds de roulement" },
+  { id: "secteur", libelle: "Comparaison au secteur" },
+  { id: "scores", libelle: "Scores de fragilité" },
+];
 
 const LIBELLE_ZONE: Record<ZoneScore, string> = {
   sain: "Zone saine",
@@ -129,13 +141,17 @@ export function DiagnosticPage() {
   }, [periods, periodId]);
 
   const { data, isLoading, error, refetch } = useDiagnostic(periodId);
+  const { data: ratios } = useRatios(periodId);
   const currency = data?.currency ?? "EUR";
   const seuil = data?.seuilRentabilite;
   const bfr = data?.bfrNormatif;
 
   return (
     <div className="space-y-6">
-      <EntetePage titre="Diagnostic" sousTitre="Fragilité, point mort et besoin de financement du cycle.">
+      <EntetePage
+        titre="Diagnostic"
+        sousTitre="Les indicateurs de la période, le point mort, le besoin de financement du cycle, la comparaison au secteur et les scores de fragilité."
+      >
         <select
           className="input w-48"
           value={periodId ?? ""}
@@ -149,6 +165,20 @@ export function DiagnosticPage() {
           ))}
         </select>
       </EntetePage>
+
+      {periodId && (
+        <nav aria-label="Sommaire du diagnostic" className="flex flex-wrap gap-2">
+          {SOMMAIRE.map((entree) => (
+            <a
+              key={entree.id}
+              href={`#${entree.id}`}
+              className="rounded-full border border-rule/15 bg-surface px-3 py-1 text-sm text-ink-2 hover:text-ink hover:bg-surface-2 transition"
+            >
+              {entree.libelle}
+            </a>
+          ))}
+        </nav>
+      )}
 
       {!periodId && (
         <EtatVide titre="Aucune période" action={{ to: "/import", label: "Importer des données" }}>
@@ -175,36 +205,23 @@ export function DiagnosticPage() {
         >
       {data && (
         <div className="space-y-6">
-          <div className="card bg-ink/[0.02]">
-            <h2 className="font-display text-lg font-semibold mb-1">Scores de fragilité</h2>
-            <p className="text-sm text-ink-3">
-              Deux modèles statistiques publiés, appliqués à {data.periodLabel} ({data.joursPeriode}{" "}
-              jours). Ce sont des indices, pas des prédictions : chaque composante est affichée avec
-              son coefficient pour que le calcul reste vérifiable, et les flux sont annualisés avant
-              d&apos;être rapportés au bilan.
-            </p>
-            <p className="mt-3 text-sm">
-              <span className="font-semibold">
-                Lecture{" "}
-                {data.diagnostic.convergence === "convergente"
-                  ? "convergente"
-                  : data.diagnostic.convergence === "divergente"
-                    ? "divergente"
-                    : "partielle"}
-                .
-              </span>{" "}
-              {data.diagnostic.commentaire}
-            </p>
-          </div>
-
-          <div className="grid lg:grid-cols-2 gap-4">
-            {data.diagnostic.scores.map((score) => (
-              <CarteScore key={score.id} score={score} />
-            ))}
-          </div>
+          <section id="indicateurs" className="space-y-4 scroll-mt-28" aria-labelledby="titre-indicateurs">
+            <h2 id="titre-indicateurs" className="text-lg font-bold">
+              Les indicateurs de la période
+            </h2>
+            {ratios &&
+              CATEGORIES.map((categorie) => (
+                <RatioTable
+                  key={categorie}
+                  categorie={categorie}
+                  ratios={ratios.ratios.filter((r) => r.category === categorie)}
+                  currency={ratios.currency}
+                />
+              ))}
+          </section>
 
           {seuil && (
-            <div className="card">
+            <div id="seuil" className="card scroll-mt-28">
               <h2 className="font-display text-lg font-semibold mb-1">Seuil de rentabilité</h2>
               <p className="text-sm text-ink-3 mb-4">
                 À partir de quel chiffre d&apos;affaires l&apos;entreprise couvre ses charges — et
@@ -319,7 +336,7 @@ export function DiagnosticPage() {
           )}
 
           {bfr && (
-            <div className="card">
+            <div id="bfr" className="card scroll-mt-28">
               <h2 className="font-display text-lg font-semibold mb-1">
                 Besoin en fonds de roulement
               </h2>
@@ -397,7 +414,45 @@ export function DiagnosticPage() {
       {/* Sur le dernier exercice complet du dossier, et non sur la période
           choisie plus haut : une année partielle ne se compare pas à des
           quartiles annuels. La carte le dit dans son sous-titre. */}
-      {entityId && <ComparaisonSectorielle entityId={entityId} />}
+      {entityId && (
+        <div id="secteur" className="scroll-mt-28">
+          <ComparaisonSectorielle entityId={entityId} />
+        </div>
+      )}
+
+      {/* Les scores de fragilité en dernier : des modèles statistiques, à
+          confronter au reste du diagnostic plutôt qu'à lire en premier. */}
+      {periodId && data && (
+        <div className="space-y-6">
+          <div id="scores" className="card bg-ink/[0.02] scroll-mt-28">
+            <h2 className="font-display text-lg font-semibold mb-1">Scores de fragilité</h2>
+            <p className="text-sm text-ink-3">
+              Deux modèles statistiques publiés, appliqués à {data.periodLabel} ({data.joursPeriode}{" "}
+              jours). Ce sont des indices, pas des prédictions : chaque composante est affichée avec
+              son coefficient pour que le calcul reste vérifiable, et les flux sont annualisés avant
+              d&apos;être rapportés au bilan.
+            </p>
+            <p className="mt-3 text-sm">
+              <span className="font-semibold">
+                Lecture{" "}
+                {data.diagnostic.convergence === "convergente"
+                  ? "convergente"
+                  : data.diagnostic.convergence === "divergente"
+                    ? "divergente"
+                    : "partielle"}
+                .
+              </span>{" "}
+              {data.diagnostic.commentaire}
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-4">
+            {data.diagnostic.scores.map((score) => (
+              <CarteScore key={score.id} score={score} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

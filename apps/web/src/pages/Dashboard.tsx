@@ -66,7 +66,7 @@ const OU_COMPRENDRE: Record<string, { to: string; libelle: string }> = {
     to: "/diagnostic",
     libelle: "Voir les scores de fragilité",
   },
-  croissance_ca: { to: "/analysis", libelle: "Voir l'évolution" },
+  croissance_ca: { to: "/evolution", libelle: "Voir l'évolution" },
 };
 
 export function Dashboard() {
@@ -83,8 +83,8 @@ export function Dashboard() {
   return (
     <div className="space-y-6">
       <EntetePage
-        titre="Tableau de bord"
-        sousTitre="Vue synthétique de la performance financière."
+        titre="Synthèse"
+        sousTitre="Où en est le dossier, en un écran : les chiffres clés de la période et ce qu'ils disent."
       >
         {/* Le dossier se choisit dans le menu ; reste ici ce qui n'en est
             pas un, la vue du groupe. */}
@@ -227,6 +227,7 @@ function EntityDashboard({ entityId }: { entityId: string }) {
           >
             {ratioResult && (
               <DashboardBody
+                entityId={entityId}
                 ratioResult={ratioResult}
                 contexte={contexte}
                 missions={<MissionsDossier entityId={entityId} />}
@@ -369,10 +370,18 @@ interface ContexteTemporel {
 }
 
 /** Bandeau des alertes non acquittées, avec le chemin pour les traiter. */
-function BandeauAlertes() {
+/**
+ * Les alertes du dossier affiché — et de lui seul. Le bandeau comptait celles
+ * de tout le cabinet : la synthèse de Bastide annonçait onze alertes qui
+ * concernaient toutes un autre dossier. Une même règle franchie sur plusieurs
+ * périodes n'est nommée qu'une fois.
+ */
+function BandeauAlertes({ entityId }: { entityId?: string }) {
   const { data: evenements } = useAlertEvents();
-  const actives = evenements?.filter((e) => !e.acknowledged) ?? [];
+  const actives =
+    evenements?.filter((e) => !e.acknowledged && (entityId === undefined || e.entity?.id === entityId)) ?? [];
   if (actives.length === 0) return null;
+  const regles = [...new Set(actives.map((e) => e.rule.label))];
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/30 bg-warning-soft/60 px-4 py-3">
@@ -384,11 +393,8 @@ function BandeauAlertes() {
           </span>{" "}
           <span className="text-ink-2">
             —{" "}
-            {actives
-              .slice(0, 2)
-              .map((e) => e.rule.label)
-              .join(" · ")}
-            {actives.length > 2 && ` · et ${actives.length - 2} autre${actives.length > 3 ? "s" : ""}`}
+            {regles.slice(0, 2).join(" · ")}
+            {regles.length > 2 && ` · et ${regles.length - 2} autre${regles.length > 3 ? "s" : ""}`}
           </span>
         </span>
       </p>
@@ -472,8 +478,11 @@ function DashboardBody({
   ratioResult,
   contexte,
   missions,
+  entityId,
 }: {
   ratioResult: Pick<RatioResultPayload, "currency" | "aggregates" | "derived" | "ratios">;
+  /** Le dossier affiché ; absent de la vue consolidée, qui montre toutes les alertes. */
+  entityId?: string;
   contexte?: ContexteTemporel;
   /** Le bloc des missions du dossier ; absent de la vue consolidée. */
   missions?: ReactNode;
@@ -506,7 +515,7 @@ function DashboardBody({
         </div>
       )}
 
-      <BandeauAlertes />
+      <BandeauAlertes entityId={entityId} />
 
       <div className="apparition">
         <Synthese etat={etat} currency={currency} ouComprendre={OU_COMPRENDRE} />

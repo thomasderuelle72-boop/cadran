@@ -91,7 +91,8 @@ export interface ImportReference {
 
 export type RatioCategory = "RENTABILITE" | "LIQUIDITE" | "SOLVABILITE" | "ACTIVITE";
 export type RatioStatus = "bon" | "attention" | "critique" | "neutre";
-export type RatioUnit = "pourcentage" | "jours" | "ratio" | "devise" | "annees";
+/** « indice » : base 100 au premier exercice, pour comparer deux croissances. */
+export type RatioUnit = "pourcentage" | "jours" | "ratio" | "devise" | "annees" | "indice";
 
 export interface RatioValue {
   id: string;
@@ -680,6 +681,10 @@ export interface SerieExercice {
   complet: boolean;
   valeurs: Record<string, number | null>;
   besoinFinancement?: number;
+  /** Jours couverts et bornes (AAAA-MM-JJ), pour un exercice réalisé. */
+  jours?: number;
+  debut?: string;
+  fin?: string;
 }
 
 export interface Hypotheses {
@@ -707,11 +712,40 @@ export interface TableauEnregistre {
   enregistre: boolean;
 }
 
+export interface LignePlan {
+  annee: number;
+  besoins: { investissements: number; augmentationBfr: number; remboursements: number; dividendes: number; total: number };
+  ressources: { caf: number; emprunts: number; diminutionBfr: number; total: number };
+  /** Ressources moins besoins : la variation des disponibilités. */
+  solde: number;
+  tresorerieFin: number;
+}
+
+export interface ResumeScenario {
+  id: "prudent" | "central" | "ambitieux";
+  libelle: string;
+  croissanceCa: number;
+  chiffreAffairesFinal: number;
+  resultatNetCumule: number;
+  tresorerieFinale: number;
+  besoinMaximal: number;
+}
+
 export interface Previsionnel {
   hypotheses: Hypotheses;
+  /** Les hypothèses « si rien ne change », tirées du dernier exercice complet. */
+  duReel: Hypotheses;
+  /** Les valeurs constatées en face de chaque hypothèse. */
+  reference: Partial<Record<keyof Hypotheses, number>>;
+  /** Vrai quand des hypothèses ont été enregistrées pour ce dossier. */
+  enregistre: boolean;
   exercices: SerieExercice[];
+  /** Le dernier exercice complet, colonne de référence des tableaux. */
+  realise: SerieExercice | null;
   /** Millésime du dernier exercice complet, point de départ de la projection. */
   depart: number | null;
+  plan: LignePlan[];
+  scenarios: ResumeScenario[];
 }
 
 /** État d'un dossier dans le portefeuille ; les motifs disent pourquoi. */

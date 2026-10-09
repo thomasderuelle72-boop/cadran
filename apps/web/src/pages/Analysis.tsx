@@ -108,8 +108,8 @@ export function AnalysisPage() {
   return (
     <div className="space-y-6">
       <EntetePage
-        titre="Résultats et flux"
-        sousTitre="Soldes intermédiaires de gestion et tableau de flux de trésorerie."
+        titre="Activité et résultat"
+        sousTitre="Du chiffre d'affaires au résultat net, puis d'où vient et où part la trésorerie."
       >
         <select
           className="input w-48"

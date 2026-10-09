@@ -1,16 +1,13 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, memoriserCsrf, uploadFile } from "./client";
 import { choisirDossier } from "../lib/dossierCourant";
 import type { EtatAbonnement, PlanId } from "../lib/abonnement";
 import type {
   BilanValeur,
-  Bloc,
   DossierOpportunites,
   Hypotheses,
-  Mesure,
   Previsionnel,
   SerieExercice,
-  TableauEnregistre,
   OrganisationPlateforme,
   SantePlateforme,
   UtilisateurPlateforme,
@@ -643,46 +640,13 @@ export function useRetirerMarque() {
   });
 }
 
-// --- Tableau de bord pluriannuel -------------------------------------------
-
-/* Le catalogue ne dépend ni de l'entité ni des données : il est mis en cache
- * sans péremption plutôt que rechargé à chaque changement d'entité. */
-export function useMesures(entityId: string | null) {
-  return useQuery<Mesure[]>({
-    queryKey: ["mesures"],
-    queryFn: () => api.get(`/entities/${entityId}/pluriannuel/mesures`),
-    enabled: Boolean(entityId),
-    staleTime: Infinity,
-  });
-}
+// --- Évolution et prévisionnel -----------------------------------------------
 
 export function useSeriesPluriannuelles(entityId: string | null) {
   return useQuery<SerieExercice[]>({
     queryKey: ["pluriannuel", "series", entityId],
     queryFn: () => api.get(`/entities/${entityId}/pluriannuel/series`),
     enabled: Boolean(entityId),
-  });
-}
-
-export function useTableauPluriannuel(entityId: string | null) {
-  return useQuery<TableauEnregistre>({
-    queryKey: ["pluriannuel", "tableau", entityId],
-    queryFn: () => api.get(`/entities/${entityId}/pluriannuel/tableau`),
-    enabled: Boolean(entityId),
-  });
-}
-
-export function useEnregistrerTableau(entityId: string | null) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (blocs: Bloc[]) =>
-      api.put<{ blocs: Bloc[] }>(`/entities/${entityId}/pluriannuel/tableau`, {
-        blocs,
-      }),
-    onSuccess: () =>
-      queryClient.invalidateQueries({
-        queryKey: ["pluriannuel", "tableau", entityId],
-      }),
   });
 }
 
@@ -706,12 +670,26 @@ export function usePrevisionnel(
       ).toString()
     : "";
   return useQuery<Previsionnel>({
+    // Garder la projection affichée pendant le recalcul : sans cela, chaque
+    // frappe dans un champ ferait clignoter tout l'écran. Mais seulement pour
+    // le même dossier : reprendre celle d'un autre dossier ferait adopter ses
+    // hypothèses au dossier qu'on vient d'ouvrir.
+    placeholderData: (precedente, requete) =>
+      requete?.queryKey[2] === entityId ? keepPreviousData(precedente) : undefined,
     queryKey: ["pluriannuel", "previsionnel", entityId, parametres],
     queryFn: () =>
       api.get(
         `/entities/${entityId}/pluriannuel/previsionnel${parametres ? `?${parametres}` : ""}`,
       ),
     enabled: Boolean(entityId),
+  });
+}
+
+export function useEffacerHypotheses(entityId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.delete<{ effacees: boolean }>(`/entities/${entityId}/pluriannuel/previsionnel`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["pluriannuel"] }),
   });
 }
 
@@ -1099,5 +1077,27 @@ export function useValeurCreee(filtre: FiltreValeur) {
     queryKey: ["valeur-creee", filtre],
     queryFn: () => api.get(`/valeur-creee?${parametres.toString()}`),
     enabled: filtre.statuts.length > 0,
+  });
+}
+
+// --- Modèles du cabinet -----------------------------------------------------
+
+/** Un réglage partagé par le cabinet ; `valeur` vaut null tant qu'il n'est pas posé. */
+export function usePreferenceCabinet<T>(cle: string) {
+  return useQuery<{ valeur: T | null }>({
+    queryKey: ["preferences", cle],
+    queryFn: () => api.get(`/preferences/${cle}`),
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useEnregistrerPreferenceCabinet<T>(cle: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (valeur: T | null): Promise<{ valeur: T | null }> =>
+      valeur === null
+        ? api.delete<{ valeur: T | null }>(`/preferences/${cle}`)
+        : api.put<{ valeur: T | null }>(`/preferences/${cle}`, valeur),
+    onSuccess: (reponse) => queryClient.setQueryData(["preferences", cle], reponse),
   });
 }

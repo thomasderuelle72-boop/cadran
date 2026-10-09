@@ -143,6 +143,8 @@ function graduation(unite: RatioUnit): (valeur: number) => string {
       return (valeur) => `${Math.round(valeur)} j`;
     case "annees":
       return (valeur) => `${valeur.toFixed(1)}`;
+    case "indice":
+      return (valeur) => String(Math.round(valeur));
     case "devise":
       return (valeur) => abregerMontant(valeur);
     default:
@@ -298,12 +300,26 @@ function hauteurLegende(series: number): number {
 
 const MARGE = { top: 8, bottom: 4, left: 4 };
 
+/**
+ * Bornes de l'axe vertical. Par défaut, zéro est inclus : c'est la seule
+ * lecture honnête d'une barre. Une courbe en base 100 se lit au contraire
+ * autour de 100 — partir de zéro écraserait les écarts qu'on veut montrer.
+ */
+type Domaine = "zero" | "resserre";
+
+const BORNES_RESSERREES = [
+  (min: number) => Math.floor((min - 5) / 10) * 10,
+  (max: number) => Math.ceil((max + 5) / 10) * 10,
+] as const;
+
 function Axes({
   cleAbscisse,
   unite,
+  domaine = "zero",
 }: {
   cleAbscisse: string;
   unite: RatioUnit;
+  domaine?: Domaine;
 }) {
   return (
     <>
@@ -327,6 +343,7 @@ function Axes({
         axisLine={false}
         width={56}
         tickFormatter={(valeur) => graduation(unite)(Number(valeur))}
+        {...(domaine === "resserre" ? { domain: [...BORNES_RESSERREES] } : {})}
       />
     </>
   );
@@ -395,6 +412,7 @@ export function CourbeTemporelle({
   currency = "EUR",
   unite = "devise",
   hauteur = 260,
+  domaine = "zero",
 }: {
   donnees: PointGraphique[];
   series: SerieGraphique[];
@@ -402,6 +420,7 @@ export function CourbeTemporelle({
   currency?: string;
   unite?: RatioUnit;
   hauteur?: number;
+  domaine?: Domaine;
 }) {
   const dernierIndex = donnees.length - 1;
   const couleurs = useCouleursGraphique();
@@ -413,7 +432,7 @@ export function CourbeTemporelle({
     <div ref={conteneur}>
       <ResponsiveContainer width="100%" height={hauteur}>
         <LineChart data={donnees} margin={{ ...MARGE, right: marge }}>
-          <Axes cleAbscisse={cleAbscisse} unite={unite} />
+          <Axes cleAbscisse={cleAbscisse} unite={unite} domaine={domaine} />
           <Tooltip {...infobulle} />
           {series.length > 1 && (
             <LegendeHaute series={series} couleurs={couleurs} />

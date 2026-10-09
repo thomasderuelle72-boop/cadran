@@ -3,7 +3,8 @@ import { useAuth } from "./context/AuthContext";
 import { Layout } from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { PlateformePage } from "./pages/Plateforme";
-import { PluriannuelPage } from "./pages/Pluriannuel";
+import { EvolutionPage } from "./pages/Evolution";
+import { PrevisionnelPage } from "./pages/Previsionnel";
 import { PortefeuillePage } from "./pages/Portefeuille";
 import { OpportunitesPage } from "./pages/Opportunites";
 import { ValeurCreeePage } from "./pages/ValeurCreee";
@@ -16,7 +17,6 @@ import { MentionsLegales } from "./pages/MentionsLegales";
 import { Confidentialite } from "./pages/Confidentialite";
 import { CGV } from "./pages/CGV";
 import { Dashboard } from "./pages/Dashboard";
-import { RatiosPage } from "./pages/Ratios";
 import { AnalysisPage } from "./pages/Analysis";
 import { ReceivablesPage } from "./pages/Receivables";
 import { DiagnosticPage } from "./pages/Diagnostic";
@@ -66,7 +66,9 @@ export default function App() {
         }
       >
         <Route path="/tableau-de-bord" element={<Dashboard />} />
-        <Route path="/ratios" element={<RatiosPage />} />
+        {/* Anciennes adresses : les ratios vivent dans le diagnostic, le
+            pluriannuel est devenu Évolution et Prévisionnel. */}
+        <Route path="/ratios" element={<Navigate to="/diagnostic" replace />} />
         <Route path="/analysis" element={<AnalysisPage />} />
         <Route path="/receivables" element={<ReceivablesPage />} />
         <Route path="/diagnostic" element={<DiagnosticPage />} />
@@ -79,7 +81,9 @@ export default function App() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/conseil" element={<ConseilPage />} />
         <Route path="/abonnement" element={<AbonnementPage />} />
-        <Route path="/pluriannuel" element={<PluriannuelPage />} />
+        <Route path="/pluriannuel" element={<Navigate to="/evolution" replace />} />
+        <Route path="/evolution" element={<EvolutionPage />} />
+        <Route path="/previsionnel" element={<PrevisionnelPage />} />
         <Route path="/portefeuille" element={<PortefeuillePage />} />
         <Route path="/opportunites" element={<OpportunitesPage />} />
         <Route path="/valeur-creee" element={<ValeurCreeePage />} />

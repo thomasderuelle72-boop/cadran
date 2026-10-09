@@ -12,6 +12,15 @@ import {
   assainirHypotheses,
   projeter,
 } from "./previsionnel";
+import {
+  LignePlan,
+  ReferenceHypotheses,
+  ResumeScenario,
+  hypothesesDuReel,
+  planDeFinancement,
+  scenarios,
+} from "./depart";
+import { Prisma } from "@prisma/client";
 
 /**
  * Le module pluriannuel : plusieurs exercices côte à côte, et ce qui vient
@@ -33,6 +42,13 @@ export interface SerieExercice {
   valeurs: Record<string, number | null>;
   /** Montant à financer, pour un exercice projeté qui ne boucle pas. */
   besoinFinancement?: number;
+  /**
+   * Jours couverts et bornes, pour un exercice réalisé. L'écran dit ainsi
+   * « 2026 · 9 mois » au lieu de comparer neuf mois à une année pleine.
+   */
+  jours?: number;
+  debut?: string;
+  fin?: string;
 }
 
 @Injectable()
@@ -107,6 +123,13 @@ export class PluriannuelService {
       ...("besoinFinancement" in exercice
         ? { besoinFinancement: exercice.besoinFinancement }
         : {}),
+      ...("joursCouverts" in exercice
+        ? {
+            jours: exercice.joursCouverts,
+            debut: exercice.debut.toISOString().slice(0, 10),
+            fin: exercice.fin.toISOString().slice(0, 10),
+          }
+        : {}),
     };
   }
 
@@ -167,16 +190,18 @@ export class PluriannuelService {
     organizationId: string,
     entityId: string,
     hypothesesBrutes?: Partial<Hypotheses>
-  ): Promise<{ hypotheses: Hypotheses; exercices: SerieExercice[]; depart: number | null }> {
+  ): Promise<{
+    hypotheses: Hypotheses;
+    duReel: Hypotheses;
+    reference: ReferenceHypotheses;
+    enregistre: boolean;
+    exercices: SerieExercice[];
+    realise: SerieExercice | null;
+    depart: number | null;
+    plan: LignePlan[];
+    scenarios: ResumeScenario[];
+  }> {
     const exercices = construireExercices(await this.periodes(organizationId, entityId));
-
-    const enregistrees = hypothesesBrutes
-      ? undefined
-      : ((await this.prisma.tableauDeBord.findUnique({ where: { entityId } }))?.hypotheses as
-          | Partial<Hypotheses>
-          | null
-          | undefined);
-    const hypotheses = assainirHypotheses(hypothesesBrutes ?? enregistrees ?? HYPOTHESES_PAR_DEFAUT);
 
     /*
      * Le dernier exercice **complet** sert de point de départ, pas le dernier
@@ -185,16 +210,53 @@ export class PluriannuelService {
      */
     const complets = exercices.filter((exercice) => exercice.complet);
     const depart = complets[complets.length - 1];
+    const { hypotheses: duReel, reference } = hypothesesDuReel(complets);
+
+    const enregistrees = (await this.prisma.tableauDeBord.findUnique({ where: { entityId } }))?.hypotheses as
+      | Partial<Hypotheses>
+      | null
+      | undefined;
+    // Sans rien d'enregistré, on part du réel du client — jamais de moyennes.
+    const hypotheses = assainirHypotheses(hypothesesBrutes ?? enregistrees ?? duReel);
+    const enregistre = Boolean(enregistrees);
+
     if (!depart) {
-      return { hypotheses, exercices: [], depart: null };
+      return {
+        hypotheses,
+        duReel,
+        reference,
+        enregistre,
+        exercices: [],
+        realise: null,
+        depart: null,
+        plan: [],
+        scenarios: [],
+      };
     }
 
-    const projetes = projeter({ annee: depart.annee, aggregates: depart.aggregates }, hypotheses);
+    const pointDeDepart = { annee: depart.annee, aggregates: depart.aggregates };
+    const projetes = projeter(pointDeDepart, hypotheses);
     return {
       hypotheses,
+      duReel,
+      reference,
+      enregistre,
       exercices: projetes.map((exercice) => this.enSerie(exercice, false)),
+      realise: this.enSerie(depart, true),
       depart: depart.annee,
+      plan: planDeFinancement(depart.aggregates, projetes, hypotheses),
+      scenarios: scenarios(pointDeDepart, hypotheses),
     };
+  }
+
+  /** Oublier les hypothèses enregistrées : le prévisionnel repart du réel. */
+  async effacerHypotheses(organizationId: string, entityId: string): Promise<{ effacees: boolean }> {
+    await this.entities.getOrThrow(organizationId, entityId);
+    const enBase = await this.prisma.tableauDeBord.findUnique({ where: { entityId } });
+    if (enBase?.hypotheses) {
+      await this.prisma.tableauDeBord.update({ where: { entityId }, data: { hypotheses: Prisma.DbNull } });
+    }
+    return { effacees: true };
   }
 
   async enregistrerHypotheses(

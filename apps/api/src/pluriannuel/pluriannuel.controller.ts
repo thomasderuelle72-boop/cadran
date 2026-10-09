@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Put, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Put, Query, UseGuards } from "@nestjs/common";
 import { JwtAuthGuard } from "../common/jwt-auth.guard";
 import { RolesGuard } from "../common/roles.guard";
 import { Roles } from "../common/roles.decorator";
@@ -68,6 +68,12 @@ export class PluriannuelController {
     @Body() corps: Partial<Hypotheses>
   ) {
     return this.pluriannuel.enregistrerHypotheses(user.organizationId, entityId, corps ?? {});
+  }
+
+  @Delete("previsionnel")
+  @Roles(Role.ADMIN, Role.DAF, Role.CONTROLEUR)
+  effacerHypotheses(@CurrentUser() user: AuthUser, @Param("entityId") entityId: string) {
+    return this.pluriannuel.effacerHypotheses(user.organizationId, entityId);
   }
 }
 

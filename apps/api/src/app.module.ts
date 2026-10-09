@@ -26,6 +26,7 @@ import { PluriannuelModule } from "./pluriannuel/pluriannuel.module";
 import { PortefeuilleModule } from "./portefeuille/portefeuille.module";
 import { OpportunitesModule } from "./opportunites/opportunites.module";
 import { ValeurModule } from "./valeur/valeur.module";
+import { PreferencesModule } from "./preferences/preferences.module";
 import { BenchmarkModule } from "./benchmark/benchmark.module";
 import { EmailModule } from "./email/email.module";
 
@@ -72,6 +73,7 @@ import { EmailModule } from "./email/email.module";
     PortefeuilleModule,
     OpportunitesModule,
     ValeurModule,
+    PreferencesModule,
     BenchmarkModule,
   ],
   /*

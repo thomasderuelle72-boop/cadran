@@ -4,7 +4,7 @@ import {
   Award,
   Bell,
   BriefcaseBusiness,
-  CalendarRange,
+  ChartSpline,
   ChartColumn,
   ChevronsUpDown,
   CreditCard,
@@ -16,11 +16,11 @@ import {
   LogOut,
   Menu,
   MessageCircleQuestion,
-  Percent,
   Settings,
   ShieldCheck,
   Stethoscope,
   Target,
+  TrendingUp,
   Upload,
   Wallet,
   X,
@@ -31,7 +31,8 @@ import { BasculeTheme } from "./BasculeTheme";
 import { BandeauSupport } from "./BandeauSupport";
 import { SelecteurDossier } from "./SelecteurDossier";
 import type { Role } from "../api/types";
-import { useAlertEvents, useEntities } from "../api/hooks";
+import { useAlertEvents, useEntities, useEtatConseil } from "../api/hooks";
+import { useDossierCourant } from "../lib/dossierCourant";
 
 interface Entree {
   to: string;
@@ -50,81 +51,92 @@ interface Entree {
   plusieursDossiers?: boolean;
   /** Porte le nombre d'alertes non traitées. */
   compteurAlertes?: boolean;
+  /** Affichée seulement si le conseiller est activé sur cette instance. */
+  conseiller?: boolean;
 }
 
 /**
- * Navigation groupée par ce que l'utilisateur vient faire, et non par module
- * technique.
+ * Navigation en trois étages : le cabinet, le dossier, les données.
+ *
+ * L'ancien menu mêlait des écrans qui parlent de tous les dossiers (alertes,
+ * plan d'action) et des écrans qui parlent du dossier choisi en haut
+ * (tableau de bord, diagnostic) : on ne savait jamais de quoi parlait la page
+ * ouverte. Désormais :
+ * - « Cabinet » : ce qui porte sur tous les dossiers ;
+ * - le bloc du dossier, titré de son nom : comprendre ses chiffres, puis
+ *   prévoir ;
+ * - « Données » : ce qu'on importe et ce qu'on exporte.
  *
  * Les libellés disent ce qu'on trouve derrière, dans les mots d'un dirigeant
- * autant que d'un comptable : « Résultats et flux » plutôt qu'« Analyse »,
- * « Clients et fournisseurs » plutôt qu'« Encours », « Sur plusieurs
- * années » plutôt que « Pluriannuel ». Chaque entrée a son icône, qui se reconnaît
- * avant de se lire, et une aide au survol.
- *
- * Ce qui règle le compte plutôt que les chiffres — paramètres, abonnement,
- * console d'exploitation — quitte la liste principale pour le pied de menu :
- * mêlé aux écrans d'analyse, il allongeait la liste sans servir le travail.
+ * autant que d'un comptable. Chaque entrée a son icône, qui se reconnaît
+ * avant de se lire, et une aide au survol. Ce qui règle le compte plutôt que
+ * les chiffres — paramètres, abonnement, console — est dans le pied de menu.
  */
-const FAMILLES: Array<{ titre: string; entrees: Entree[] }> = [
+interface Famille {
+  titre: string;
+  entrees: Entree[];
+}
+
+const CABINET: Famille = {
+  titre: "Cabinet",
+  entrees: [
+    {
+      to: "/portefeuille",
+      label: "Portefeuille",
+      Icone: BriefcaseBusiness,
+      aide: "Tous les dossiers, du plus urgent au plus sain",
+      plusieursDossiers: true,
+    },
+    {
+      to: "/opportunites",
+      label: "Missions à proposer",
+      Icone: Lightbulb,
+      aide: "Ce que les chiffres de chaque dossier appellent, chiffré en euros",
+    },
+    { to: "/actions", label: "Plan d'action", Icone: ListChecks, aide: "Les mesures décidées et leur suivi, dossier par dossier" },
+    {
+      to: "/valeur-creee",
+      label: "Valeur créée",
+      Icone: Award,
+      aide: "Ce que les actions menées ont rapporté aux clients",
+    },
+    {
+      to: "/alerts",
+      label: "Alertes",
+      Icone: Bell,
+      aide: "Les seuils franchis, à traiter",
+      compteurAlertes: true,
+    },
+  ],
+};
+
+const DOSSIER: Famille[] = [
   {
-    titre: "Vue d'ensemble",
+    titre: "Comprendre",
     entrees: [
-      {
-        to: "/portefeuille",
-        label: "Portefeuille",
-        Icone: BriefcaseBusiness,
-        aide: "Tous les dossiers, du plus urgent au plus sain",
-        plusieursDossiers: true,
-      },
       {
         to: "/tableau-de-bord",
-        label: "Tableau de bord",
+        label: "Synthèse",
         Icone: LayoutDashboard,
-        aide: "Les chiffres clés et les ratios de la période",
+        aide: "Où en est le dossier, en un écran",
       },
-      {
-        to: "/opportunites",
-        label: "Missions à proposer",
-        Icone: Lightbulb,
-        aide: "Ce que les chiffres de chaque dossier appellent, chiffré en euros",
-      },
-      {
-        to: "/valeur-creee",
-        label: "Valeur créée",
-        Icone: Award,
-        aide: "Ce que les actions menées ont rapporté aux clients",
-      },
-      {
-        to: "/alerts",
-        label: "Alertes",
-        Icone: Bell,
-        aide: "Les seuils franchis, à traiter",
-        compteurAlertes: true,
-      },
-    ],
-  },
-  {
-    titre: "Analyser",
-    entrees: [
       {
         to: "/analysis",
-        label: "Résultats et flux",
+        label: "Activité et résultat",
         Icone: ChartColumn,
-        aide: "Soldes intermédiaires de gestion et tableau de flux",
+        aide: "Du chiffre d'affaires au résultat, et les flux de trésorerie",
       },
-      { to: "/ratios", label: "Ratios", Icone: Percent, aide: "L'évolution des ratios, période après période" },
+      {
+        to: "/evolution",
+        label: "Évolution",
+        Icone: TrendingUp,
+        aide: "Les derniers exercices côte à côte : activité, rentabilité, structure, trésorerie",
+      },
       {
         to: "/diagnostic",
         label: "Diagnostic",
         Icone: Stethoscope,
-        aide: "Scores de fragilité, seuil de rentabilité, comparaison au secteur",
-      },
-      {
-        to: "/pluriannuel",
-        label: "Sur plusieurs années",
-        Icone: CalendarRange,
-        aide: "Les exercices côte à côte, et le prévisionnel",
+        aide: "Indicateurs, seuil de rentabilité, besoin en fonds de roulement, secteur, scores",
       },
       {
         to: "/receivables",
@@ -132,30 +144,37 @@ const FAMILLES: Array<{ titre: string; entrees: Entree[] }> = [
         Icone: HandCoins,
         aide: "Qui doit quoi, et depuis combien de temps",
       },
-    ],
-  },
-  {
-    titre: "Prévoir et agir",
-    entrees: [
-      { to: "/cash", label: "Trésorerie", Icone: Wallet, aide: "La prévision de trésorerie" },
-      { to: "/budget", label: "Budget", Icone: Target, aide: "Le budget et l'écart au réalisé" },
-      { to: "/actions", label: "Plan d'action", Icone: ListChecks, aide: "Les mesures décidées et leur suivi" },
       {
         to: "/conseil",
         label: "Conseiller",
         Icone: MessageCircleQuestion,
         aide: "Poser une question sur les chiffres du dossier",
+        conseiller: true,
       },
     ],
   },
   {
-    titre: "Données",
+    titre: "Prévoir",
     entrees: [
-      { to: "/import", label: "Importer", Icone: Upload, aide: "Charger un FEC ou une balance" },
-      { to: "/reports", label: "Rapports", Icone: FileText, aide: "Les documents à télécharger ou envoyer" },
+      {
+        to: "/previsionnel",
+        label: "Prévisionnel",
+        Icone: ChartSpline,
+        aide: "Les trois prochains exercices et le plan de financement",
+      },
+      { to: "/cash", label: "Trésorerie", Icone: Wallet, aide: "La trésorerie semaine par semaine" },
+      { to: "/budget", label: "Budget", Icone: Target, aide: "Le budget et l'écart au réalisé" },
     ],
   },
 ];
+
+const DONNEES: Famille = {
+  titre: "Données",
+  entrees: [
+    { to: "/import", label: "Importer", Icone: Upload, aide: "Charger un FEC ou une balance" },
+    { to: "/reports", label: "Rapports", Icone: FileText, aide: "Les documents à télécharger ou envoyer" },
+  ],
+};
 
 /** Le compte, pas les chiffres : en pied de menu. */
 const COMPTE: Entree[] = [
@@ -228,10 +247,45 @@ function Lien({ entree, compteur, onNavigate }: { entree: Entree; compteur?: num
   );
 }
 
+function Groupe({
+  famille,
+  visible,
+  aTraiter,
+  onNavigate,
+  sousTitre = false,
+}: {
+  famille: Famille;
+  visible: (entree: Entree) => boolean;
+  aTraiter: number;
+  onNavigate?: () => void;
+  sousTitre?: boolean;
+}) {
+  const entrees = famille.entrees.filter(visible);
+  if (entrees.length === 0) return null;
+  return (
+    <div>
+      <div className={`px-3 mb-1 text-xs font-semibold ${sousTitre ? "text-ink-3/90" : "text-ink-3"}`}>{famille.titre}</div>
+      <div className="flex flex-col gap-0.5">
+        {entrees.map((entree) => (
+          <Lien
+            key={entree.to}
+            entree={entree}
+            compteur={entree.compteurAlertes ? aTraiter : undefined}
+            onNavigate={onNavigate}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Navigation({ onNavigate }: { onNavigate?: () => void }) {
   const { user } = useAuth();
   const { data: entites } = useEntities();
   const { data: alertes } = useAlertEvents();
+  const { data: conseil } = useEtatConseil();
+  const [entityId] = useDossierCourant(entites);
+  const dossier = entites?.find((e) => e.id === entityId);
   const plusieursDossiers = (entites?.length ?? 0) > 1;
   /* Pendant un accès support, l'entrée Plateforme disparaît : on
    * n'administre pas la plateforme depuis le dossier d'un client, et le garde
@@ -242,30 +296,42 @@ function Navigation({ onNavigate }: { onNavigate?: () => void }) {
   const visible = (entree: Entree) =>
     (!entree.roles || (user?.role !== undefined && entree.roles.includes(user.role))) &&
     (!entree.plateforme || estExploitant) &&
-    (!entree.plusieursDossiers || plusieursDossiers);
+    (!entree.plusieursDossiers || plusieursDossiers) &&
+    (!entree.conseiller || conseil?.disponible === true);
 
   return (
     <>
       <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-4" aria-label="Navigation principale">
-        {FAMILLES.map((famille) => {
-          const entrees = famille.entrees.filter(visible);
-          if (entrees.length === 0) return null;
-          return (
-            <div key={famille.titre}>
-              <div className="px-3 mb-1 text-xs font-semibold text-ink-3">{famille.titre}</div>
-              <div className="flex flex-col gap-0.5">
-                {entrees.map((entree) => (
-                  <Lien
-                    key={entree.to}
-                    entree={entree}
-                    compteur={entree.compteurAlertes ? aTraiter : undefined}
-                    onNavigate={onNavigate}
-                  />
-                ))}
-              </div>
+        {/* Un dirigeant qui suit sa seule entreprise n'a pas de cabinet : le
+            même groupe s'appelle alors « Suivi ». */}
+        <Groupe
+          famille={{ ...CABINET, titre: plusieursDossiers ? "Cabinet" : "Suivi" }}
+          visible={visible}
+          aTraiter={aTraiter}
+          onNavigate={onNavigate}
+        />
+
+        {/* Le dossier choisi en haut, et tout ce qui parle de lui. */}
+        <div className="rounded-xl bg-ink/[0.035] p-1.5 space-y-3" aria-label={dossier ? `Dossier ${dossier.name}` : "Dossier"}>
+          <div className="px-2 pt-1">
+            <div className="text-[0.7rem] font-semibold uppercase tracking-wide text-ink-3">Dossier</div>
+            <div className="text-sm font-bold truncate" title={dossier?.name}>
+              {dossier?.name ?? "Aucun dossier"}
             </div>
-          );
-        })}
+          </div>
+          {DOSSIER.map((famille) => (
+            <Groupe
+              key={famille.titre}
+              famille={famille}
+              visible={visible}
+              aTraiter={aTraiter}
+              onNavigate={onNavigate}
+              sousTitre
+            />
+          ))}
+        </div>
+
+        <Groupe famille={DONNEES} visible={visible} aTraiter={aTraiter} onNavigate={onNavigate} />
       </nav>
 
       <div className="border-t border-rule/10 p-3">
