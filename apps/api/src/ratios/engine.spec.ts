@@ -1,10 +1,4 @@
-import {
-  RATIO_IDS,
-  bilanEstEquilibre,
-  computeAggregates,
-  computeDerived,
-  computeRatios,
-} from "./engine";
+import { RATIO_IDS, bilanEstEquilibre, computeAggregates, computeDerived, computeRatios, actualiserLibelles } from "./engine";
 import { LinePoste } from "@prisma/client";
 
 describe("moteur de calcul des ratios", () => {
@@ -177,5 +171,16 @@ describe("ratios de rotation sur une période plus courte qu'un exercice", () =>
         surAnnee.find((r) => r.id === id)?.value
       );
     }
+  });
+});
+
+describe("libellés relus", () => {
+  it("remplace un ancien libellé enregistré par celui en vigueur, sans toucher à la valeur", () => {
+    const [dso, cycle] = actualiserLibelles([
+      { id: "dso", label: "DSO — délai clients", formula: "(Créances clients / CA) × 273 jours de période", value: 55, unit: "jours", category: "ACTIVITE", status: "attention", interpretation: "" },
+      { id: "cycle_conversion_cash", label: "Cycle de conversion cash", formula: "DSO + DIO − DPO", value: 60, unit: "jours", category: "ACTIVITE", status: "critique", interpretation: "" },
+    ] as never);
+    expect(dso).toMatchObject({ label: "Délai de paiement des clients", value: 55, formula: "(Créances clients / CA) × 273 jours de période" });
+    expect(cycle).toMatchObject({ label: "Cycle de trésorerie", formula: "Délai clients + durée de stockage − délai fournisseurs" });
   });
 });

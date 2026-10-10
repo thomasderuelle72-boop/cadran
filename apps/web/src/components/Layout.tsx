@@ -18,6 +18,7 @@ import {
   MessageCircleQuestion,
   Settings,
   Scale,
+  ScrollText,
   ShieldCheck,
   Stethoscope,
   Target,
@@ -171,6 +172,17 @@ const DOSSIER: Famille[] = [
       },
       { to: "/cash", label: "Trésorerie", Icone: Wallet, aide: "La trésorerie semaine par semaine" },
       { to: "/budget", label: "Budget", Icone: Target, aide: "Le budget et l'écart au réalisé" },
+    ],
+  },
+  {
+    titre: "Restituer",
+    entrees: [
+      {
+        to: "/rapport-client",
+        label: "Rapport client",
+        Icone: ScrollText,
+        aide: "Le rapport à remettre au client, composé à partir des chiffres du dossier",
+      },
     ],
   },
 ];

@@ -9,6 +9,7 @@ import {
   Derived,
   lireAgregats,
   RatioValue,
+  actualiserLibelles,
 } from "./engine";
 import { joursEntreDates } from "../analysis/structure";
 
@@ -103,7 +104,7 @@ export class RatiosService {
       currency: period.entity.currency,
       aggregates: lireAgregats(period.ratioResult.aggregates),
       derived: period.ratioResult.derived as unknown as Derived,
-      ratios: period.ratioResult.ratios as unknown as RatioValue[],
+      ratios: actualiserLibelles(period.ratioResult.ratios as unknown as RatioValue[]),
       computedAt: period.ratioResult.computedAt,
     };
   }

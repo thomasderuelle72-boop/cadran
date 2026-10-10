@@ -205,14 +205,28 @@ export function lireRentabilite(exercices: SerieExercice[]): Lecture | null {
     const charges = variation(c0, cN).taux;
     if (ventes !== null && charges !== null) {
       const constat = `Sur la période, les charges d'exploitation ont évolué de ${pourcentSigne(charges)} et les ventes de ${pourcentSigne(ventes)}`;
+      // Dit dans le sens des chiffres : « vont plus vite » quand tout monte,
+      // « baissent plus vite » quand tout baisse.
+      const defavorable =
+        ventes < 0 && charges >= 0
+          ? "les ventes baissent pendant que les charges augmentent"
+          : charges < 0
+            ? "les ventes baissent plus vite que les charges"
+            : "les charges vont plus vite que les ventes";
+      const favorable =
+        ventes >= 0 && charges < 0
+          ? "les ventes progressent pendant que les charges baissent"
+          : ventes < 0
+            ? "les charges baissent plus vite que les ventes"
+            : "les ventes vont plus vite que les charges";
       // Un écart de quelques points est un signal ; l'effet ciseaux, c'est
       // quand il est franc, ou qu'il a déjà coûté de la marge.
       if (charges - ventes >= 0.05 || (charges - ventes > 0.02 && ecart !== null && ecart <= -2)) {
-        phrases.push(`${constat} : les charges vont plus vite que les ventes, c'est un effet ciseaux qui réduit la marge.`);
+        phrases.push(`${constat} : ${defavorable}, c'est un effet ciseaux qui réduit la marge.`);
       } else if (charges - ventes > 0.02) {
-        phrases.push(`${constat} : les charges vont un peu plus vite que les ventes, à surveiller avant que la marge ne s'en ressente.`);
+        phrases.push(`${constat} : ${defavorable} — à surveiller avant que la marge ne s'en ressente.`);
       } else if (ventes - charges > 0.02) {
-        phrases.push(`${constat} : les ventes vont plus vite que les charges, chaque euro vendu rapporte davantage.`);
+        phrases.push(`${constat} : ${favorable}, chaque euro vendu rapporte davantage.`);
       }
     }
   }

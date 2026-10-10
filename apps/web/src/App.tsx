@@ -6,6 +6,7 @@ import { PlateformePage } from "./pages/Plateforme";
 import { EvolutionPage } from "./pages/Evolution";
 import { PrevisionnelPage } from "./pages/Previsionnel";
 import { BilanPage } from "./pages/Bilan";
+import { RapportClientPage } from "./pages/RapportClient";
 import { PortefeuillePage } from "./pages/Portefeuille";
 import { OpportunitesPage } from "./pages/Opportunites";
 import { ValeurCreeePage } from "./pages/ValeurCreee";
@@ -84,6 +85,7 @@ export default function App() {
         <Route path="/abonnement" element={<AbonnementPage />} />
         <Route path="/pluriannuel" element={<Navigate to="/evolution" replace />} />
         <Route path="/bilan" element={<BilanPage />} />
+        <Route path="/rapport-client" element={<RapportClientPage />} />
         <Route path="/evolution" element={<EvolutionPage />} />
         <Route path="/previsionnel" element={<PrevisionnelPage />} />
         <Route path="/portefeuille" element={<PortefeuillePage />} />

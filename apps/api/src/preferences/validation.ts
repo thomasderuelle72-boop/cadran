@@ -30,8 +30,57 @@ function validerEvolution(brut: unknown): Verdict<ModeleEvolution> {
   return { valide: true, valeur: { lignes: [...new Set(lignes as string[])] } };
 }
 
+export interface ModeleRapport {
+  sections: string[];
+  titre: string;
+  mot: string;
+  conclusion: string;
+}
+
+/** Les sections que l'écran sait composer ; une autre serait ignorée sans bruit, on la refuse. */
+const SECTIONS_RAPPORT = new Set([
+  "garde",
+  "mot",
+  "synthese",
+  "evolution",
+  "resultat",
+  "bilan",
+  "indicateurs",
+  "missions",
+  "plan",
+  "valeur",
+  "previsionnel",
+  "conclusion",
+]);
+
+function texte(brut: unknown, max: number): string | null {
+  return typeof brut === "string" && brut.length <= max ? brut : null;
+}
+
+function validerRapport(brut: unknown): Verdict<ModeleRapport> {
+  if (typeof brut !== "object" || brut === null || Array.isArray(brut)) {
+    return { valide: false, motif: "Le modèle de rapport attendu est un objet." };
+  }
+  const objet = brut as Record<string, unknown>;
+  const sections = objet.sections;
+  if (!Array.isArray(sections) || sections.length === 0 || sections.length > SECTIONS_RAPPORT.size) {
+    return { valide: false, motif: "Le rapport doit compter au moins une section." };
+  }
+  if (!sections.every((s) => typeof s === "string" && SECTIONS_RAPPORT.has(s))) {
+    return { valide: false, motif: "Section de rapport inconnue." };
+  }
+  const titre = texte(objet.titre, 200);
+  const mot = texte(objet.mot, 5000);
+  const conclusion = texte(objet.conclusion, 5000);
+  if (titre === null || mot === null || conclusion === null) {
+    return { valide: false, motif: "Titre (200 caractères) ou textes (5 000 caractères) trop longs ou absents." };
+  }
+  return { valide: true, valeur: { sections: [...new Set(sections as string[])], titre, mot, conclusion } };
+}
+
 export const VALIDATEURS: Record<string, (brut: unknown) => Verdict<unknown>> = {
   evolution: validerEvolution,
+  rapport: validerRapport,
 };
 
 export function cleConnue(cle: string): boolean {

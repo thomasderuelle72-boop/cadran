@@ -514,3 +514,26 @@ export function computeRatios(
 
   return ratios;
 }
+
+/*
+ * Les libellés en vigueur, par identifiant. Les ratios sont enregistrés en
+ * base avec leur libellé du jour du calcul : renommer un ratio (« DSO —
+ * délai clients » devenu « Délai de paiement des clients ») laisserait
+ * l'ancien nom sur toutes les périodes déjà importées. On les relit donc à
+ * travers le moteur actuel.
+ */
+const REFERENCE_LIBELLES = new Map(
+  computeRatios(lireAgregats({}), computeDerived(lireAgregats({})), null).map((r) => [r.id, r])
+);
+
+/** Applique les libellés et formules en vigueur à des ratios lus en base ; les valeurs ne bougent pas. */
+export function actualiserLibelles(ratios: RatioValue[]): RatioValue[] {
+  return ratios.map((r) => {
+    const reference = REFERENCE_LIBELLES.get(r.id);
+    if (!reference) return r;
+    // Une formule qui cite la durée de la période garde la sienne : elle dit
+    // sur combien de jours la valeur a été calculée.
+    const formula = r.formula.includes("jours de période") ? r.formula : reference.formula;
+    return { ...r, label: reference.label, formula };
+  });
+}

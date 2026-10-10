@@ -328,3 +328,66 @@
     box-shadow: var(--ombre-survol);
   }
 }
+
+/*
+ * Le rapport client est une feuille de papier : il garde les couleurs claires
+ * quel que soit le thème de l'écran, puisque c'est ainsi qu'il sera imprimé et
+ * lu. La classe redéfinit les tokens pour tout ce qu'elle contient — y compris
+ * les composants partagés, qui écrivent à l'encre des tokens.
+ */
+.papier {
+  --paper: 255 255 255;
+  --surface: 255 255 255;
+  --surface-2: 243 245 244;
+  --ink: 17 24 22;
+  --ink-2: 62 72 68;
+  --ink-3: 90 102 97;
+  --rule: 17 24 22;
+  --primary: 21 101 82;
+  --primary-soft: 221 238 231;
+  --success: 23 112 80;
+  --success-soft: 215 236 227;
+  --warning: 150 101 18;
+  --warning-soft: 246 232 203;
+  --critical: 173 61 46;
+  --critical-soft: 248 224 219;
+  --serie-1: 0 158 115;
+  --serie-2: 150 101 18;
+  --serie-3: 0 114 178;
+  color-scheme: light;
+  background: rgb(255 255 255);
+  color: rgb(17 24 22);
+}
+
+/*
+ * L'impression du rapport : seule la racine d'impression, rendue hors de
+ * l'application, part sur le papier. Masquer l'application plutôt que la
+ * rendre invisible évite les pages blanches qu'elle aurait occupées.
+ */
+.racine-impression {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm 15mm;
+  }
+  body {
+    background: white !important;
+  }
+  #root {
+    display: none !important;
+  }
+  .racine-impression {
+    display: block;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .saut-avant {
+    break-before: page;
+  }
+  .insecable {
+    break-inside: avoid;
+  }
+}
